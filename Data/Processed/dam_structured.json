@@ -1,0 +1,6211 @@
+[
+    {
+        "id": "1.110",
+        "chapter": "1",
+        "node_type": "process",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 5,
+        "raw_text": "1.110 Country Strategy Papers (CSP), Regional Integration Strategy Papers (RISP), and other programming documents",
+        "title": "Country Strategy Papers (CSP), Regional Integration Strategy Papers (RISP), and other programming documents",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.111",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.111.1",
+            "1.111.2"
+        ],
+        "page": 2,
+        "raw_text": "1.111 Selection of the Team",
+        "title": "Selection of the Team",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.111.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.111",
+        "has_children": false,
+        "children": [],
+        "page": 2,
+        "raw_text": "1.111.1 Composition/appointment of the Country Strategy Task Team for the Diagnostic Note / CSP Completion Report / new CSP / Mid- I ( i ) ( i ) ( i ) ( i ) ( i ) A2 ( i ) ( i ) ( i ) Term Review and other strategic/programming documents",
+        "title": "Composition/appointment of the Country Strategy Task Team for the Diagnostic Note / CSP Completion Report / new CSP / Mid- Term Review and other strategic/programming documents",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A2",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "1.111.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.111",
+        "has_children": false,
+        "children": [],
+        "page": 2,
+        "raw_text": "1.111.2 Composition/appointment of Regional Strategy Task Team to prepare the Diagnostic Note / RISP Completion Report / I ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) A2 ( i ) new RISP / Mid-Term Review and other strategic/programming documents. a Other programming documents as per the Bank’s Operations Manual: Country Briefs, CSP/RISP Updates (also known as ‘Extension’), Interim CSPs (i-CSP), and Joint CSPs (JCAS). 2",
+        "title": "Composition/appointment of Regional Strategy Task Team to prepare the Diagnostic Note / RISP Completion Report / new RISP / Mid-Term Review and other strategic/programming documents. a Other programming documents as per the Bank’s Operations Manual: Country Briefs, CSP/RISP Updates (also known as ‘Extension’), Interim CSPs (i-CSP), and Joint CSPs (JCAS).",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A2",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "1.112",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.112.1",
+            "1.112.2"
+        ],
+        "page": 3,
+        "raw_text": "1.112 Diagnostic Note Preparation, review and approval of",
+        "title": "Diagnostic Note Preparation, review and approval of",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.112.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.112",
+        "has_children": false,
+        "children": [],
+        "page": 3,
+        "raw_text": "1.112.1 I ( i ) R4 C C ( i ) ( i ) C R11 ( i ) A2 Country Diagnostic Note",
+        "title": "CC Country Diagnostic Note",
+        "actions": [
+            "I",
+            "( i )",
+            "R4",
+            "( i )",
+            "( i )",
+            "C",
+            "R11",
+            "( i )",
+            "A2"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "1.112.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.112",
+        "has_children": false,
+        "children": [],
+        "page": 3,
+        "raw_text": "1.112.2 Preparation, review and approval of R4 R11 ( i ) I ( i ) ( i ) C C ( i ) A2 Regional Diagnostic Note",
+        "title": "Preparation, review and approval of CC Regional Diagnostic Note",
+        "actions": [
+            "R4",
+            "R11",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A2"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "1.113",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.113.1",
+            "1.113.2"
+        ],
+        "page": 3,
+        "raw_text": "1.113 Completion Report",
+        "title": "Completion Report",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.113.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.113",
+        "has_children": false,
+        "children": [],
+        "page": 3,
+        "raw_text": "1.113.1 Preparation, review and approval of CSP 8 Completion Report & PPT Presentation on I ( i ) R4 C C R12 C R12 ( i ) R13 A1 13 ( i ) strategic priorities for the next CSP",
+        "title": "Preparation, review and approval of CSP Completion Report & PPT Presentation on CCR12 strategic priorities for the next CSP",
+        "actions": [
+            "I",
+            "( i )",
+            "R4",
+            "C",
+            "R12",
+            "( i )",
+            "R13",
+            "A1",
+            "( i )"
+        ],
+        "note_references": [
+            "8",
+            "13"
+        ]
+    },
+    {
+        "id": "1.113.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.113",
+        "has_children": false,
+        "children": [],
+        "page": 3,
+        "raw_text": "1.113.2 Preparation, review and approval of RISP Completion Report & PPT Presentation on I ( i ) R4 C ( i ) R 12 C C 8 R12 ( i ) R 13 A1 13 ( i ) strategic priorities for the next RISP 3",
+        "title": "Preparation, review and approval of RISP Completion Report & PPT Presentation on CC8 strategic priorities for the next RISP",
+        "actions": [
+            "I",
+            "( i )",
+            "R4",
+            "C",
+            "( i )",
+            "R",
+            "R12",
+            "( i )",
+            "R",
+            "A1",
+            "( i )"
+        ],
+        "note_references": [
+            "12",
+            "13",
+            "3"
+        ]
+    },
+    {
+        "id": "1.114",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.114.1",
+            "1.114.2"
+        ],
+        "page": 4,
+        "raw_text": "1.114 New Strategy Paper",
+        "title": "New Strategy Paper",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.114.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.114",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.114.1 Preparation, review and approval of New R4 R12 8 R12 R14 14 14 I ( i ) C C C ( i ) A1 A2 CSP (with a 3-Year Rolling Business Plan)",
+        "title": "Preparation, review and approval of New CCC CSP (with a -Year Rolling Business Plan)",
+        "actions": [
+            "R4",
+            "R12",
+            "R12",
+            "R14",
+            "I",
+            "( i )",
+            "( i )",
+            "A1",
+            "A2"
+        ],
+        "note_references": [
+            "8",
+            "14",
+            "3"
+        ]
+    },
+    {
+        "id": "1.114.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.114",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.114.2 Preparation, review and approval of New R4 12 8 R12 R14 14 14 I ( i ) C ( i ) R C C ( i ) A1 A2 RISP (with a 3-Year Rolling Business Plan)",
+        "title": "Preparation, review and approval of New RCC RISP (with a -Year Rolling Business Plan)",
+        "actions": [
+            "R4",
+            "R12",
+            "R14",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "A1",
+            "A2"
+        ],
+        "note_references": [
+            "12",
+            "8",
+            "14",
+            "3"
+        ]
+    },
+    {
+        "id": "1.115",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.115.1",
+            "1.115.2"
+        ],
+        "page": 4,
+        "raw_text": "1.115 Other Programming Documents 15",
+        "title": "Other Programming Documents",
+        "actions": [],
+        "note_references": [
+            "15"
+        ]
+    },
+    {
+        "id": "1.115.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.115",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.115.1 Interim CSP/RISP; Country Brief; or JCAS Follow the respective process for new CSP/RISP (See 1.114.1 / 1.114.2)",
+        "title": "Interim CSP/RISP; Country Brief; or JCAS Follow the respective process for new CSP/RISP (See .. / ..)",
+        "actions": [],
+        "note_references": [
+            "1",
+            "114",
+            "2"
+        ]
+    },
+    {
+        "id": "1.115.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.115",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.115.2 Updated CSP/RISP (‘Extension’) Follow the respective process for new CSP/RISP (See 1.114.1 / 1.114.2)",
+        "title": "Updated CSP/RISP (‘Extension’) Follow the respective process for new CSP/RISP (See .. / ..)",
+        "actions": [],
+        "note_references": [
+            "1",
+            "114",
+            "2"
+        ]
+    },
+    {
+        "id": "1.116",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.116.1",
+            "1.116.2"
+        ],
+        "page": 4,
+        "raw_text": "1.116 Mid-Term Review",
+        "title": "Mid-Term Review",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.116.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.116",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.116.1 Preparation, review and approval of Mid- R4 R12 8 R12/16/17 R17 16/17 16 17 I ( i ) C C C ( i ) A1 ( i ) A2 Term Review of CSP",
+        "title": "Preparation, review and approval of Mid- // / CCC Term Review of CSP",
+        "actions": [
+            "R4",
+            "R12",
+            "R12",
+            "R17",
+            "I",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )",
+            "A2"
+        ],
+        "note_references": [
+            "8",
+            "16",
+            "17"
+        ]
+    },
+    {
+        "id": "1.116.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.116",
+        "has_children": false,
+        "children": [],
+        "page": 4,
+        "raw_text": "1.116.2 Preparation, review and approval of Mid- I ( i ) R4 C ( i ) R 12 C C 8 R 11 R12/16/17 ( i ) R17 A1 16/17 16 A2 17 ( i ) Term Review of RISP 4",
+        "title": "Preparation, review and approval of Mid- CC8 // / Term Review of RISP",
+        "actions": [
+            "I",
+            "( i )",
+            "R4",
+            "C",
+            "( i )",
+            "R",
+            "R",
+            "R12",
+            "( i )",
+            "R17",
+            "A1",
+            "A2",
+            "( i )"
+        ],
+        "note_references": [
+            "12",
+            "11",
+            "16",
+            "17",
+            "4"
+        ]
+    },
+    {
+        "id": "1.117",
+        "chapter": "1",
+        "node_type": "task",
+        "process_id": "1.110",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "1.117.1",
+            "1.117.2"
+        ],
+        "page": 5,
+        "raw_text": "1.117 Mission on Programmatic Engagement",
+        "title": "Mission on Programmatic Engagement",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "1.117.1",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.117",
+        "has_children": false,
+        "children": [],
+        "page": 5,
+        "raw_text": "1.117.1 Preparation Mission for CSP / RISP See 2.120: Organization of mission Completion Report and Diagnostic Note",
+        "title": "Preparation Mission for CSP / RISP See .: Organization of mission Completion Report and Diagnostic Note",
+        "actions": [],
+        "note_references": [
+            "2",
+            "120"
+        ]
+    },
+    {
+        "id": "1.117.2",
+        "chapter": "1",
+        "node_type": "child_task",
+        "process_id": "1.110",
+        "parent_task_id": "1.117",
+        "has_children": false,
+        "children": [],
+        "page": 5,
+        "raw_text": "1.117.2 CSP / RISP Dialogue Mission (during CSP / See 2.120: Organization of mission RISP preparation)",
+        "title": "CSP / RISP Dialogue Mission (during CSP / See .: Organization of mission RISP preparation)",
+        "actions": [],
+        "note_references": [
+            "2",
+            "120"
+        ]
+    },
+    {
+        "id": "2.110",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.110 CLIENT RELATIONS AND COMMUNICATIONS",
+        "title": "CLIENT RELATIONS AND COMMUNICATIONS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.111",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.111 Request for Government clearance of quarterly missions ( i ) I ( i ) ( i ) R A ( i ) ( i ) 2",
+        "title": "Request for Government clearance of quarterly missions",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.112",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.112 Routine communication with Executing Agencies / PIUs I A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) R ( i ) 3",
+        "title": "Routine communication with Executing Agencies / PIUs",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.113",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.113 Critical communication with Executing Agencies / PIUs I ( i ) R ( i ) ( i ) A R ( i ) ( i )",
+        "title": "Critical communication with Executing Agencies / PIUs AR",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.114",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.114 Communication from Regional Offices to Government on ( i ) I R ( i ) A ( i ) 4 operational matters / dialogue Communication from HQ-based Departments to ( i )",
+        "title": "Communication from Regional Offices to Government on operational matters / dialogue Communication from HQ-based Departments to",
+        "actions": [
+            "( i )",
+            "I",
+            "R",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "4"
+        ]
+    },
+    {
+        "id": "2.115",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.115 ( i ) I ( i ) ( i ) R A ( i ) ( i ) Government on operational matters 4 / dialogue C o m m u n i c a t io n t o G overnment on critical 3 operational ( i )",
+        "title": "Government on operational matters / dialogue Communicatio ntoGovernment on critical operational",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "4",
+            "3"
+        ]
+    },
+    {
+        "id": "2.116",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.116 I R R ( i ) ( i ) R R A ( i ) ( i ) m a tte rs 4 / d i a lo g u e 5",
+        "title": "IRR RRA matte rs / dialo gue5",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "4"
+        ]
+    },
+    {
+        "id": "2.117",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.117 Exceptional communication by Senior Management to R ( i ) I A senior levels of Government",
+        "title": "Exceptional communication by Senior Management to senior levels of Government",
+        "actions": [
+            "R",
+            "( i )",
+            "I",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.118",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.118 Communication with Co-Financiers of projects I ( i ) R ( i ) ( i ) A ( i ) ( i )",
+        "title": "Communication with Co-Financiers of projects",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.119",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 10,
+        "raw_text": "2.119 Communication to clients on meeting attendance proxies 6 ( i ) I ( i ) A R ( i ) 10",
+        "title": "Communication to clients on meeting attendance proxies AR",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "6",
+            "10"
+        ]
+    },
+    {
+        "id": "2.120",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.120 ORGANIZATION OF MISSIONS & REVIEW AND APPROVAL OF MISSION REPORTS Organization of mission & Approval of Mission Findings &",
+        "title": "ORGANIZATION OF MISSIONS & REVIEW AND APPROVAL OF MISSION REPORTS Organization of mission & Approval of Mission Findings &",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.121",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.121 A2 A4 I ( i ) ( i ) ( i ) R ( i ) ( i ) ( i ) ( i ) R ecommendations for staff below PL-2 level Organization of mission & Approval of Mission Findings and",
+        "title": "ecommendations for staff below PL- level Organization of mission & Approval of Mission Findings and",
+        "actions": [
+            "A2",
+            "A4",
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.122",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.122 Recommendations (PL-2 and PL-1 levels): by Regional I3 C R3 A3 ( i ) Centres’ staff Organization of mission & Approval of Mission Findings and",
+        "title": "Recommendations (PL- and PL- levels): by Regional Centres’ staff Organization of mission & Approval of Mission Findings and",
+        "actions": [
+            "I",
+            "C",
+            "R3",
+            "A3",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "1"
+        ]
+    },
+    {
+        "id": "2.123",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.123 Recommendations (PL-2 and PL-1 levels): by Support I R A ( i ) ( i ) Departments’ staff",
+        "title": "Recommendations (PL- and PL- levels): by Support IRA Departments’ staff",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "1"
+        ]
+    },
+    {
+        "id": "2.124",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.124 Organization of mission & Approval of Mission Findings and 5 I6 ( i ) I A ( i ) ( i ) R ecommendations (Directors)",
+        "title": "Organization of mission & Approval of Mission Findings and ecommendations (Directors)",
+        "actions": [
+            "I",
+            "( i )",
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "R"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "2.125",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.125 Organization of mission & Approval of Mission Findings and ( i ) ( i ) I ( i ) A Recommendations (Vice-Presidents) Quarterly Mission program ( i ) I C C R A ( i )",
+        "title": "Organization of mission & Approval of Mission Findings and Recommendations (Vice-Presidents) Quarterly Mission program ICCRA",
+        "actions": [
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.126",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.120",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 12,
+        "raw_text": "2.126 ( i )",
+        "title": "",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.210",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.210",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.210 BUILDING THE BANK GROUP’S PROJECTS PIPELINE",
+        "title": "BUILDING THE BANK GROUP’S PROJECTS PIPELINE",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.211",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.210",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.211.1",
+            "2.211.2",
+            "2.211.3",
+            "2.211.4"
+        ],
+        "page": 14,
+        "raw_text": "2.211 Initial Request for Project/Programme Financing:",
+        "title": "Initial Request for Project/Programme Financing:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.211.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.211",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.211.1 RMC or REC operations: Receipt, initial assessment of eligibility I2 R A ( i ) ( i ) ( i ) ( i ) ( i ) 3 of request",
+        "title": "RMC or REC operations: Receipt, initial assessment of eligibility of request",
+        "actions": [
+            "I",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.211.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.211",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.211.2 Multi-national, regional, or innovative operations: Receipt and/or I3 R ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) 3 initial review and assessment of eligibility of request",
+        "title": "Multi-national, regional, or innovative operations: Receipt and/or initial review and assessment of eligibility of request",
+        "actions": [
+            "I",
+            "R",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.211.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.211",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.211.3 Technical review to determine admissibility of project / programme I ( i ) A ( i )",
+        "title": "Technical review to determine admissibility of project / programme",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.211.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.211",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.211.4 Inclusion of a project in the pipeline (Project Brief) I C R ( i ) ( i ) A",
+        "title": "Inclusion of a project in the pipeline (Project Brief) ICR",
+        "actions": [
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.212",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.210",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.212.1"
+        ],
+        "page": 14,
+        "raw_text": "2.212 Lending Programme preparation: A4",
+        "title": "Lending Programme preparation:",
+        "actions": [
+            "A4"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.212.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.212",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.212.1 Inclusion of an Operation in the Lending Programme (BPPS) ( i ) I C R R ( i ) ( i ) ( i )",
+        "title": "Inclusion of an Operation in the Lending Programme (BPPS) ICRR",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.213",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.210",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.213.1",
+            "2.213.2",
+            "2.213.3"
+        ],
+        "page": 14,
+        "raw_text": "2.213 Annual programming for Bank Group Operations:",
+        "title": "Annual programming for Bank Group Operations:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.213.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.213",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.213.1 Launch Annual Programme Preparation & Budget exercise ( i ) ( i ) ( i ) ( i ) I A ( i )",
+        "title": "Launch Annual Programme Preparation & Budget exercise",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.213.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.213",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.213.2 Submissions by Cost-Centres on the IOP (SRAS) C I 5 C R R R A Consolidation of the 3-Year rolling Programme and Budget",
+        "title": "Submissions by Cost-Centres on the IOP (SRAS) CI5 CRRRAConsolidation of the -Year rolling Programme and Budget",
+        "actions": [],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.213.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.210",
+        "parent_task_id": "2.213",
+        "has_children": false,
+        "children": [],
+        "page": 14,
+        "raw_text": "2.213.3 I ( i ) ( i ) C C C R ( i ) R A Document (PBD) 14",
+        "title": "CCCR Document (PBD)",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "14"
+        ]
+    },
+    {
+        "id": "2.220",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.220 PROJECT / PROGRAMME ORIGINATION AND LENDING Process: R Review and Recommend / review and Clear A Validate or Endorse / Approve Date: December 2022 ( i ) To be Informed / FRGP desab-QH( SROTCERID tcejorP GDD reganaM GNDR 7 sdraugefaS PV reciffO / / reciffO reganaM & rotceS 2srebmeM reganaM rotceriD MRIF 1reganaM ACTION rotceriD 3)desab-noigeR TSIF lesnuoC noisiviD rotceriD margorP FO ksiR 8 denrecnoC S&E MOCSPO ,rotceriD ,rotceriD yrtnuoC DRAOB 5 6 reciffO / CAQT tiderC rotceS rotceS 4 CRSP GESP TSRP maeT lageL lageL GDR Activity daeL ksaT CRC S&E R/C No.",
+        "title": "PROJECT / PROGRAMME ORIGINATION AND LENDING Process: Review and Recommend / review and Clear Validate or Endorse / Approve Date: December 2022 To be Informed / FRGP desab-QH( SROTCERID tcejorP GDD reganaM GNDR sdraugefaS PV reciffO / / reciffO reganaM & rotceS 2srebmeM reganaM rotceriD MRIF 1reganaM ACTION rotceriD )desab-noigeR TSIF lesnuoC noisiviD rotceriD margorP FO ksiR denrecnoC S&E MOCSPO ,rotceriD ,rotceriD yrtnuoC DRAOB reciffO / CAQT tiderC rotceS rotceS CRSP GESP TSRP maeT lageL lageL GDR Activity daeL ksaT CRC S&E / No.",
+        "actions": [
+            "R",
+            "A",
+            "( i )",
+            "R",
+            "C"
+        ],
+        "note_references": [
+            "7",
+            "3",
+            "8",
+            "56",
+            "4"
+        ]
+    },
+    {
+        "id": "2.221",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.221.1",
+            "2.221.2",
+            "2.221.3"
+        ],
+        "page": 16,
+        "raw_text": "2.221 Project/Programme Identification",
+        "title": "Project/Programme Identification",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.221.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.221",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.221.1 E&S Categorisation Memorandum I A ( i ) R1 ( i ) ( i ) ( i ) ( i )",
+        "title": "E&S Categorisation Memorandum",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "R1",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.221.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.221",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.221.2 Project / Programme Brief – when originated 9 I C C A C ( i ) ( i ) ( i ) ( i ) ( i ) by Regional Directorate",
+        "title": "Project / Programme Brief – when originated ICCAC by Regional Directorate",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "9"
+        ]
+    },
+    {
+        "id": "2.221.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.221",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.221.3 Project / Programme Brief – when originated I C C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) by HQ-based Department (PCN):10",
+        "title": "Project / Programme Brief – when originated ICCA by HQ-based Department (PCN):",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "10"
+        ]
+    },
+    {
+        "id": "2.222",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.222.1",
+            "2.222.2"
+        ],
+        "page": 16,
+        "raw_text": "2.222 Project/Programme Concept Notes",
+        "title": "Project/Programme Concept Notes",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.222.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.222",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.222.1 Project Concept Note (PCN) for a non- operation11 C13 C13 13 exceptional delivered by a I ( i ) C C ( i ) ( i ) R1 R1 ( i ) R2 A Regional Business Centre",
+        "title": "Project Concept Note (PCN) for a non- operation11 exceptional delivered by aI CC Regional Business Centre",
+        "actions": [
+            "C13",
+            "C13",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R1",
+            "R1",
+            "( i )",
+            "R2",
+            "A"
+        ],
+        "note_references": [
+            "13"
+        ]
+    },
+    {
+        "id": "2.222.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.222",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.222.2 Project Concept Note (PCN) operation12 ▪ for an exceptional delivered by a Regional Business Centre, o r C13 C13 13 C14 )14 )14 I ( i ) C ( i ( i ) R1 R1 ( i R1 R2 R2 A ▪ for a multi- national, regional, or innovative operation delivered by a HQ- based Sector Department (PAR):10",
+        "title": "Project Concept Note (PCN) operation12 ▪ for an exceptional delivered by a Regional Business Centre, orC13 ) ) ( i ( i ▪ for a multi- national, regional, or innovative operation delivered by a HQ- based Sector Department (PAR):",
+        "actions": [
+            "C13",
+            "C14",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "R1",
+            "R1",
+            "R1",
+            "R2",
+            "R2",
+            "A"
+        ],
+        "note_references": [
+            "13",
+            "14",
+            "10"
+        ]
+    },
+    {
+        "id": "2.223",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.223.1",
+            "2.223.2",
+            "2.223.3"
+        ],
+        "page": 16,
+        "raw_text": "2.223 Project/Programme Appraisal Report",
+        "title": "Project/Programme Appraisal Report",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.223.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.223",
+        "has_children": false,
+        "children": [],
+        "page": 16,
+        "raw_text": "2.223.1 Environmental and Social Compliance Note I A R1 ( i ) ( i ) ( i ) 15 (ESCON) reports 16",
+        "title": "Environmental and Social Compliance Note (ESCON) reports",
+        "actions": [
+            "I",
+            "A",
+            "R1",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "15",
+            "16"
+        ]
+    },
+    {
+        "id": "2.223.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.223",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.223.2 P ro je c t A p p r a is a l R e p o r t ( PAR) for a non- C13 C13 13 A16 I ( i ) C C C ( i ) R1 R1 ( i ) R2 R2 R2 1 1 ex ce p t i o n a l o p e r a ti o n",
+        "title": "P ro je ctApprais alReport( PAR) for a non- CCC ex ce ptionaloperati on",
+        "actions": [
+            "C13",
+            "C13",
+            "A16",
+            "I",
+            "( i )",
+            "( i )",
+            "R1",
+            "R1",
+            "( i )",
+            "R2",
+            "R2",
+            "R2"
+        ],
+        "note_references": [
+            "13",
+            "11"
+        ]
+    },
+    {
+        "id": "2.223.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.223",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.223.3 Project Appraisal Report (PAR) operation12 ▪ for an exceptional delivered by a Regional Business Centre, C13 C13 13 C14 C14 I ( i ) C ( i ) R1 R1 R1 R2 R2 R2 A or ( i ) ▪ for a multinational, regional, or innovative operation delivered by a HQ- based Sector Department Directors:17",
+        "title": "Project Appraisal Report (PAR) operation12 ▪ for an exceptional delivered by a Regional Business Centre, or ▪ for a multinational, regional, or innovative operation delivered by a HQ- based Sector Department Directors:",
+        "actions": [
+            "C13",
+            "C13",
+            "C14",
+            "C14",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "R1",
+            "R1",
+            "R1",
+            "R2",
+            "R2",
+            "R2",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "13",
+            "17"
+        ]
+    },
+    {
+        "id": "2.224",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.224.1",
+            "2.224.2",
+            "2.224.3",
+            "2.224.4"
+        ],
+        "page": 17,
+        "raw_text": "2.224 Negotiation of Financing Agreements and their Submission to the Board of",
+        "title": "Negotiation of Financing Agreements and their Submission to the Board of",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.224.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.224",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.224.1 Invitation for negotiations I C1 C2 A",
+        "title": "Invitation for negotiations",
+        "actions": [
+            "I",
+            "C1",
+            "C2",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.224.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.224",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.224.2 Preparation and Negotiation of draft Loan / I18 C13 C13 13 C ( i ) A ( i ) ( i ) ( i ) ( i ) Grant/ Guarantee Agreements Resolutions19",
+        "title": "Preparation and Negotiation of draft Loan / Grant/ Guarantee Agreements Resolutions19",
+        "actions": [
+            "I",
+            "C13",
+            "C13",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "13"
+        ]
+    },
+    {
+        "id": "2.224.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.224",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.224.3 Preparation of Board ( i ) I ( i ) R2 ( i ) ( i ) ( i ) C A ( i )",
+        "title": "Preparation of Board",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "R2",
+            "( i )",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.224.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.224",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.224.4 Outcome of Negotiations and package to be I I C2 A1 20 ( i ) A1 21 ( i ) submitted to the Board",
+        "title": "Outcome of Negotiations and package to be IIC2 submitted to the Board",
+        "actions": [
+            "A1",
+            "( i )",
+            "A1",
+            "( i )"
+        ],
+        "note_references": [
+            "20",
+            "21"
+        ]
+    },
+    {
+        "id": "2.225",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.220",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.225.1",
+            "2.225.2"
+        ],
+        "page": 17,
+        "raw_text": "2.225 Post-Board Approval:",
+        "title": "Post-Board Approval:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.225.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.225",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.225.1 Register Project Loan / Grant / Guarantee I A ( i ) ( i ) C 22 number in SAP",
+        "title": "Register Project Loan / Grant / Guarantee number in SAP",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "C"
+        ],
+        "note_references": [
+            "22"
+        ]
+    },
+    {
+        "id": "2.225.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.220",
+        "parent_task_id": "2.225",
+        "has_children": false,
+        "children": [],
+        "page": 17,
+        "raw_text": "2.225.2 Notification of Board Approval to the RMC I C ( i ) A ( i ) ( i ) 17",
+        "title": "Notification of Board Approval to the RMC",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "17"
+        ]
+    },
+    {
+        "id": "2.310",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.310 LOAN / GRANT SIGNATURE AND EFFECTIVENESS Finalization / Update of Loan / Grant",
+        "title": "LOAN / GRANT SIGNATURE AND EFFECTIVENESS Finalization / Update of Loan / Grant",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.311",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.311 I1 5 C I2 5 C1 C5 C ( i ) ( i ) ( i ) A2 ( i ) ( i ) agreement for Signature",
+        "title": "agreement for Signature",
+        "actions": [
+            "I",
+            "C",
+            "I",
+            "C1",
+            "C5",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A2",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "2.312.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.310",
+        "parent_task_id": "2.312",
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.312.1 Signature of Financing Agreements for ADB or I C ( i ) A3 6 ( i ) ( i ) R2 ( i ) ( i ) ADF loans, grants, or guarantees",
+        "title": "Signature of Financing Agreements for ADB or ADF loans, grants, or guarantees",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A3",
+            "( i )",
+            "( i )",
+            "R2",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "6"
+        ]
+    },
+    {
+        "id": "2.312.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.310",
+        "parent_task_id": "2.312",
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.312.2 Signature of Financing Agreements for See DAM 16.100, 16.200, 16.300, and 16.400 technical cooperation funds / facilities",
+        "title": "Signature of Financing Agreements for See DAM ., ., ., and . technical cooperation funds / facilities",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.313",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.313 Fulfilment of conditions for Loan / Grant entry I R2 ( i ) ( i ) ( i ) ( i ) ( i ) A1 ( i ) into force",
+        "title": "Fulfilment of conditions for Loan / Grant entry into force",
+        "actions": [
+            "I",
+            "R2",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.314",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 21,
+        "raw_text": "2.314 Fulfilment of conditions for Loan / Grant 7 8 I R1 R1 ( i ) R1 ( i ) R2 ( i ) ( i ) ( i ) A1 ( i ) disbursement",
+        "title": "Fulfilment of conditions for Loan / Grant disbursement",
+        "actions": [
+            "I",
+            "R1",
+            "R1",
+            "( i )",
+            "R1",
+            "( i )",
+            "R2",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )"
+        ],
+        "note_references": [
+            "78"
+        ]
+    },
+    {
+        "id": "2.320",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.320 PROJECT / PROGRAM SUPERVISION AND MONITORING & PORTFOLIO REVIEW:",
+        "title": "PROJECT / PROGRAM SUPERVISION AND MONITORING & PORTFOLIO REVIEW:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.321",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.321 Project Launching I ( i ) A2 4 ( i ) ( i )",
+        "title": "Project Launching",
+        "actions": [
+            "I",
+            "( i )",
+            "A2",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "4"
+        ]
+    },
+    {
+        "id": "2.322",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.322.1",
+            "2.322.2",
+            "2.322.3",
+            "2.322.4"
+        ],
+        "page": 23,
+        "raw_text": "2.322 Project / Programme Monitoring:",
+        "title": "Project / Programme Monitoring:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.322.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.322",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.322.1 Contract Creation in SAP I ( i ) A2 ( i ) I5 5",
+        "title": "Contract Creation in SAP",
+        "actions": [
+            "I",
+            "( i )",
+            "A2",
+            "( i )",
+            "I"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "2.322.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.322",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.322.2 Borrower Quarterly Progress Report C2 ( i ) ( i ) ( i ) ( i ) 6 See DAM PSO 2.120",
+        "title": "Borrower Quarterly Progress Report See DAM PSO .",
+        "actions": [
+            "C2",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "6",
+            "2",
+            "120"
+        ]
+    },
+    {
+        "id": "2.322.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.322",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.322.3 Implementation Support: Supervision Mission",
+        "title": "Implementation Support: Supervision Mission",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.322.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.322",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.322.4 Project Implementation Progress & Results Report I7 7 7 7 7 R1 ( i ) ( i ) ( i ) A1 R1 R1 ( i ) ( i ) 7 (IPR)",
+        "title": "Project Implementation Progress & Results Report (IPR)",
+        "actions": [
+            "I",
+            "R1",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1",
+            "R1",
+            "R1",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "77",
+            "7"
+        ]
+    },
+    {
+        "id": "2.323",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.323.1",
+            "2.323.2",
+            "2.323.3"
+        ],
+        "page": 23,
+        "raw_text": "2.323 Project MTR (Mid Term Review):",
+        "title": "Project MTR (Mid Term Review):",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.323.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.323",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.323.1 Project Mid-Term Review Terms of Reference I ( i ) R2 A2 ( i )",
+        "title": "Project Mid-Term Review Terms of Reference",
+        "actions": [
+            "I",
+            "( i )",
+            "R2",
+            "A2",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.323.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.323",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.323.2 Project Mid-Term Review Report – without I ( i ) C ( i ) R2 A1 ( i ) ( i ) ( i ) change in project scope",
+        "title": "Project Mid-Term Review Report – without change in project scope",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "R2",
+            "A1",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.323.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.323",
+        "has_children": false,
+        "children": [],
+        "page": 23,
+        "raw_text": "2.323.3 Project Mid-Term Review Report – with change in I8 C8 8 8 8 8 8 ( i ) ( i ) C2 R1 ( i ) ( i ) R2 R2 A2 scope8 the project 23",
+        "title": "Project Mid-Term Review Report – with change in scope8 the project",
+        "actions": [
+            "I",
+            "C8",
+            "( i )",
+            "( i )",
+            "C2",
+            "R1",
+            "( i )",
+            "( i )",
+            "R2",
+            "R2",
+            "A2"
+        ],
+        "note_references": [
+            "88",
+            "8",
+            "23"
+        ]
+    },
+    {
+        "id": "2.324",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.324.1",
+            "2.324.2"
+        ],
+        "page": 24,
+        "raw_text": "2.324 Project / Programme Completion:",
+        "title": "Project / Programme Completion:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.324.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.324",
+        "has_children": false,
+        "children": [],
+        "page": 24,
+        "raw_text": "2.324.1 Completion Evaluation Terms of Reference I C R2 A1 ( i ) 9 I9 C9 9 9",
+        "title": "Completion Evaluation Terms of Reference",
+        "actions": [
+            "I",
+            "C",
+            "R2",
+            "A1",
+            "( i )",
+            "I",
+            "C9"
+        ],
+        "note_references": [
+            "9",
+            "99"
+        ]
+    },
+    {
+        "id": "2.324.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.324",
+        "has_children": false,
+        "children": [],
+        "page": 24,
+        "raw_text": "2.324.2 Project Completion Report (PCR) ( i ) ( i ) R1 R2 ( i ) ( i ) ( i ) A1 ( i ) ( i ) ( i )",
+        "title": "Project Completion Report (PCR)",
+        "actions": [
+            "( i )",
+            "( i )",
+            "R1",
+            "R2",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.325",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.320",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.325.1",
+            "2.325.2"
+        ],
+        "page": 24,
+        "raw_text": "2.325 Portfolio Performance Review:",
+        "title": "Portfolio Performance Review:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.325.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.325",
+        "has_children": false,
+        "children": [],
+        "page": 24,
+        "raw_text": "2.325.1 C o u n try / R e g i on a l Portfolio Performance Review 10 10 I10 10 10 10 C1 C1 ( i ) R1 R1 R2 ( i ) ( i ) A1 ( i ) ( i ) 1 0 (C P P R / R P P R )",
+        "title": "Country / Regional Portfolio Performance Review (CPPR / RPPR)",
+        "actions": [
+            "I",
+            "C1",
+            "C1",
+            "( i )",
+            "R1",
+            "R1",
+            "R2",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "10"
+        ]
+    },
+    {
+        "id": "2.325.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.320",
+        "parent_task_id": "2.325",
+        "has_children": false,
+        "children": [],
+        "page": 24,
+        "raw_text": "2.325.2 Annual Portfolio Performance Review report R1 C1 ( i ) I R1 R1 ( i ) ( i ) ( i ) A1 ( i ) ( i )",
+        "title": "Annual Portfolio Performance Review report",
+        "actions": [
+            "R1",
+            "C1",
+            "( i )",
+            "I",
+            "R1",
+            "R1",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.410",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.410 PROJECT / PROGRAM FINANCIAL MANAGEMENT",
+        "title": "PROJECT / PROGRAM FINANCIAL MANAGEMENT",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.411",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.410",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.411.1",
+            "2.411.2",
+            "2.411.3",
+            "2.411.4",
+            "2.411.5"
+        ],
+        "page": 27,
+        "raw_text": "2.411 Country Systems Assessment and Capacity Development 1",
+        "title": "Country Systems Assessment and Capacity Development",
+        "actions": [],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.411.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.411",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.411.1 Country Fiduciary Risk Assessment (CFRA) I C R ( i ) ( i ) R A 1 2 1",
+        "title": "Country Fiduciary Risk Assessment (CFRA) ICR",
+        "actions": [
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "12",
+            "1"
+        ]
+    },
+    {
+        "id": "2.411.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.411",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.411.2 Assessment of Supreme Audit Institutions / Private ( i ) ( i ) I C R R R A 1 2 1 audit firms",
+        "title": "Assessment of Supreme Audit Institutions / Private ICRRRA12 audit firms",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.411.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.411",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.411.3 RMC Public Financial Management Capacity Building I C R R A R ( i ) 1 1 2 2 2 programs / projects",
+        "title": "RMC Public Financial Management Capacity Building ICRRAR programs / projects",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "11",
+            "22",
+            "2"
+        ]
+    },
+    {
+        "id": "2.411.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.411",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.411.4 Financial Management (FM) and other related ( i ) I C ( i ) ( i ) ( i ) ( i ) A 2 trainings for project staff",
+        "title": "Financial Management (FM) and other related trainings for project staff",
+        "actions": [
+            "( i )",
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.411.5",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.411",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.411.5 Training on Financial Management for Bank staff I ( i ) ( i ) ( i ) R A 2 2",
+        "title": "Training on Financial Management for Bank staff",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "22"
+        ]
+    },
+    {
+        "id": "2.412",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.410",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.412.1",
+            "2.412.2"
+        ],
+        "page": 27,
+        "raw_text": "2.412 Implementing Agency Financial Management Capacity Assessment Report for new projects:",
+        "title": "Implementing Agency Financial Management Capacity Assessment Report for new projects:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.412.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.412",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.412.1 ( i ) I R ( i ) ( i ) A High / Substantial Risk 2 2 ( i ) ( i ) ( i ) ( i )",
+        "title": "High / Substantial Risk",
+        "actions": [
+            "( i )",
+            "I",
+            "R",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "22"
+        ]
+    },
+    {
+        "id": "2.412.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.412",
+        "has_children": false,
+        "children": [],
+        "page": 27,
+        "raw_text": "2.412.2 Moderate / Low Risk I A 2",
+        "title": "Moderate / Low Risk",
+        "actions": [
+            "I",
+            "A"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.413",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.410",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.413.1",
+            "2.413.2",
+            "2.413.3",
+            "2.413.4",
+            "2.413.5"
+        ],
+        "page": 28,
+        "raw_text": "2.413 Financial Management under Project Implementation and Supervision",
+        "title": "Financial Management under Project Implementation and Supervision",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.413.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.413",
+        "has_children": false,
+        "children": [],
+        "page": 28,
+        "raw_text": "2.413.1 Financial Management (FM) supervision Report including FM Performance Rating and Fiduciary ( i ) I A ( i ) 1 Risk Rating Update",
+        "title": "Financial Management (FM) supervision Report including FM Performance Rating and Fiduciary Risk Rating Update",
+        "actions": [
+            "( i )",
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.413.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.413",
+        "has_children": false,
+        "children": [],
+        "page": 28,
+        "raw_text": "2.413.2 Review of Interim Financial Reports ( i ) I A ( i ) ( i ) 1",
+        "title": "Review of Interim Financial Reports",
+        "actions": [
+            "( i )",
+            "I",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.413.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.413",
+        "has_children": false,
+        "children": [],
+        "page": 28,
+        "raw_text": "2.413.3 Review of audit reports-meet Fiduciary Safeguard ( i ) I A ( i ) ( i ) ( i ) 1 Requirements",
+        "title": "Review of audit reports-meet Fiduciary Safeguard Requirements",
+        "actions": [
+            "( i )",
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.413.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.413",
+        "has_children": false,
+        "children": [],
+        "page": 28,
+        "raw_text": "2.413.4 Review of audit reports-do not meet Fiduciary ( i ) I R ( i ) ( i ) A 2 1 Safeguard Requirements (Rejection)",
+        "title": "Review of audit reports-do not meet Fiduciary Safeguard Requirements (Rejection)",
+        "actions": [
+            "( i )",
+            "I",
+            "R",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "21"
+        ]
+    },
+    {
+        "id": "2.413.5",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.410",
+        "parent_task_id": "2.413",
+        "has_children": false,
+        "children": [],
+        "page": 28,
+        "raw_text": "2.413.5 Project/Program External Auditors recruitment I C ( i ) ( i ) A 2 clearance 28",
+        "title": "Project/Program External Auditors recruitment clearance",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "2",
+            "28"
+        ]
+    },
+    {
+        "id": "2.420",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.420",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.420 PROJECT PROCUREMENT AND COMPLIANCE REVIEW",
+        "title": "PROJECT PROCUREMENT AND COMPLIANCE REVIEW",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.421",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.420",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.421 Procurement Planning: Periodic Revision / Updating of I A ( i ) ( i ) ( i ) ( i ) ( i ) Procurement Plans",
+        "title": "Procurement Planning: Periodic Revision / Updating of Procurement Plans",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.422",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.420",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.422.1",
+            "2.422.2"
+        ],
+        "page": 29,
+        "raw_text": "2.422 Advertising:",
+        "title": "Advertising:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.422.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.420",
+        "parent_task_id": "2.422",
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.422.1 General Procurement Notice I A C ( i ) ( i ) ( i ) ( i )",
+        "title": "General Procurement Notice IAC",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.422.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.420",
+        "parent_task_id": "2.422",
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.422.2 Specific Procurement Notice1 I A C ( i ) ( i ) ( i ) ( i )",
+        "title": "Specific Procurement Notice1 IAC",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.423",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.420",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.423.1",
+            "2.423.2",
+            "2.423.3"
+        ],
+        "page": 29,
+        "raw_text": "2.423 Prior Review Bidding Documents:",
+        "title": "Prior Review Bidding Documents:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.423.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.420",
+        "parent_task_id": "2.423",
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.423.1 Review of Standard Bidding Documents I C ( i ) R 3 ( i ) A ( i ) ( i ) ( i ) 1",
+        "title": "Review of Standard Bidding Documents",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "R",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "3",
+            "1"
+        ]
+    },
+    {
+        "id": "2.423.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.420",
+        "parent_task_id": "2.423",
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.423.2 Review of Standard Bidding Documents for large value R 3 I ( i ) C A ( i ) ( i ) ( i ) procurements2 1 R 3 R",
+        "title": "Review of Standard Bidding Documents for large value procurements2",
+        "actions": [
+            "R",
+            "I",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "R"
+        ],
+        "note_references": [
+            "3",
+            "1"
+        ]
+    },
+    {
+        "id": "2.423.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.420",
+        "parent_task_id": "2.423",
+        "has_children": false,
+        "children": [],
+        "page": 29,
+        "raw_text": "2.423.3 Review of Non-Standard Bidding Documents I ( i ) ( i ) ( i ) ( i ) ( i ) C A 1 2",
+        "title": "Review of Non-Standard Bidding Documents",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "C",
+            "A"
+        ],
+        "note_references": [
+            "12"
+        ]
+    },
+    {
+        "id": "2.430",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.430",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 30,
+        "raw_text": "2.430 PRIOR REVIEW EVALUATION REPORTS",
+        "title": "PRIOR REVIEW EVALUATION REPORTS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.431",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.430",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.431.1",
+            "2.431.2",
+            "2.431.3",
+            "2.431.4"
+        ],
+        "page": 30,
+        "raw_text": "2.431 Competitive Procurement Process:",
+        "title": "Competitive Procurement Process:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.431.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.431",
+        "has_children": false,
+        "children": [],
+        "page": 30,
+        "raw_text": "2.431.1 Goods (a) Goods: ≤ UA 5,000,000 I C ( i ) ( i ) A ( i ) ( i ) ( i ) ( i ) (b) Goods: > UA 5,000,000 ≤ UA 10,000,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Goods: > UA 10,000,000 ≤ UA 15,000,000 I C ( i ) ( i ) ( i ) ( i ) A ( i ) ( i ) (d) Goods: > UA 15,000,000 I ( i ) ( i ) C ( i ) ( i ) R A",
+        "title": "Goods (a) Goods: ≤ UA ,, (b) Goods: > UA ,, ≤ UA ,, (c) Goods: > UA ,, ≤ UA ,, (d) Goods: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "5",
+            "000",
+            "10",
+            "15"
+        ]
+    },
+    {
+        "id": "2.431.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.431",
+        "has_children": false,
+        "children": [],
+        "page": 30,
+        "raw_text": "2.431.2 Works (a) Works: ≤ UA 15,000,000 I C ( i ) ( i ) A ( i ) ( i ) ( i ) ( i ) (b) Works: > UA 15,000,000 ≤ 40,000,000 I ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Works: > UA 40,000,000 ≤ UA 50,000,000 I ( i ) ( i ) C ( i ) ( i ) A ( i ) (d) Works: > UA 50,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) R A",
+        "title": "Works (a) Works: ≤ UA ,, (b) Works: > UA ,, ≤ ,, (c) Works: > UA ,, ≤ UA ,, (d) Works: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "15",
+            "000",
+            "40",
+            "50"
+        ]
+    },
+    {
+        "id": "2.431.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.431",
+        "has_children": false,
+        "children": [],
+        "page": 30,
+        "raw_text": "2.431.3 Consulting Firms (a) Consulting Firms: ≤ UA 500,000 I C ( i ) ( i ) A ( i ) ( i ) ( i ) ( i ) (b) Consulting Firms: > UA 500,000 ≤ UA 1,000,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Consulting Firms: > UA 1,000,000 ≤ UA 5,000,000 I ( i ) ( i ) C ( i ) ( i ) A ( i ) (d) Consulting Firms: > UA 5,000,000 I ( i ) C ( i ) R A ( i ) ( i ) ( i )",
+        "title": "Consulting Firms (a) Consulting Firms: ≤ UA , (b) Consulting Firms: > UA , ≤ UA ,, (c) Consulting Firms: > UA ,, ≤ UA ,, (d) Consulting Firms: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "500",
+            "000",
+            "1",
+            "5"
+        ]
+    },
+    {
+        "id": "2.431.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.431",
+        "has_children": false,
+        "children": [],
+        "page": 30,
+        "raw_text": "2.431.4 Individual Consultant (a) Individual Consultant: ≤ UA 100,000 I C ( i ) ( i ) A ( i ) ( i ) ( i ) ( i ) (b) Individual Consultant: > UA 100,000 ≤ 300,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Individual Consultant: > 300,000 ≤ UA 500,000 I ( i ) ( i ) C ( i ) ( i ) A ( i ) (d) Individual Consultant: > 500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) R A 30",
+        "title": "Individual Consultant (a) Individual Consultant: ≤ UA , (b) Individual Consultant: > UA , ≤ , (c) Individual Consultant: > , ≤ UA , (d) Individual Consultant: > ,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "100",
+            "000",
+            "300",
+            "500",
+            "30"
+        ]
+    },
+    {
+        "id": "2.432",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.430",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.432.1",
+            "2.432.2",
+            "2.432.3",
+            "2.432.4"
+        ],
+        "page": 31,
+        "raw_text": "2.432 Direct",
+        "title": "Direct",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.432.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.432",
+        "has_children": false,
+        "children": [],
+        "page": 31,
+        "raw_text": "2.432.1 Goods (a) Goods: ≤ UA 1,000,000 I C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Goods: > UA 1,000,000 ≤ 2,500,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) (c) Goods: > UA 2,500,000 ≤ UA 5,000,000 I ( i ) C ( i ) ( i ) ( i ) A ( i ) ( i ) (d) Goods: > UA 5,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A",
+        "title": "Goods (a) Goods: ≤ UA ,, (b) Goods: > UA ,, ≤ ,, (c) Goods: > UA ,, ≤ UA ,, (d) Goods: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "1",
+            "000",
+            "2",
+            "500",
+            "5"
+        ]
+    },
+    {
+        "id": "2.432.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.432",
+        "has_children": false,
+        "children": [],
+        "page": 31,
+        "raw_text": "2.432.2 Works (a) Works: ≤ UA 3,000,000 I C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Works: > UA 3,000,000 ≤ 6,000,000 I ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Works: > UA 6,000,000 ≤ UA 10,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (d) Works: > UA 10, 000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A",
+        "title": "Works (a) Works: ≤ UA ,, (b) Works: > UA ,, ≤ ,, (c) Works: > UA ,, ≤ UA ,, (d) Works: > UA , ,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "3",
+            "000",
+            "6",
+            "10"
+        ]
+    },
+    {
+        "id": "2.432.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.432",
+        "has_children": false,
+        "children": [],
+        "page": 31,
+        "raw_text": "2.432.3 Consulting Firms (a) Consulting Firms: ≤ UA 200,000 I C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Consulting Firms: > UA 200,000 ≤500,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) (c) Consulting Firms: > UA 500,000 ≤ UA 1,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (d) Consulting Firms: > UA 1,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A",
+        "title": "Consulting Firms (a) Consulting Firms: ≤ UA , (b) Consulting Firms: > UA , ≤, (c) Consulting Firms: > UA , ≤ UA ,, (d) Consulting Firms: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "200",
+            "000",
+            "500",
+            "1"
+        ]
+    },
+    {
+        "id": "2.432.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.432",
+        "has_children": false,
+        "children": [],
+        "page": 31,
+        "raw_text": "2.432.4 Individual Consultant (a) Individual Consultant: ≤ UA 50,000 I C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (b) Individual Consultant: > UA 50,000 ≤ 100,000 I ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Individual Consultant: > UA 100,000 ≤ UA 500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (d) Individual Consultant: > UA 500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A 31",
+        "title": "Individual Consultant (a) Individual Consultant: ≤ UA , ICA (b) Individual Consultant: > UA , ≤ , (c) Individual Consultant: > UA , ≤ UA , (d) Individual Consultant: > UA ,",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "50",
+            "000",
+            "100",
+            "500",
+            "31"
+        ]
+    },
+    {
+        "id": "2.433",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.430",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.433.1",
+            "2.433.2",
+            "2.433.3",
+            "2.433.4"
+        ],
+        "page": 32,
+        "raw_text": "2.433 Contract Amendments:",
+        "title": "Contract Amendments:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.433.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.433",
+        "has_children": false,
+        "children": [],
+        "page": 32,
+        "raw_text": "2.433.1 Goods (a) Goods: ≤ UA 500,000 I C ( i ) ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Goods: > UA 500,000 ≤ 1,250,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) (c) Goods: > UA 1,250,000 ≤ UA 2,500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (d) Goods: > UA 2,500,000 I ( i ) C ( i ) ( i ) ( i ) R A ( i ) ( i )",
+        "title": "Goods (a) Goods: ≤ UA , (b) Goods: > UA , ≤ ,, (c) Goods: > UA ,, ≤ UA ,, (d) Goods: > UA ,,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "500",
+            "000",
+            "1",
+            "250",
+            "2"
+        ]
+    },
+    {
+        "id": "2.433.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.433",
+        "has_children": false,
+        "children": [],
+        "page": 32,
+        "raw_text": "2.433.2 Works (a) Works: ≤ UA 1,500,000 I C C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Works: > UA 1,500,000 ≤ 3,000,000 I ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (c) Works: > UA 3,000,000 ≤ UA 5,000,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (d) Works: > UA 5,000,000 I ( i ) C ( i ) ( i ) ( i ) R A ( i ) ( i )",
+        "title": "Works (a) Works: ≤ UA ,, ICC (b) Works: > UA ,, ≤ ,, (c) Works: > UA ,, ≤ UA ,, (d) Works: > UA ,,",
+        "actions": [
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1",
+            "500",
+            "000",
+            "3",
+            "5"
+        ]
+    },
+    {
+        "id": "2.433.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.433",
+        "has_children": false,
+        "children": [],
+        "page": 32,
+        "raw_text": "2.433.3 Consulting Firms (a) Consulting Firms: ≤ UA 100,000 I C ( i )C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) (b) Consulting Firms: > UA 100,000 ≤ 250,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) (c) Consulting Firms: > UA 250,000 ≤ UA 500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (c) Consulting Firms: > UA 500,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A",
+        "title": "Consulting Firms (a) Consulting Firms: ≤ UA , (b) Consulting Firms: > UA , ≤ , (c) Consulting Firms: > UA , ≤ UA , (c) Consulting Firms: > UA ,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "100",
+            "000",
+            "250",
+            "500"
+        ]
+    },
+    {
+        "id": "2.433.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.430",
+        "parent_task_id": "2.433",
+        "has_children": false,
+        "children": [],
+        "page": 32,
+        "raw_text": "2.433.4 Individual Consultant (a) Individual Consultant: ≤ UA 25,000 I C ( i ) A ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) (b) Individual Consultant: > UA 25,000 ≤ 50,000 I ( i ) ( i ) C A ( i ) ( i ) ( i ) ( i ) ( i ) (c) Individual Consultant: > UA 50,000 ≤ UA 250,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) A (c) Individual Consultant: > UA 250,000 I ( i ) ( i ) C ( i ) ( i ) ( i ) ( i ) R A 32",
+        "title": "Individual Consultant (a) Individual Consultant: ≤ UA , (b) Individual Consultant: > UA , ≤ , (c) Individual Consultant: > UA , ≤ UA , (c) Individual Consultant: > UA ,",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "25",
+            "000",
+            "50",
+            "250",
+            "32"
+        ]
+    },
+    {
+        "id": "2.434",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.430",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 33,
+        "raw_text": "2.434 Misprocurement: 4 (a) Declaration of misprocurement ( i ) ( i ) ( i ) A I ( i ) C 3",
+        "title": "Misprocurement: (a) Declaration of misprocurement AI",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "C"
+        ],
+        "note_references": [
+            "4",
+            "3"
+        ]
+    },
+    {
+        "id": "2.440",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.440",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 34,
+        "raw_text": "2.440 COMPLAINTS, AUDIT, INSPECTION AND COUNTRY DIAGNOSTICS",
+        "title": "COMPLAINTS, AUDIT, INSPECTION AND COUNTRY DIAGNOSTICS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.441",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.440",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 34,
+        "raw_text": "2.441 Complaints: Examination of Complaints 3 R ( i ) ( i ) ( i ) I ( i ) ( i ) ( i ) ( i ) C A2",
+        "title": "Complaints: Examination of Complaints",
+        "actions": [
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "C",
+            "A2"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.442",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.440",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 34,
+        "raw_text": "2.442 Procurement Audit: Procurement Audit under BPS I A3 R C ( i ) ( i ) ( i ) ( i ) ( i )",
+        "title": "Procurement Audit: Procurement Audit under BPS RC",
+        "actions": [
+            "I",
+            "A3",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.443",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.440",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 34,
+        "raw_text": "2.443 Procurement Inspection: Fiduciary Inspection Review (FIR) ( i ) I 4 ( i ) ( i ) ( i ) ( i ) ( i ) ( i ) A1",
+        "title": "Procurement Inspection: Fiduciary Inspection Review (FIR)",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A1"
+        ],
+        "note_references": [
+            "4"
+        ]
+    },
+    {
+        "id": "2.444",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.440",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 34,
+        "raw_text": "2.444 Country diagnostic activities: Borrower Procurement Assessment Report [also called Report on I C ( i ) ( i ) R A1 Assessment of Critical Indicators (RACI)]",
+        "title": "Country diagnostic activities: Borrower Procurement Assessment Report [also called Report on Assessment of Critical Indicators (RACI)]",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "R",
+            "A1"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.510",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.510 LOAN / GRANT DISBURSEMENT PROCESSING R Review & Recommend A Approve Date: December 2022 ( i ) To be Informed rellortnoC GDD reciffO tnatsissA reciffO reciffO reciffO reganaM / 2.RTIF tnatsissA reganaM 4.CFIF gnitnuoccA 3.CIFF sdraugefaS reganaM ACTION CFIF tnemesrubsiD tnemesrubsiD tnemesrubsiD lortnoC denrecnoC reganaM reganaM reganaM yrtsigeR rotceriD yrtnuoC Activity naoL naoL GDR ksaT S&E No.",
+        "title": "LOAN / GRANT DISBURSEMENT PROCESSING Review & Recommend Approve Date: December 2022 To be Informed rellortnoC GDD reciffO tnatsissA reciffO reciffO reciffO reganaM / .RTIF tnatsissA reganaM .CFIF gnitnuoccA .CIFF sdraugefaS reganaM ACTION CFIF tnemesrubsiD tnemesrubsiD tnemesrubsiD lortnoC denrecnoC reganaM reganaM reganaM yrtsigeR rotceriD yrtnuoC Activity naoL naoL GDR ksaT S&E No.",
+        "actions": [
+            "R",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "4",
+            "3"
+        ]
+    },
+    {
+        "id": "2.511",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.511.1",
+            "2.511.2"
+        ],
+        "page": 36,
+        "raw_text": "2.511 Disbursement Letter: 1",
+        "title": "Disbursement Letter:",
+        "actions": [],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.511.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.511",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.511.1 Disbursement Letter I A A ( i ) 2 3",
+        "title": "Disbursement Letter IAA",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "23"
+        ]
+    },
+    {
+        "id": "2.511.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.511",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.511.2 Revision of disbursements methods I R A ( i ) 2 2",
+        "title": "Revision of disbursements methods IRA",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "22"
+        ]
+    },
+    {
+        "id": "2.512",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.512.1",
+            "2.512.2",
+            "2.512.3"
+        ],
+        "page": 36,
+        "raw_text": "2.512 Reimbursement Guarantees:",
+        "title": "Reimbursement Guarantees:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.512.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.512",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.512.1 Issue Reimbursement Guarantees (with regard to Trust I C R A 2 2 Funds)",
+        "title": "Issue Reimbursement Guarantees (with regard to Trust ICRA22 Funds)",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.512.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.512",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.512.2 Amend Reimbursement Guarantees I C R A ( i ) 2 2 2 2",
+        "title": "Amend Reimbursement Guarantees ICRA",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "22"
+        ]
+    },
+    {
+        "id": "2.512.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.512",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.512.3 Reimbursement Guarantee Letter I C A A 3 2",
+        "title": "Reimbursement Guarantee Letter ICAA32",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.513",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.513.1",
+            "2.513.2",
+            "2.513.3"
+        ],
+        "page": 36,
+        "raw_text": "2.513 Disbursement Application: 3",
+        "title": "Disbursement Application:",
+        "actions": [],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "2.513.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.513",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.513.1 Scan & Enter Application into SAP I A 2 4",
+        "title": "Scan & Enter Application into SAP",
+        "actions": [
+            "I",
+            "A"
+        ],
+        "note_references": [
+            "24"
+        ]
+    },
+    {
+        "id": "2.513.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.513",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.513.2 Check Conformity & Completeness of the Application I C R A 2 2",
+        "title": "Check Conformity & Completeness of the Application ICRA22",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.513.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.513",
+        "has_children": false,
+        "children": [],
+        "page": 36,
+        "raw_text": "2.513.3 Approve Loan Disbursement Application: (a) Up to UA 2,000,000 R A ( i ) 2 2 (b) Over UA 2 million up to UA 10 million R A ( i ) 2 2 (c) Over UA 10,000,000 R A ( i ) 2 2 36",
+        "title": "Approve Loan Disbursement Application: (a) Up to UA ,, (b) Over UA million up to UA million (c) Over UA ,,",
+        "actions": [
+            "R",
+            "A",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "R",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "000",
+            "22",
+            "10",
+            "36"
+        ]
+    },
+    {
+        "id": "2.514",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.514.1",
+            "2.514.2"
+        ],
+        "page": 37,
+        "raw_text": "2.514 Disbursement Execution:",
+        "title": "Disbursement Execution:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.514.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.514",
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.514.1 Execution of disbursements (Initiation is automated - part of the Approval of Loan I A Disbursement Application)",
+        "title": "Execution of disbursements (Initiation is automated - part of the Approval of Loan Disbursement Application)",
+        "actions": [
+            "I",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.514.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.514",
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.514.2 Reversal of disbursements I I A",
+        "title": "Reversal of disbursements IIA",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.515",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.515.1",
+            "2.515.2"
+        ],
+        "page": 37,
+        "raw_text": "2.515 Cancellation of Disbursement:",
+        "title": "Cancellation of Disbursement:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.515.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.515",
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.515.1 Cancellation of Disbursement Application 5 ( i ) I A C",
+        "title": "Cancellation of Disbursement Application IAC",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "2.515.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.510",
+        "parent_task_id": "2.515",
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.515.2 Reactivation of Disbursement Application ( i ) I A C Returned disbursements (SWIFT)",
+        "title": "Reactivation of Disbursement Application IACReturned disbursements (SWIFT)",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.516",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.510",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 37,
+        "raw_text": "2.516 I C A",
+        "title": "ICA",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.520",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.520 LOAN / GRANT ADMINISTRATION 1 Extension of the Project’s Closing Date:",
+        "title": "LOAN / GRANT ADMINISTRATION Extension of the Project’s Closing Date:",
+        "actions": [],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.521",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.520",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.521.1",
+            "2.521.2",
+            "2.521.3",
+            "2.521.4",
+            "2.521.5"
+        ],
+        "page": 38,
+        "raw_text": "2.521 Extension of the project’s closing date, cumulative total",
+        "title": "Extension of the project’s closing date, cumulative total",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.521.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.521",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.521.1 I ( i ) A ( i ) ( i ) ≤ 1 year",
+        "title": "≤ year",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "2.521.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.521",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.521.2 Extension of the project’s closing date, cumulative total I ( i ) A ( i ) ( i ) > 1 Year and ≤ 2 Years;",
+        "title": "Extension of the project’s closing date, cumulative total > Year and ≤ Years;",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1",
+            "2"
+        ]
+    },
+    {
+        "id": "2.521.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.521",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.521.3 Extension of the project’s closing date, cumulative total I ( i ) C ( i ) ( i ) R A 2 > 2 Years Reopening of the project closing date after it has lapsed",
+        "title": "Extension of the project’s closing date, cumulative total > Years Reopening of the project closing date after it has lapsed",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.521.4",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.521",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.521.4 I C ( i ) ( i ) R ( i ) A 2 for not more than 6 months",
+        "title": "for not more than months",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "2",
+            "6"
+        ]
+    },
+    {
+        "id": "2.521.5",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.521",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.521.5 Reopening of the project closing date after it has lapsed I C ( i ) ( i ) R ( i ) R A 2 2 for more than 6 months Revision of List of Categories of Expenditure:",
+        "title": "Reopening of the project closing date after it has lapsed for more than months Revision of List of Categories of Expenditure:",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "22",
+            "6"
+        ]
+    },
+    {
+        "id": "2.522",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.520",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.522.1",
+            "2.522.2",
+            "2.522.3"
+        ],
+        "page": 38,
+        "raw_text": "2.522",
+        "title": "",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.522.1",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.522",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.522.1 Revision of List of Goods and Services within same I A ( i ) ( i ) ( i ) ( i ) category of expenditure",
+        "title": "Revision of List of Goods and Services within same category of expenditure",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.522.2",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.522",
+        "has_children": false,
+        "children": [],
+        "page": 38,
+        "raw_text": "2.522.2 Services2 Revision of List of Goods and across I ( i ) A ( i ) ( i ) categories of expenditure < 30% across category of expenditure 38",
+        "title": "Services2 Revision of List of Goods and across categories of expenditure < % across category of expenditure",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "30",
+            "38"
+        ]
+    },
+    {
+        "id": "2.522.3",
+        "chapter": "2",
+        "node_type": "child_task",
+        "process_id": "2.520",
+        "parent_task_id": "2.522",
+        "has_children": false,
+        "children": [],
+        "page": 39,
+        "raw_text": "2.522.3 Revision of List of Goods and Services2 across category of expenditure > than 30% across categories of I ( i ) R ( i ) ( i ) R A 2 1 expenditure",
+        "title": "Revision of List of Goods and Services2 across category of expenditure > than % across categories of expenditure",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "30",
+            "21"
+        ]
+    },
+    {
+        "id": "2.530",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.530 UTILIZATION OF SAVINGS C Check and Verify",
+        "title": "UTILIZATION OF SAVINGS Check and Verify",
+        "actions": [
+            "C"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.531",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 40,
+        "raw_text": "2.531 Utilization of Savings requests above UA 5 million up to a ceiling of UA 10 million or I ( i ) ( i ) C ( i ) A ( i ) amounting to equivalent of 10% of the amount2 original loan/grant",
+        "title": "Utilization of Savings requests above UA million up to a ceiling of UA million or amounting to equivalent of % of the amount2 original loan/grant",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "5",
+            "10"
+        ]
+    },
+    {
+        "id": "2.532",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 40,
+        "raw_text": "2.532 Utilization of Savings requests between UA 1 million3within million and 5 original project I ( i ) ( i ) C ( i ) A ( i ) 2 scope and objectives",
+        "title": "Utilization of Savings requests between UA million3within million and original project scope and objectives",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "1",
+            "5",
+            "2"
+        ]
+    },
+    {
+        "id": "2.533",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 40,
+        "raw_text": "2.533 Utilization of Savings requests for all ( i ) A3 A4 amounts less than UA1 million 3within I ( i ) C ( i ) ( i ) ( i ) ( i ) 2 original project scope and objectives",
+        "title": "Utilization of Savings requests for all amounts less than UA1 million 3within original project scope and objectives",
+        "actions": [
+            "( i )",
+            "A3",
+            "A4",
+            "I",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "2.534",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 40,
+        "raw_text": "2.534 Utilization of Savings request activities ( i ) I C ( i ) C R ( i ) R ( i ) R R A 2 2 2 2 beyond project scope and objectives 5",
+        "title": "Utilization of Savings request activities RRA22 beyond project scope and objectives",
+        "actions": [
+            "( i )",
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "R",
+            "( i )"
+        ],
+        "note_references": [
+            "22",
+            "5"
+        ]
+    },
+    {
+        "id": "2.535",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.530",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 40,
+        "raw_text": "2.535 Utilization of Savings involving additional activities within original project scope and objectives that ( i ) R R R R I C ( i ) C ( i ) ( i ) A 2 2 2 2 are above UA 10 million or equivalent of above 10%of the original project cost 40",
+        "title": "Utilization of Savings involving additional activities within original project scope and objectives that RRRRIC are above UA million or equivalent of above %of the original project cost",
+        "actions": [
+            "( i )",
+            "( i )",
+            "C",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "22",
+            "10",
+            "40"
+        ]
+    },
+    {
+        "id": "2.540",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.540",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.540 SUSPENSION OF DISBURSEMENT",
+        "title": "SUSPENSION OF DISBURSEMENT",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "2.541",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.540",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.541 Suspension of Disbursement for operational R R R I C ( i ) C C A 2 1 2 6 reasons",
+        "title": "Suspension of Disbursement for operational RRRIC CCA21 reasons",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": [
+            "26"
+        ]
+    },
+    {
+        "id": "2.542",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.540",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.542 Suspension of disbursement for non- I C R R R A 2 1 2 operational reasons 74",
+        "title": "Suspension of disbursement for non- ICRRRA21 operational reasons",
+        "actions": [],
+        "note_references": [
+            "2",
+            "74"
+        ]
+    },
+    {
+        "id": "2.543",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.540",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.543 Loan / Grant Cancellation C R R A3 R R R A4 Loan / Grant Cancellation I C C ( i ) ( i ) 1 2 1 2 2",
+        "title": "Loan / Grant Cancellation CRRA3 RRRA4 Loan / Grant Cancellation ICC",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "12",
+            "2"
+        ]
+    },
+    {
+        "id": "2.550",
+        "chapter": "2",
+        "node_type": "process",
+        "process_id": "2.550",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.550 CHANGES IN LOAN OR GRANT CONDITIONS S u b s t a n t ia l c hanges in Loan or Grant C",
+        "title": "CHANGES IN LOAN OR GRANT CONDITIONS Substantia lchanges in Loan or Grant",
+        "actions": [
+            "C"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.551",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.550",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.551 I C ( i ) C R ( i ) R ( i ) R A 2 1 2 co n d i t i o n s 8 C",
+        "title": "co nditions8",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "R",
+            "( i )",
+            "R",
+            "A",
+            "C"
+        ],
+        "note_references": [
+            "21",
+            "2"
+        ]
+    },
+    {
+        "id": "2.552",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.550",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 41,
+        "raw_text": "2.552 Other changes in Loan or Grant conditions 9 I C R ( i ) R 9 A R 10 A10 2 1 2 41",
+        "title": "Other changes in Loan or Grant conditions ICR AR10",
+        "actions": [
+            "( i )",
+            "R",
+            "A10"
+        ],
+        "note_references": [
+            "9",
+            "21",
+            "2",
+            "41"
+        ]
+    },
+    {
+        "id": "3.110",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 46,
+        "raw_text": "3.110 ORGANIZATION OF NSO MISSIONS & REVIEW AND APPROVAL OF MISSION FINDINGS AND RECOMMENDATIONS A3 A4",
+        "title": "ORGANIZATION OF NSO MISSIONS & REVIEW AND APPROVAL OF MISSION FINDINGS AND RECOMMENDATIONS",
+        "actions": [
+            "A3",
+            "A4"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.111",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 46,
+        "raw_text": "3.111 Concerned Staff members below PL-2 level I ( i ) ( i ) I2 I3 I4 A5 A6",
+        "title": "Concerned Staff members below PL- level",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "I",
+            "I",
+            "I",
+            "A5",
+            "A6"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.112",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 46,
+        "raw_text": "3.112 Concerned Staff of PL-2 and PL-1 levels ( i ) ( i ) I5 I6",
+        "title": "Concerned Staff of PL- and PL- levels",
+        "actions": [
+            "( i )",
+            "( i )",
+            "I",
+            "I"
+        ],
+        "note_references": [
+            "2",
+            "1"
+        ]
+    },
+    {
+        "id": "3.113",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 46,
+        "raw_text": "3.113 Concerned Director ( i ) ( i ) A",
+        "title": "Concerned Director",
+        "actions": [
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.114",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.110",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 46,
+        "raw_text": "3.114 Concerned Vice-President ( i ) ( i ) ( i ) I A",
+        "title": "Concerned Vice-President",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "I",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.210",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.210",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.210 PIPELINE DEVELOPMENT C Check and Verify",
+        "title": "PIPELINE DEVELOPMENT Check and Verify",
+        "actions": [
+            "C"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.211",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.210",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.211 Business Development Activities in Country I A ( i ) ( i ) ( i ) 1",
+        "title": "Business Development Activities in Country",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "3.220",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.220 CLIENT RELATIONS Processes:",
+        "title": "CLIENT RELATIONS Processes:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.221",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.221 Application assessment and client feedback I A ( i ) ( i ) 1",
+        "title": "Application assessment and client feedback",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "3.222",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.222 Signing of Non-Disclosure Agreement I C A ( i ) ( i ) 3 sponsors7",
+        "title": "Signing of Non-Disclosure Agreement ICA sponsors7",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "3.223",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.223 Routine communication with I A ( i ) 2 sponsors8",
+        "title": "Routine communication with sponsors8",
+        "actions": [
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.224",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.224 Critical communication with I ( i ) R ( i ) ( i ) A ( i ) 2",
+        "title": "Critical communication with",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.225",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.225 Communication to Government Refer to Activities 2.114 – 2.117 in Section 2. Communication with Co-Financiers of projects and third",
+        "title": "Communication to Government Refer to Activities . – . in Section . Communication with Co-Financiers of projects and third",
+        "actions": [],
+        "note_references": [
+            "2",
+            "114",
+            "117"
+        ]
+    },
+    {
+        "id": "3.226",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.220",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.226 I A ( i ) ( i ) ( i ) ( i ) 2 parties",
+        "title": "parties",
+        "actions": [
+            "I",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.230",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.230",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.230 EXPLORATORY REVIEW R Review & Recommend",
+        "title": "EXPLORATORY REVIEW Review & Recommend",
+        "actions": [
+            "R"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.231",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.230",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.231 Preparation and review of Preliminary Evaluation Note 9 I A ( i ) 2 (PEN) for lending & guarantee operations",
+        "title": "Preparation and review of Preliminary Evaluation Note (PEN) for lending & guarantee operations",
+        "actions": [
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "9",
+            "2"
+        ]
+    },
+    {
+        "id": "3.232",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.230",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 48,
+        "raw_text": "3.232 Preparation and review of PEN for equity and quasi- 10 9 I R 6 A ( i ) 2 equity operations Page 48",
+        "title": "Preparation and review of PEN for equity and quasi- equity operations Page",
+        "actions": [
+            "I",
+            "R",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "10",
+            "9",
+            "6",
+            "2",
+            "48"
+        ]
+    },
+    {
+        "id": "3.233",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.230",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.233 Fast Tracking Decision I ( i ) C C R R R A ( i ) ( i ) 2",
+        "title": "Fast Tracking Decision CCRRRA",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.240",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.240",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.240 NSO LENDING PROGRAM PREPARATION",
+        "title": "NSO LENDING PROGRAM PREPARATION",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.241",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.240",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 49,
+        "raw_text": "3.241 Including of a Non-Sovereign Operation in the pipeline I ( i ) ( i ) C A C R ( i ) 12 2 and the Bank’s Indicative Operations Program (IOP)",
+        "title": "Including of a Non-Sovereign Operation in the pipeline CACR and the Bank’s Indicative Operations Program (IOP)",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "12",
+            "2"
+        ]
+    },
+    {
+        "id": "3.310",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.310 CONCEPT REVIEW Fast-Track6",
+        "title": "CONCEPT REVIEW Fast-Track6",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.311",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.311 Operations Skip Concept Review. After the PEN pass straight to Project Appraisal stage. Note7 non-exceptional8 Project Concept (PCN) for a Non-Sovereign",
+        "title": "Operations Skip Concept Review. After the PEN pass straight to Project Appraisal stage. Note7 non-exceptional8 Project Concept (PCN) for a Non-Sovereign",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.312",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.312 I ( i ) C R ( i ) ( i ) ( i ) ( i ) A2 ( i ) Operation (PCN)7 exceptional9 Project Concept Note for an Non-Sovereign",
+        "title": "Operation (PCN) exceptional9 Project Concept Note for an Non-Sovereign",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A2",
+            "( i )"
+        ],
+        "note_references": [
+            "7"
+        ]
+    },
+    {
+        "id": "3.313",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.313 I ( i ) C R ( i ) ( i ) ( i ) R R R A2 Operation 10",
+        "title": "RRRA2 Operation",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "10"
+        ]
+    },
+    {
+        "id": "3.314",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.310",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.314 Indicative term sheet; or on mandate letter (where necessary) I ( i ) C A3 ( i ) ( i ) ( i )",
+        "title": "Indicative term sheet; or on mandate letter (where necessary)",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "A3",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.320",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.320 DUE DILIGENCE AND APPRAISAL (PAR)11 non-exceptional8 Project Appraisal Report for a Non-",
+        "title": "DUE DILIGENCE AND APPRAISAL (PAR) non-exceptional8 Project Appraisal Report for a Non-",
+        "actions": [],
+        "note_references": [
+            "11"
+        ]
+    },
+    {
+        "id": "3.321",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.321 I ( i ) ( i ) ( i ) ( i ) ( i ) R R R ( i ) A Sovereign Operation (PAR)11 exceptional9",
+        "title": "RRR Sovereign Operation (PAR) exceptional9",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "11"
+        ]
+    },
+    {
+        "id": "3.322",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.322 Project Appraisal Report for an Non-Sovereign I ( i ) ( i ) ( i ) ( i ) ( i ) R R R R A Operation",
+        "title": "Project Appraisal Report for an Non-Sovereign RRRRAOperation",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.323",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.320",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 52,
+        "raw_text": "3.323 Notification of Board outcome to Client I ( i ) A ( i ) ( i ) ( i ) ( i )",
+        "title": "Notification of Board outcome to Client",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.410",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.410 TRADE FINANCE TRANSACTIONS GUARANTEE",
+        "title": "TRADE FINANCE TRANSACTIONS GUARANTEE",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.411",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.411 Issuing Bank Limits for Trade Finance Transaction Guarantee I R R A",
+        "title": "Issuing Bank Limits for Trade Finance Transaction Guarantee IRRA",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.412",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.412 Review and approval of Trade Finance Transaction Guarantee requests including I R A ( i ) 3 ( i ) 3 determination of the relevant Transaction Guarantee fee",
+        "title": "Review and approval of Trade Finance Transaction Guarantee requests including IRA determination of the relevant Transaction Guarantee fee",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "3"
+        ]
+    },
+    {
+        "id": "3.413",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.413 Approval of Confirming Banks for Trade Finance Transaction Guarantee I R A ( i ) 2 ( i ) 3",
+        "title": "Approval of Confirming Banks for Trade Finance Transaction Guarantee IRA",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "3"
+        ]
+    },
+    {
+        "id": "3.414",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.414 Approval of temporary Issuing Bank limits increases of up to 10% (for maximum I R A ( i ) 4 ( i ) 4 1 year) for Trade Finance Transaction Guarantee Product.5",
+        "title": "Approval of temporary Issuing Bank limits increases of up to % (for maximum IRA year) for Trade Finance Transaction Guarantee Product.",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "10",
+            "4",
+            "41",
+            "5"
+        ]
+    },
+    {
+        "id": "3.415",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.410",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 55,
+        "raw_text": "3.415 Quarterly Progress report on Trade Finance Guarantee I C R ( i ) A ( i ) ( i )",
+        "title": "Quarterly Progress report on Trade Finance Guarantee ICR",
+        "actions": [
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.510",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.510",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.510 NEGOTIATION OF DRAFT INVESTMENT AGREEMENTS",
+        "title": "NEGOTIATION OF DRAFT INVESTMENT AGREEMENTS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.511",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.510",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.511 Negotiation and initialling of draft final financing / investment agreements (subject to formal I ( i ) C C C C A2 ( i ) ( i ) ( i ) approval process)",
+        "title": "Negotiation and initialling of draft final financing / investment agreements (subject to formal CCCCA2 approval process)",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.512",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.510",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.512 A p p ro v a l a n d S i g n in g o f financing / investment 2 I ( i ) ( i ) ( i ) A3 ( i ) ( i ) ( i ) ag r ee m e n t s / d o c u m e n t s FIRST DISBURSEMENT",
+        "title": "Appro valandSignin goffinancing / investment ag r ee ments/ documentsFIRST DISBURSEMENT",
+        "actions": [
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A3",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2"
+        ]
+    },
+    {
+        "id": "3.520",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.520",
+        "title": "",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.521",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.521 Condition Precedent (CP) waiver or other variations of financing agreement terms (if Refer to Modifications of Terms of the Bank investment: Section 3.680 necessary)",
+        "title": "Condition Precedent (CP) waiver or other variations of financing agreement terms (if Refer to Modifications of Terms of the Bank investment: Section . necessary)",
+        "actions": [],
+        "note_references": [
+            "3",
+            "680"
+        ]
+    },
+    {
+        "id": "3.522",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.522 Disbursement Order Memorandum (DOM) I ( i ) R A2 ( i ) ( i )",
+        "title": "Disbursement Order Memorandum (DOM)",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "A2",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.523",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.523 Disbursement of requested funds Refer to Section 2.313 - 2.314 – 2.510 (Disbursement Application & Disbursement Execution)",
+        "title": "Disbursement of requested funds Refer to Section . - . – . (Disbursement Application & Disbursement Execution)",
+        "actions": [],
+        "note_references": [
+            "2",
+            "313",
+            "314",
+            "510"
+        ]
+    },
+    {
+        "id": "3.524",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.520",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 57,
+        "raw_text": "3.524 P ro j e c t T ra n s f e r F o rm ( P T F ) s ignature & hand- 4 4 )4 I ( i ) C A3 A3 ( i ( i ) ( i ) 3 ov e r t o p o rt f o l io su p er v i s io n Notes to NSO 3.510 - 3.520 1. Regional NSO Lead: PL-2 or PL-1 staff in HQ-based Sector department or located in a Region / Country Office . 2. Signature of Financing Agreements: The default signatory is the Sector Director, who may sign or delegate signature to Sector Manager. However, the Vice President may, at her/his own discretion, sign or delegate signature to Regional Director-General or Country Manager. With regard to Jeopardy Projects, the signatory is SNOU Head, whereas for Joint Venture Projects the default signatory remains the Sector Director; for those Jeopardy Projects which are managed both by the SNOU Head and a Sector Director, the signatory is determined having regard to the respective allocation of roles and responsibilities. 3. Hand-over from Sector Monitoring & Supervision to SNOU: The same procedure shall be used to transfer projects between Sector Supervision and SNOU when projects become Jeopardy or are reclassified from Jeopardy to Joint Venture or Active Monitoring. 4. Hand-over from origination to monitoring & supervision: Both the Sector Managers in charge of Origination / Monitoring & Supervision must co-sign the Project Transfer Form (PTF). Page 57",
+        "title": "P ro jectTra nsferForm ( PTF) s ignature & hand- ) ( i ov ertoport folio su p er visio n Notes to NSO . - . . Regional NSO Lead: PL- or PL- staff in HQ-based Sector department or located in a Region / Country Office . . Signature of Financing Agreements: The default signatory is the Sector Director, who may sign or delegate signature to Sector Manager. However, the Vice President may, at her/his own discretion, sign or delegate signature to Regional Director-General or Country Manager. With regard to Jeopardy Projects, the signatory is SNOU Head, whereas for Joint Venture Projects the default signatory remains the Sector Director; for those Jeopardy Projects which are managed both by the SNOU Head and a Sector Director, the signatory is determined having regard to the respective allocation of roles and responsibilities. . Hand-over from Sector Monitoring & Supervision to SNOU: The same procedure shall be used to transfer projects between Sector Supervision and SNOU when projects become Jeopardy or are reclassified from Jeopardy to Joint Venture or Active Monitoring. . Hand-over from origination to monitoring & supervision: Both the Sector Managers in charge of Origination / Monitoring & Supervision must co-sign the Project Transfer Form (PTF). Page",
+        "actions": [
+            "I",
+            "( i )",
+            "C",
+            "A3",
+            "A3",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "44",
+            "4",
+            "3",
+            "510",
+            "520",
+            "1",
+            "2",
+            "57"
+        ]
+    },
+    {
+        "id": "3.610",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.610",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.610",
+        "title": "",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.611",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.610",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.611 Condition Precedent (CP) waiver or other variations of financing agreement terms (if Refer to Modifications of Terms of the Bank Investment: Section 3.680 necessary)",
+        "title": "Condition Precedent (CP) waiver or other variations of financing agreement terms (if Refer to Modifications of Terms of the Bank Investment: Section . necessary)",
+        "actions": [],
+        "note_references": [
+            "3",
+            "680"
+        ]
+    },
+    {
+        "id": "3.612",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.610",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.612 Preparation of Disbursement Order I ( i ) A 2 A 2 ( i ) ( i ) ( i ) ( i ) 2 2 Memorandum (DOM)",
+        "title": "Preparation of Disbursement Order Memorandum (DOM)",
+        "actions": [
+            "I",
+            "( i )",
+            "A",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "2",
+            "22"
+        ]
+    },
+    {
+        "id": "3.613",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.610",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.613 Disbursement of Requested Funds – Approval Refer to Section 2.313 - 2.314 – 2.510 (Disbursement Application & Disbursement Execution) of Disbursement Application: REPORTING4",
+        "title": "Disbursement of Requested Funds – Approval Refer to Section . - . – . (Disbursement Application & Disbursement Execution) of Disbursement Application: REPORTING4",
+        "actions": [],
+        "note_references": [
+            "2",
+            "313",
+            "314",
+            "510"
+        ]
+    },
+    {
+        "id": "3.620",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.620 SUPERVISION AND See Section 3.110 (Organization of NSO Missions)",
+        "title": "SUPERVISION AND See Section . (Organization of NSO Missions)",
+        "actions": [],
+        "note_references": [
+            "3",
+            "110"
+        ]
+    },
+    {
+        "id": "3.621",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.621 Supervision mission TOR approval",
+        "title": "Supervision mission TOR approval",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.622",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.622 Supervision Reports (before / after XSR) ( i ) 5 5 I ( i ) ( i ) R A ( i ) 1",
+        "title": "Supervision Reports (before / after XSR)",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "R",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "55",
+            "1"
+        ]
+    },
+    {
+        "id": "3.623",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.623 Annual Project Review: Performing and Joint- ( i ) I 5 ( i ) R ( i ) 5 R5 A 5 ( i ) ( i ) 1 Venture Projects",
+        "title": "Annual Project Review: Performing and Joint- Venture Projects",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "R5",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "5",
+            "1"
+        ]
+    },
+    {
+        "id": "3.624",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.624 Annual Project Review: Jeopardy Projects I 6 ( i ) R ( i ) ( i ) C6 ( i ) ( i ) A 6 1 7",
+        "title": "Annual Project Review: Jeopardy Projects",
+        "actions": [
+            "I",
+            "( i )",
+            "R",
+            "( i )",
+            "( i )",
+            "C6",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "6",
+            "61",
+            "7"
+        ]
+    },
+    {
+        "id": "3.625",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.625 Annual NSO Portfolio Review Report I R ( i ) ( i ) R ( i ) A ( i ) 1 8 ( i )",
+        "title": "Annual NSO Portfolio Review Report",
+        "actions": [
+            "I",
+            "R",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "18"
+        ]
+    },
+    {
+        "id": "3.626",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.620",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.626 Bi-annual Special Operations Unit Report I R ( i ) ( i ) R ( i ) R A ( i ) 1 Supervision4",
+        "title": "Bi-annual Special Operations Unit Report Supervision4",
+        "actions": [
+            "I",
+            "R",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "R",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "3.630",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.630",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.630 Extended See Section 3.110 (Organization of NSO Missions)",
+        "title": "Extended See Section . (Organization of NSO Missions)",
+        "actions": [],
+        "note_references": [
+            "3",
+            "110"
+        ]
+    },
+    {
+        "id": "3.631",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.630",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.631 Extended Supervision Mission TOR",
+        "title": "Extended Supervision Mission TOR",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.632",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.630",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 59,
+        "raw_text": "3.632 XSR preparation, review, and approval I C C ( i ) R A ( i ) ( i ) ( i ) ( i ) ( i ) 1 Page 59",
+        "title": "XSR preparation, review, and approval ICC Page",
+        "actions": [
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "1",
+            "59"
+        ]
+    },
+    {
+        "id": "3.640",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.640 MANAGEMENT OF PROBLEMATIC OPERATIONS (WORKOUTS) C Check and Verify",
+        "title": "MANAGEMENT OF PROBLEMATIC OPERATIONS (WORKOUTS) Check and Verify",
+        "actions": [
+            "C"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.641",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.641 “Joint-Venture”, or “Jeopardy”) and Re-Transfer I I ( i ) ( i ) R R R ( i ) ( i ) ( i ) ( i ) A Sectors3 to",
+        "title": "“Joint-Venture”, or “Jeopardy”) and Re-Transfer II RRR Sectors3 to",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.642",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.642 Supervision of Work-out Projects Refer to 3.621 - 3.625 R4",
+        "title": "Supervision of Work-out Projects Refer to . - .",
+        "actions": [
+            "R4"
+        ],
+        "note_references": [
+            "3",
+            "621",
+            "625"
+        ]
+    },
+    {
+        "id": "3.643",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.643 Rescheduling decisions on Work-out Projects ( i ) I C C ( i ) C R ( i ) ( i ) ( i ) ( i ) R R A",
+        "title": "Rescheduling decisions on Work-out Projects ICC RRA",
+        "actions": [
+            "( i )",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.644",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.644 New Money decisions 5 on Work-out Projects ( i ) I C ( i ) C R ( i ) ( i ) ( i ) ( i ) R R R A Agreement modifications relating to Work-out",
+        "title": "New Money decisions on Work-out Projects RRRAAgreement modifications relating to Work-out",
+        "actions": [
+            "( i )",
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "3.645",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.645 Refer to Section 3.680 - Modifications of Terms of the Bank investment Projects",
+        "title": "Refer to Section . - Modifications of Terms of the Bank investment Projects",
+        "actions": [],
+        "note_references": [
+            "3",
+            "680"
+        ]
+    },
+    {
+        "id": "3.646",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.640",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.646 Signature of Restructuring Finance Agreements Refer to 3.512",
+        "title": "Signature of Restructuring Finance Agreements Refer to .",
+        "actions": [],
+        "note_references": [
+            "3",
+            "512"
+        ]
+    },
+    {
+        "id": "3.650",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.650",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.650 WRITE-OFFS Processes:",
+        "title": "WRITE-OFFS Processes:",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.651",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.650",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.651 Write-off decisions ( i ) I ( i ) C C ( i ) ( i ) ( i ) ( i ) R ( i ) A",
+        "title": "Write-off decisions CC",
+        "actions": [
+            "( i )",
+            "I",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "R",
+            "( i )",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.652",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.650",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.652 Decisions for Recoveries after write-off operations I C R ( i ) A ( i ) ( i )",
+        "title": "Decisions for Recoveries after write-off operations ICR",
+        "actions": [
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.653",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.650",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.653 Finance Vice-President’s Quarterly Report to the President (on the management of problematic I R R A 6 NSOs)",
+        "title": "Finance Vice-President’s Quarterly Report to the President (on the management of problematic IRRA6 NSOs)",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.654",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.650",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 61,
+        "raw_text": "3.654 President’s Quarterly Report to the Board of Directors (on Written-Off Loans and Investments ( i ) ( i ) I ( i ) R R R A NSOs) 7 Page 61",
+        "title": "President’s Quarterly Report to the Board of Directors (on Written-Off Loans and Investments RRRANSOs) Page",
+        "actions": [
+            "( i )",
+            "( i )",
+            "I",
+            "( i )"
+        ],
+        "note_references": [
+            "7",
+            "61"
+        ]
+    },
+    {
+        "id": "3.660",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.660",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.660 DECISIONS ON EXERCISE OF BANK’S RIGHTS Decision as to the exercise of Bank’s rights",
+        "title": "DECISIONS ON EXERCISE OF BANK’S RIGHTS Decision as to the exercise of Bank’s rights",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.661",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.660",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.661 (including Collateral enforcement) in the event of I C C ( i ) R R ( i ) ( i ) ( i ) ( i ) A ( i ) ( i ) default",
+        "title": "(including Collateral enforcement) in the event of ICC RR default",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.670",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.670",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.670 PROJECT / LOAN CANCELLATIONS",
+        "title": "PROJECT / LOAN CANCELLATIONS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.671",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.670",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.671 Project / Loan Cancellation – during the I C ( i ) R A ( i ) ( i ) ( i ) Origination phase",
+        "title": "Project / Loan Cancellation – during the Origination phase",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.672",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.670",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 62,
+        "raw_text": "3.672 Project / Loan Cancellation – during the I C ( i ) R A ( i ) ( i ) ( i ) ( i ) Monitoring & Supervision phase",
+        "title": "Project / Loan Cancellation – during the Monitoring & Supervision phase",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "R",
+            "A",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.680",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.680 MODIFICATION OF TERMS OF THE BANK INVESTMENT 1",
+        "title": "MODIFICATION OF TERMS OF THE BANK INVESTMENT",
+        "actions": [],
+        "note_references": [
+            "1"
+        ]
+    },
+    {
+        "id": "3.681",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.681 Extension of Disbursement Deadline I R A6 ( i ) A6 ( i ) A6 A6",
+        "title": "Extension of Disbursement Deadline",
+        "actions": [
+            "I",
+            "R",
+            "A6",
+            "( i )",
+            "A6",
+            "( i )",
+            "A6",
+            "A6"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.682",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.682 Suspension of Disbursement I C R ( i ) ( i )",
+        "title": "Suspension of Disbursement ICR",
+        "actions": [
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.683",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "3.683.1",
+            "3.683.2",
+            "3.683.3",
+            "3.683.4"
+        ],
+        "page": 63,
+        "raw_text": "3.683 Modifications (or waivers) relating to non-financial terms of the Bank Investment: risk:7",
+        "title": "Modifications (or waivers) relating to non-financial terms of the Bank Investment: risk:",
+        "actions": [],
+        "note_references": [
+            "7"
+        ]
+    },
+    {
+        "id": "3.683.1",
+        "chapter": "3",
+        "node_type": "child_task",
+        "process_id": "3.680",
+        "parent_task_id": "3.683",
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.683.1 Which do not have a material impact on credit Performing Project, Watchlisted Project under Portfolio I C ( i ) C R A ( i ) ( i ) ( i ) Management and Watchlisted Project under Joint Venture. risk:8",
+        "title": "Which do not have a material impact on credit Performing Project, Watchlisted Project under Portfolio CRA Management and Watchlisted Project under Joint Venture. risk:",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": [
+            "8"
+        ]
+    },
+    {
+        "id": "3.683.2",
+        "chapter": "3",
+        "node_type": "child_task",
+        "process_id": "3.680",
+        "parent_task_id": "3.683",
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.683.2 Which may have a potential impact on credit Performing project, Watchlisted Project under Portfolio I C ( i ) C R R ( i ) ( i ) A Management and Watchlisted Project under Joint Venture. risk:7",
+        "title": "Which may have a potential impact on credit Performing project, Watchlisted Project under Portfolio CRR Management and Watchlisted Project under Joint Venture. risk:",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "( i )",
+            "A"
+        ],
+        "note_references": [
+            "7"
+        ]
+    },
+    {
+        "id": "3.683.3",
+        "chapter": "3",
+        "node_type": "child_task",
+        "process_id": "3.680",
+        "parent_task_id": "3.683",
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.683.3 Which do not have a material impact on credit I C ( i ) C R ( i ) ( i ) A ( i ) Watchlisted Project under Jeopardy.",
+        "title": "Which do not have a material impact on credit Watchlisted Project under Jeopardy.",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.683.4",
+        "chapter": "3",
+        "node_type": "child_task",
+        "process_id": "3.680",
+        "parent_task_id": "3.683",
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.683.4 risk:8 Which may have a potential impact on credit I C ( i ) C R ( i ) ( i ) R A Watchlisted Project under Jeopardy.",
+        "title": "risk: Which may have a potential impact on credit Watchlisted Project under Jeopardy.",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "C",
+            "R",
+            "( i )",
+            "( i )",
+            "R",
+            "A"
+        ],
+        "note_references": [
+            "8"
+        ]
+    },
+    {
+        "id": "3.684",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.684 Modifications (or waivers) relating to Fees I C C C R ( i ) ( i ) A ( i )",
+        "title": "Modifications (or waivers) relating to Fees ICCCR",
+        "actions": [
+            "( i )",
+            "( i )",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.685",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.685 Modifications (or waivers) relating to Bank Group policies I C C C ( i ) ( i ) R R R9 ( i ) A9",
+        "title": "Modifications (or waivers) relating to Bank Group policies ICCC RRR9",
+        "actions": [
+            "( i )",
+            "( i )",
+            "( i )",
+            "A9"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.686",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.686 Modifications (or waivers) relating to financial terms of the R10 R11 A12 I C C R ( i ) ( i ) R R 10 Bank Investment",
+        "title": "Modifications (or waivers) relating to financial terms of the ICCR RR10 Bank Investment",
+        "actions": [
+            "R10",
+            "R11",
+            "A12",
+            "( i )",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.687",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.680",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 63,
+        "raw_text": "3.687 Sales of Loans I C C R R13 R R R11 A 12 Page 63",
+        "title": "Sales of Loans ICCRR13 RRR11 Page",
+        "actions": [
+            "A"
+        ],
+        "note_references": [
+            "12",
+            "63"
+        ]
+    },
+    {
+        "id": "3.710",
+        "chapter": "3",
+        "node_type": "process",
+        "process_id": "3.710",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 66,
+        "raw_text": "3.710 EQUITY INVESTMENTS",
+        "title": "EQUITY INVESTMENTS",
+        "actions": [],
+        "note_references": []
+    },
+    {
+        "id": "3.711",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.710",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 66,
+        "raw_text": "3.711 Nomination of Bank representatives to Boards of ( i ) I I R A investee companies",
+        "title": "Nomination of Bank representatives to Boards of IIRAinvestee companies",
+        "actions": [
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.712",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.710",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 66,
+        "raw_text": "3.712 Nomination of Bank representatives to Advisory I A ( i ) Committees (ACs) of Investee Funds 5",
+        "title": "Nomination of Bank representatives to Advisory Committees (ACs) of Investee Funds",
+        "actions": [
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": [
+            "5"
+        ]
+    },
+    {
+        "id": "3.713",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.710",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 66,
+        "raw_text": "3.713 Sale of Equity stakes I1 C ( i ) ( i ) R2 R3 R ( i ) ( i ) R2 A",
+        "title": "Sale of Equity stakes",
+        "actions": [
+            "I",
+            "C",
+            "( i )",
+            "( i )",
+            "R2",
+            "R3",
+            "R",
+            "( i )",
+            "( i )",
+            "R2",
+            "A"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "3.714",
+        "chapter": "3",
+        "node_type": "task",
+        "process_id": "3.710",
+        "parent_task_id": null,
+        "has_children": false,
+        "children": [],
+        "page": 66,
+        "raw_text": "3.714 Participation in shareholders’ meetings of investee I A ( i ) companies4",
+        "title": "Participation in shareholders’ meetings of investee companies4",
+        "actions": [
+            "I",
+            "A",
+            "( i )"
+        ],
+        "note_references": []
+    },
+    {
+        "id": "2.312",
+        "chapter": "2",
+        "node_type": "task",
+        "process_id": "2.310",
+        "parent_task_id": null,
+        "has_children": true,
+        "children": [
+            "2.312.1",
+            "2.312.2"
+        ],
+        "page": null,
+        "raw_text": "",
+        "title": "",
+        "actions": [],
+        "note_references": [],
+        "is_placeholder": true,
+        "is_incomplete": true
+    }
+]

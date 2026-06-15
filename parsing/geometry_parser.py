@@ -15,12 +15,12 @@ def classify_relative_position(base_char, candidate_char):
         return "baseline"
 
 
-def extract_action_metadata(base_char, chars, x_tolerance=15):
+def extract_action_metadata(base_char, chars, x_tolerance=40):
 
     result = {
         "action": base_char["text"],
         "authority_modifier": None,
-        "note_reference": None
+        "note_references": []
     }
 
     base_x = base_char["x0"]
@@ -33,7 +33,7 @@ def extract_action_metadata(base_char, chars, x_tolerance=15):
         if c == base_char:
             continue
 
-        if not c["text"].isdigit():
+        if not (c["text"].isdigit() or c["text"] == "/"):
             continue
 
         distance = c["x0"] - base_x
@@ -53,12 +53,31 @@ def extract_action_metadata(base_char, chars, x_tolerance=15):
         if relation == "subscript":
             subscripts.append(c)
 
-        elif relation == "superscript":
+        if relation == "superscript":
+            print(
+                "SUPER:",
+                c["text"],
+                "x=", round(c["x0"],1),
+                "top=", round(c["top"],1)
+            )
             superscripts.append(c)
-
     # LEFT → RIGHT
     subscripts.sort(key=lambda x: x["x0"])
     superscripts.sort(key=lambda x: x["x0"])
+
+    filtered_superscripts = []
+    if superscripts:
+        filtered_superscripts.append(superscripts[0])
+
+        for current in superscripts[1:]:
+            previous = filtered_superscripts[-1]
+            gap = current["x0"] - previous["x0"]
+
+            if gap <= 6:
+                filtered_superscripts.append(current)
+            else:
+                break
+        superscripts = filtered_superscripts
 
     if subscripts:
         result["authority_modifier"] = "".join(
@@ -66,8 +85,16 @@ def extract_action_metadata(base_char, chars, x_tolerance=15):
         )
 
     if superscripts:
-        result["note_reference"] = "".join(
+
+        raw_note = "".join(
             s["text"] for s in superscripts
         )
 
+        result["note_references"] = [
+            n.strip()
+            for n in raw_note.split("/")
+            if n.strip()
+        ]
+
+        
     return result

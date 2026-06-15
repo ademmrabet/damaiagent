@@ -9,7 +9,7 @@ def build_rows(words):
     rows = defaultdict(list)
 
     for w in words:
-        key = round(w["top"], 1)
+        key = round(w["top"])
         rows[key].append(w)
 
     for row in rows.values():
