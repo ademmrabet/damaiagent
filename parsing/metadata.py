@@ -26,7 +26,15 @@ ACTION_PATTERN = re.compile(
     r"|\b[CRA]\d*\b"
 )
 
-NOTE_PATTERN = re.compile(r"\b\d{1,3}\b")
+# v2 bug, found via the threshold_variant test on 2.513.3.a ("Up to
+# UA 2,000,000"): a bare \b\d{1,3}\b footnote-number matcher also
+# matches the digit groups inside a comma-formatted amount - "2" and
+# each "000" in "2,000,000" - and strips them, corrupting the title
+# into "Up to UA ,,". Real footnote-reference digits in this DAM are
+# always comma-free (surrounded by spaces or attached to an action
+# letter, e.g. "5 I6" or "2 2"), so excluding any digit group directly
+# touching a comma is a safe, evidence-based fix - not a guess.
+NOTE_PATTERN = re.compile(r"(?<!,)\b\d{1,3}\b(?!,)")
 
 REFERENCE_PATTERN = re.compile(
     r"See\s+DAM\s+([\d.,\sand]+)",

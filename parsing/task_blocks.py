@@ -42,10 +42,17 @@
 # had ALREADY consumed its own actions row earlier. A task's actions
 # normally appear once; a stray line carrying a fresh batch of action
 # codes on top of a task that already has some is a much stronger
-# sign of "this is actually the next task" than punctuation is. So:
-# a task is now also treated as no-longer-accepting stray lines if the
-# incoming line itself contains action codes AND the open task already
-# has action codes in its accumulated text.
+# sign of "this is actually the next task" than punctuation is.
+#
+# That signal is deliberately narrower than "line contains any action
+# code": it only fires when the line ALSO has real prose before the
+# first action code (like "Quarterly Mission program" before "( i )").
+# A bare trailing line like "( i )" with nothing in front of it is an
+# extremely common, completely normal pattern - the informed marker or
+# a footnote digit landing on its own row right after a task's main
+# action row - and must still attach to the currently open task, not
+# get diverted. Without this narrowing, the v3 rule would have wrongly
+# hijacked every task that has that (very common) trailing-row shape.
 
 import re
 
@@ -54,6 +61,20 @@ from parsing.metadata import ACTION_PATTERN, NOTE_PATTERN
 SECTION_PATTERN = re.compile(r"^\d+\.\d\s+[A-Z]")
 NOTES_PATTERN = re.compile(r"^Notes\s+on", re.IGNORECASE)
 IDENTIFIER_PATTERN = re.compile(r"^\d+(?:\.\d+)+$")
+
+# threshold_variant sub-items (found via screenshot: 2.513.3 -> (a)/(b)/
+# (c) by loan amount, 53 real occurrences across the doc, mostly
+# procurement threshold tables). The PDF only ever prints the bare
+# "(a)", never the full id - this has to be reconstructed from
+# whichever child_task was most recently opened.
+#
+# Deliberately tight, no internal spaces: "(a)" not "( a )". The
+# informed marker always extracts as "( i )" with spaces (three
+# separate PDF characters joined by row-building), so this pattern
+# doesn't collide with it in practice. Excluding the letter "i"
+# outright anyway, as a defensive belt-and-braces in case a table ever
+# has a 9th lettered item and pdfplumber happens to render it tight.
+LETTER_LABEL_PATTERN = re.compile(r"^\(([a-h]|[j-z])\)$")
 
 
 def build_task_blocks(lines):
@@ -71,6 +92,7 @@ def build_task_blocks(lines):
     blocks = []
     current_task = None
     pending_title = None
+    last_child_task_id = None  # for reconstructing threshold_variant ids
 
     def open_task(line, row):
         nonlocal pending_title
@@ -119,6 +141,25 @@ def build_task_blocks(lines):
         tokens = line.split()
         identifier = tokens[0]
 
+        # --- threshold_variant: bare "(a)"/"(b)"/... label, id has to
+        # be reconstructed from whichever child_task opened last. Never
+        # ambiguous with anything else on the page, so it always closes
+        # whatever's open and starts fresh - no look-ahead needed.
+        if LETTER_LABEL_PATTERN.fullmatch(identifier) and last_child_task_id:
+
+            close_task()
+
+            letter = identifier[1]
+            rest = line[len(identifier):].strip()
+            constructed_id = f"{last_child_task_id}.{letter}"
+
+            current_task = {
+                "text": f"{constructed_id} {rest}".rstrip(),
+                "top": row["top"],
+                "bottom": row["bottom"]
+            }
+            continue
+
         # --- continuation line (doesn't start with a bare identifier) ---
         if not IDENTIFIER_PATTERN.fullmatch(identifier):
 
@@ -127,7 +168,12 @@ def build_task_blocks(lines):
                 and current_task["text"].rstrip().endswith(".")
             )
 
-            line_has_actions = bool(ACTION_PATTERN.search(line))
+            first_action = ACTION_PATTERN.search(line)
+
+            line_leads_with_prose_then_actions = (
+                first_action is not None
+                and line[:first_action.start()].strip() != ""
+            )
 
             current_already_has_actions = (
                 current_task is not None
@@ -136,7 +182,7 @@ def build_task_blocks(lines):
 
             task_looks_finished = (
                 task_ends_with_period
-                or (line_has_actions and current_already_has_actions)
+                or (line_leads_with_prose_then_actions and current_already_has_actions)
             )
 
             if current_task and not task_looks_finished:
@@ -191,6 +237,7 @@ def build_task_blocks(lines):
             # child task, e.g. 2.325.1 - always starts a new block
             close_task()
             current_task = open_task(line, row)
+            last_child_task_id = identifier
             continue
 
         if len(parts) == 2:

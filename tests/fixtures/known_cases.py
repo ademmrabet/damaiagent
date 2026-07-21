@@ -67,3 +67,10 @@ CASES = {
         "status": "fixed",
     },
 }
+
+# threshold_variant cases (2.513.3 -> (a)/(b)/(c) by loan amount) -
+# separate from CASES above since they need id reconstruction, not
+# just a title check. Page 48, confirmed via screenshot.
+THRESHOLD_VARIANT_PAGE_INDEX = 48
+THRESHOLD_VARIANT_PARENT = "2.513.3"
+THRESHOLD_VARIANT_IDS = ["2.513.3.a", "2.513.3.b", "2.513.3.c"]

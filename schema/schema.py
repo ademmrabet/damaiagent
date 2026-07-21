@@ -81,7 +81,15 @@ class Node(BaseModel):
     """
 
     id: str  # NOT int - real ids are dotted strings like "2.221.1"
-    node_type: Literal["chapter", "process", "task", "child_task"]
+
+    # threshold_variant added after finding 53 real cases (e.g.
+    # 2.513.3 -> (a)/(b)/(c) by loan amount) of a child_task having
+    # ITS OWN children, letter-labeled rather than numbered. id
+    # convention: "2.513.3.a", parent_task_id "2.513.3" - see
+    # parsing/hierarchy.py and docs/decisions.md.
+    node_type: Literal[
+        "chapter", "process", "task", "child_task", "threshold_variant"
+    ]
 
     chapter: str
     process_id: str | None = None

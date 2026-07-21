@@ -7,7 +7,15 @@ from parsing.task_blocks import build_task_blocks
 from parsing.hierarchy import get_identifier
 from parsing.metadata import extract_title, extract_references
 
-from tests.fixtures.known_cases import CASES, PDF_PATH
+from parsing.hierarchy import get_node_type, get_parent_task_id
+
+from tests.fixtures.known_cases import (
+    CASES,
+    PDF_PATH,
+    THRESHOLD_VARIANT_PAGE_INDEX,
+    THRESHOLD_VARIANT_PARENT,
+    THRESHOLD_VARIANT_IDS,
+)
 
 
 def _blocks_by_id(page_index):
@@ -62,5 +70,43 @@ def test_3226_title_not_stolen_by_3225():
     raw = blocks["3.226"]
 
     assert extract_title(raw, "3.226") == case["expected_title"]
+
+
+def test_threshold_variant_ids_reconstructed():
+    blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
+
+    for variant_id in THRESHOLD_VARIANT_IDS:
+        assert variant_id in blocks, f"{variant_id} not found"
+        assert get_parent_task_id(variant_id) == THRESHOLD_VARIANT_PARENT
+        assert get_node_type(variant_id) == "threshold_variant"
+
+    # and the parent itself should still parse as an ordinary child_task
+    assert THRESHOLD_VARIANT_PARENT in blocks
+    assert get_node_type(THRESHOLD_VARIANT_PARENT) == "child_task"
+
+
+@pytest.mark.parametrize("variant_id,expected_title", [
+    ("2.513.3.a", "Up to UA 2,000,000"),
+    ("2.513.3.c", "Over UA 10,000,000"),
+])
+def test_threshold_variant_titles_are_clean(variant_id, expected_title):
+    blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
+    raw = blocks[variant_id]
+    assert extract_title(raw, variant_id) == expected_title
+
+
+@pytest.mark.xfail(reason=(
+    "NOTE_PATTERN's comma-adjacency fix only catches comma-formatted "
+    "amounts (2,000,000). '2 million' / '10 million' are plain "
+    "space-separated digits with no comma and no other distinguishing "
+    "text signal, so they still get stripped as false footnote "
+    "numbers. This needs real superscript/geometry detection (v1's "
+    "original approach for footnote markers) to fix properly, not "
+    "another text-pattern special case."
+))
+def test_threshold_variant_2513_3b_needs_geometry():
+    blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
+    raw = blocks["2.513.3.b"]
+    assert extract_title(raw, "2.513.3.b") == "Over UA 2 million up to UA 10 million"
 
 

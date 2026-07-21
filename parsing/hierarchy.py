@@ -5,13 +5,18 @@
 
 import re
 
-ID_PATTERN = re.compile(r"^\d+(?:\.\d+)+")
+# Trailing (?:\.[a-z])? handles threshold_variant ids like "2.513.3.a"
+# - task_blocks.py constructs these itself (the PDF only ever prints
+# the bare "(a)", never the full id), so this only needs to round-trip
+# what task_blocks.py already built, not parse it from raw PDF text.
+ID_PATTERN = re.compile(r"^\d+(?:\.\d+)+(?:\.[a-z])?")
 
 
 def get_identifier(line):
     """
     '2.221 Project Identification' -> '2.221'
     '2.221.1 E&S Categorisation Memorandum' -> '2.221.1'
+    '2.513.3.a Up to UA 2,000,000' -> '2.513.3.a'
     """
 
     if not line:
@@ -32,17 +37,22 @@ def get_chapter(identifier):
 
 def get_node_type(identifier):
     """
-    X       -> chapter (handled by caller before this; identifiers
-               here always have a dot, see get_identifier)
-    X.YY0   -> process
-    X.YYY   -> task
-    X.YYY.N -> child_task
+    X         -> chapter (handled by caller before this; identifiers
+                 here always have a dot, see get_identifier)
+    X.YY0     -> process
+    X.YYY     -> task
+    X.YYY.N   -> child_task
+    X.YYY.N.a -> threshold_variant (letter-labeled sub-item of a
+                 child_task, e.g. 2.513.3.a - see schema.py)
     """
 
     if not identifier:
         return None
 
     parts = identifier.split(".")
+
+    if len(parts) == 4:
+        return "threshold_variant"
 
     if len(parts) == 3:
         return "child_task"
@@ -81,10 +91,15 @@ def get_parent_task_id(identifier):
     # 2.221.1 -> 2.221 ; 2.112 -> None (tasks have no parent_task_id,
     # only child_tasks do - their "parent" is the process, tracked
     # via process_id, not parent_task_id)
+    # 2.513.3.a -> 2.513.3 (a threshold_variant's parent is the
+    # child_task it's a condition of)
     if not identifier:
         return None
 
     parts = identifier.split(".")
+
+    if len(parts) == 4:
+        return f"{parts[0]}.{parts[1]}.{parts[2]}"
 
     if len(parts) != 3:
         return None
