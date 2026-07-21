@@ -63,11 +63,18 @@ word "check" or "consult" to the bare letter "C" would wrongly merge
 two different authority concepts. Noted for the agent stage, not fixed
 yet.
 
-## 2026-07-21 - Known deferred issue: task 2.126
+## 2026-07-21 - Task 2.126 resolved (screenshot corrected an earlier theory)
 
-2.126's title line and what looks like its own actions sit on two
-physical PDF lines ~0.15pt apart in vertical position, which
-`build_rows()`'s row-clustering merges into a single row. Row-order
-logic alone can't separate them correctly - needs x-position
-(geometry), which is the next stage's job. Left as a documented
-`xfail` test rather than patched around with a fragile heuristic.
+Originally diagnosed (from coordinates alone) as needing geometry: two
+PDF lines ~0.15pt apart wrongly merged into one row. A real screenshot
+of page 12 showed this was wrong - title+actions are genuinely one
+row, textbook title-above-identifier, and it failed for the same
+reason as 3.225/3.226: current_task (2.125) was still open with no
+period to signal it was finished. Added a third signal to
+`task_blocks.py`: a task is also treated as finished if an incoming
+line carries action codes while the open task already has some of its
+own - a second batch of actions is a strong sign it belongs to the
+next task, not the current one. All 9 tests pass, 0 xfail. Full
+79-page smoke test: 240 task/child blocks, 0 exceptions, 2 remaining
+empty titles (2.516, 2.522, both on the new source's pages 49-50) -
+logged for the node-validation stage, not chased now.

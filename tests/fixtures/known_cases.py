@@ -37,24 +37,16 @@ CASES = {
         "status": "fixed",
     },
 
-    # KNOWN UNRESOLVED, on purpose: 2.126's title line ("Quarterly
-    # Mission program") and what looks like ITS OWN actions
-    # ("( i ) I C C R A ( i )") sit at top=386.49 and top=386.34 - two
-    # physically distinct PDF lines less than a point apart that
-    # build_rows()'s round(top) clustering merges into one row, which
-    # then gets misread as a continuation of the PRECEDING task
-    # (2.125). This isn't a row-order problem task_blocks.py can fix
-    # with text alone - it needs x-position (2.126's title starts at
-    # the same x0 as every other title, ~86-91; the actions start in
-    # a completely different x-range past 300) to separate correctly.
-    # That's explicitly the next stage's job (normalize + validate
-    # extracted characters, geometry-aware). Left failing here on
-    # purpose rather than papering over it with a text heuristic that
-    # would just break the 2.311 fix above.
+    # RESOLVED with the task_blocks.py v3 fix (see module docstring):
+    # a real screenshot of page 12 showed 2.126's title+actions are
+    # genuinely on ONE row, textbook title-above-identifier - the
+    # earlier "two lines merged by row-rounding" theory was wrong,
+    # caught by seeing the actual table instead of guessing from
+    # coordinates alone.
     "2.126": {
         "page_index": 24,
         "expected_title": "Quarterly Mission program",
-        "status": "deferred_to_geometry_stage",
+        "status": "fixed",
     },
 
     # v1-equivalent bug, found via a screenshot of the real table

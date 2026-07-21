@@ -64,11 +64,3 @@ def test_3226_title_not_stolen_by_3225():
     assert extract_title(raw, "3.226") == case["expected_title"]
 
 
-@pytest.mark.xfail(reason="needs geometry/x-position, deferred to normalize stage")
-def test_2126_title_needs_geometry():
-    case = CASES["2.126"]
-    blocks = _blocks_by_id(case["page_index"])
-    raw = blocks.get("2.126", "")
-
-    title = extract_title(raw, "2.126")
-    assert title == case["expected_title"]

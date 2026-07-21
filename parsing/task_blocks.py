@@ -32,6 +32,20 @@
 # for these redirect/"Refer to..." rows) - once seen, further stray
 # lines go through the same look-ahead check as the "nothing open"
 # case, instead of being blindly attached.
+#
+# Fix, v3: a real screenshot of page 12 found a THIRD variant neither
+# v1 nor v2 caught. Task 2.126's entire title+actions ("Quarterly
+# Mission program ( i ) I C C R A ( i )") sit on ONE row, right before
+# 2.126's own bare identifier row - textbook title-above-identifier.
+# But current_task (2.125) was still open, hadn't seen a period, so
+# v2's rule attached it to 2.125 anyway. The missing signal: 2.125
+# had ALREADY consumed its own actions row earlier. A task's actions
+# normally appear once; a stray line carrying a fresh batch of action
+# codes on top of a task that already has some is a much stronger
+# sign of "this is actually the next task" than punctuation is. So:
+# a task is now also treated as no-longer-accepting stray lines if the
+# incoming line itself contains action codes AND the open task already
+# has action codes in its accumulated text.
 
 import re
 
@@ -108,22 +122,34 @@ def build_task_blocks(lines):
         # --- continuation line (doesn't start with a bare identifier) ---
         if not IDENTIFIER_PATTERN.fullmatch(identifier):
 
-            task_looks_finished = (
+            task_ends_with_period = (
                 current_task is not None
                 and current_task["text"].rstrip().endswith(".")
             )
 
+            line_has_actions = bool(ACTION_PATTERN.search(line))
+
+            current_already_has_actions = (
+                current_task is not None
+                and bool(ACTION_PATTERN.search(current_task["text"]))
+            )
+
+            task_looks_finished = (
+                task_ends_with_period
+                or (line_has_actions and current_already_has_actions)
+            )
+
             if current_task and not task_looks_finished:
-                # A task is open and doesn't look finished yet - this
-                # line belongs to IT.
+                # A task is open, hasn't been signaled as finished
+                # (no trailing period, and not "receiving a second
+                # batch of actions") - this line belongs to IT.
                 attach(line, row)
                 continue
 
-            # Either nothing is open, or what's open already reads as
-            # a complete, period-terminated sentence - in both cases
-            # check whether the very next row is a bare identifier
-            # with nothing else on it, meaning this line is really the
-            # start of THAT task's title.
+            # Either nothing is open, or what's open looks finished -
+            # in both cases check whether the very next row is a bare
+            # identifier with nothing else on it, meaning this line is
+            # really the start of THAT task's title.
             next_row = lines[i + 1] if i + 1 < len(lines) else None
             next_line = next_row["text"].strip() if next_row else ""
             next_tokens = next_line.split()
