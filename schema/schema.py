@@ -42,6 +42,13 @@ class AuthorityCode(BaseModel):
     level: int | None = None
     meaning: str
 
+    # Confirmed against the real legend (page 48 of the updated PDF):
+    # I=black, C=red, R=yellow, A=green, (i)=no fill (italic only).
+    # Optional since it's only known for the base letters until the
+    # legend itself gets parsed/transcribed - don't fake a color for
+    # entries that haven't been confirmed yet.
+    color: str | None = None
+
 
 class Footnote(BaseModel):
     """

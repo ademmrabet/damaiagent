@@ -1,0 +1,24 @@
+[
+  {"code": "I",  "level": null, "meaning": "Initiate / Originate", "color": "black"},
+  {"code": "I1", "level": 1, "meaning": "To launch a process or activity.", "color": "black"},
+  {"code": "I2", "level": 2, "meaning": "To prepare a relevant, distinct output of that process or activity.", "color": "black"},
+  {"code": "I3", "level": 3, "meaning": "To participate in a multi-disciplinary / interdepartmental Task Team collectively responsible for a process or activity.", "color": "black"},
+
+  {"code": "C",  "level": null, "meaning": "Check and Verify (general; see C1/C2). Bare 'C' with no digit defaults to this sense, not Consult.", "color": "red"},
+  {"code": "C1", "level": 1, "meaning": "To examine an activity against a formal checklist of quality standards, requirements, or preconditions and permit the activity to proceed to the next step only if all the set standards, requirements, or preconditions have been satisfied.", "color": "red"},
+  {"code": "C2", "level": 2, "meaning": "To clear the action or decision examined to proceed to the next step since it complies with applicable policies and regulations following appropriate consultation with relevant departments (e.g., PGCL, SNFI, etc).", "color": "red"},
+
+  {"code": "C3", "level": 3, "meaning": "In the case of the Bank's Independent Functions, notably Independent Development Evaluation, and Independent Compliance Review and Mediation, to tap the opinions, perceptions, or assessments of a responsible official, or knowledgeable, well-informed expert. Distinct from Check and Verify (C1/C2).", "color": "purple"},
+  {"code": "C4", "level": 4, "meaning": "In the case there is a requirement to consult the Board of Directors or the Board of Governors, while the President or Management has the authority to approve.", "color": "purple"},
+
+  {"code": "R",  "level": null, "meaning": "Review and Recommend", "color": "yellow"},
+  {"code": "R1", "level": 1, "meaning": "To examine a submitted activity or output critically and assess its validity, value, or contribution from a number of well-defined perspectives (including compliance with the letter and spirit of adopted policies and regulations, alignment with established strategies and priorities, etc.) and provide concrete suggestions for alternative approaches aimed at specific improvements, or to guide further steps.", "color": "yellow"},
+  {"code": "R2", "level": 2, "meaning": "To examine a submitted proposal critically and determine whether it meets essential quality standards and requirements and, if it does so, clear it to be submitted to a higher authority, accompanied by a statement advocating for the proposal and/or identifying specific issues that need guidance or decision.", "color": "yellow"},
+
+  {"code": "A",  "level": null, "meaning": "Endorse / Approve / Sign", "color": "green"},
+  {"code": "A1", "level": 1, "meaning": "To validate an activity, or accept an output, or endorse a proposed decision submitted for consideration.", "color": "green"},
+  {"code": "A2", "level": 2, "meaning": "To provide the final authority to proceed to implement a decision - anchored on certitude of adequate due diligence having been carried out by responsible officials to ensure appropriate quality standards, adherence to policies, safeguards, laws and regulations, alignment to strategies and priorities, and good risk management.", "color": "green"},
+  {"code": "A3", "level": 3, "meaning": "To append one's signature on a document to signify knowledge, agreement, approval, or acceptance on behalf of the Bank Group.", "color": "green"},
+
+  {"code": "( i )", "level": null, "meaning": "To be informed: having the right/privilege to be provided information on an activity under review, and/or the obligation to find and process that information. No formal responsibility to act on it, but not excluded from exercising influence.", "color": null}
+]
