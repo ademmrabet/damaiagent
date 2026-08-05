@@ -1,31 +1,39 @@
 # Free hosting
 
-## Recommendation: Render
+## Chosen: Koyeb
 
-Render's free web-service tier is the best fit for this project specifically
-because it's genuinely Docker-native - it builds straight from the repo's
-`Dockerfile`, so the existing multi-stage build (Node build stage discarded,
-Python runtime stage shipped) works with zero changes beyond the `$PORT` fix
-below. No credit card required to sign up or deploy.
+Adem's Render deploy hit an OOM before the nodes-cache fix existed, and he'd
+rather not go back - reasonable, no need to relitigate it. Koyeb is a real
+lateral move, not a downgrade: same Docker-native model as Render (builds
+straight from the repo's `Dockerfile` via its Git-driven deploy, no code
+changes needed beyond what's already there for Render), genuinely free tier,
+no card required.
 
-- 750 free instance-hours/month - enough for one service to run continuously
-  all month, or comfortably enough for demo/grading use
-- 512MB RAM - enough for FastAPI + the deterministic agent + Groq calls (no
-  local model running here, see below)
-- Free services sleep after 15 minutes of no inbound traffic, and take
-  roughly 30-60 seconds to wake back up on the next request. This is the one
-  real trade-off - **ping the app a minute or two before a live demo** so
-  it's already warm when the professor is watching.
+- 1 free web service, 0.1 vCPU, 512MB RAM, 2GB SSD
+- Builds directly from a connected GitHub repo, auto-detects the root
+  `Dockerfile` (same as Render's flow)
+- Also injects its own `PORT` env var at runtime - the `Dockerfile`'s
+  `CMD uvicorn ... --port ${PORT:-8000}` already handles this, same fix
+  that was made for Render
+- Supports a per-port health check the same way Render does
 
-Alternatives considered and why they're worse fits right now (checked
-2026-08-06): Railway's free tier was gutted to ~$1/month credit, not
-actually free anymore. Fly.io dropped its free tier entirely and requires
-a card just to deploy. Hugging Face Spaces' Docker SDK moved behind a paid
-plan. Google Cloud Run is generous but requires a card and real GCP account
-setup - more friction than this project needs. Back4App's 256MB RAM is too
-tight for this stack. Koyeb is a legitimate secondary option (1 free
-service, 0.1 vCPU / 512MB, no card) if Render's cold starts turn out to be a
-problem for a specific demo window.
+Also considered and ruled out (checked 2026-08-06): GitHub Pages is static-
+only, cannot run a Python backend at all - a hard wall, not a preference.
+Netlify's free tier is serverless-functions-first (Node/Go), doesn't build
+from a Dockerfile, and doesn't fit this app's single persistent process with
+in-memory startup state. Cloudflare's Containers product (the piece that
+would actually work) requires the $5/month Workers Paid plan - no free tier
+covers it. Vercel has the same serverless/no-Dockerfile mismatch as Netlify.
+Earlier-ruled-out platforms unchanged: Railway's free tier is gutted to
+~$1/month credit, Fly.io has no free tier and requires a card, Hugging Face
+Spaces' Docker SDK is paid-only, Google Cloud Run needs a card and more GCP
+setup than this project warrants, Back4App's 256MB is too tight.
+
+Render is still a fallback worth knowing about: the OOM root cause is fixed
+(see the nodes-cache entry in `docs/decisions.md`, 2026-08-06) and it hasn't
+actually been retried with that fix - if Koyeb's cold starts or region
+latency ever become a problem, Render remains a one-click retry, not a dead
+end. Steps are below in case that's ever useful.
 
 ## Drop Ollama for the hosted deployment
 
@@ -38,28 +46,39 @@ if Groq is unreachable. So the hosted version only needs `docker-compose.yml`'s
 `ollama` service deployed - just the `app` service, built from the root
 `Dockerfile`, with `GROQ_API_KEY` set as an environment variable.
 
-## Deploy steps (Render)
+## Deploy steps (Koyeb)
 
-1. Push this repo to GitHub if it isn't already (Render deploys from a git
-   remote, not a local folder).
+1. Push this repo to GitHub if it isn't already.
+2. On Koyeb: create a Service -> GitHub deployment method -> select the repo
+   and branch (`main`).
+3. Builder: choose **Dockerfile** (not a buildpack) - Koyeb auto-detects it
+   at the repo root, same as Render.
+4. Health check path: `/api/health` (same endpoint used for Render and for
+   the local `docker-compose` healthcheck).
+5. Environment Variables: add `GROQ_API_KEY` with the real key. Never commit
+   `.env` to the repo - this is exactly why the key lives in the platform's
+   dashboard instead.
+6. Port: leave it to Koyeb's default/`PORT` injection - no manual override
+   needed, the `Dockerfile`'s `CMD` already reads `${PORT:-8000}`.
+7. Deploy. First build takes a few minutes (npm install + vite build + pip
+   install, per the Dockerfile's layer order).
+
+## Deploy steps (Render, fallback)
+
+1. Push this repo to GitHub if it isn't already.
 2. On Render: New -> Web Service -> connect the GitHub repo.
-3. Environment: Docker. Render will auto-detect the root `Dockerfile` - no
-   build command needed, it just runs `docker build`.
-4. Under Environment Variables, add `GROQ_API_KEY` with the real key.
-   Never commit `.env` to the repo - this is exactly why the key lives in
-   Render's dashboard instead.
-5. Leave the port field alone / don't hardcode one - Render injects its own
-   `PORT` env var at runtime, and the `Dockerfile`'s `CMD` now reads it
-   (`--port ${PORT:-8000}`, falls back to 8000 only when `PORT` isn't set,
-   e.g. local `docker-compose`).
-6. Deploy. First build will take a few minutes (npm install + vite build +
-   pip install, in that order per the Dockerfile's layer caching).
+3. Environment: Docker - auto-detects the root `Dockerfile`.
+4. Health Check Path: `/api/health`.
+5. Environment Variables: add `GROQ_API_KEY`.
+6. Leave the port field alone - Render injects its own `PORT`.
+7. Deploy.
 
 ## Known gap
 
-The `Dockerfile`'s `${PORT:-8000}` change hasn't been build-tested - no
-`docker` binary is available in this sandbox, so this was validated by
-review only (confirmed `docker-compose.yml` doesn't set `PORT` and its
-healthcheck + port mapping are both hardcoded to `8000`, so local behavior
-is unaffected either way). Worth a real `docker build` once on your own
-machine, or just trust Render's own build log the first time you deploy.
+Neither the `Dockerfile`'s `${PORT:-8000}` change nor the nodes-cache build
+step (`RUN python scripts/build_nodes_cache.py`) has been build-tested with
+a real `docker build` - no `docker` binary is available in this sandbox, so
+both were validated by review, direct measurement (the cache round-trips
+losslessly, confirmed against the live parse), and the full test suite.
+Trust the platform's own build log the first time you deploy, on whichever
+platform you pick.
