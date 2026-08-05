@@ -15,7 +15,14 @@ function isLowConfidence(data) {
 }
 
 function metaLabel(data) {
-  let label = data.method === 'id' ? 'matched by id' : 'matched by text search';
+  let label;
+  if (data.method === 'id') {
+    label = 'matched by id';
+  } else if (data.method === 'context_carryover') {
+    label = 'carried over from previous question';
+  } else {
+    label = 'matched by text search';
+  }
   if (data.score !== null && data.score !== undefined) {
     label += ' · confidence ' + data.score.toFixed(2);
   }
@@ -153,16 +160,33 @@ export default function Chat() {
     // question, not whatever happens to be on screen when it resolves.
     const targetId = activeConversation.id;
 
+    // The most recent node_id this conversation resolved to, if any -
+    // sent along so a pronoun-style follow-up ("who are the informed
+    // parties for THAT ACTIVITY?") has a real anchor instead of the
+    // backend guessing off incidental word overlap (see
+    // agent/qa.py's answer_question, docs/decisions.md 2026-08-06).
+    // Read from activeConversation.messages BEFORE appendMessage below
+    // adds this new question, same reasoning as capturing targetId.
+    let previousNodeId = null;
+    for (let i = activeConversation.messages.length - 1; i >= 0; i -= 1) {
+      const m = activeConversation.messages[i];
+      if (m.role === 'agent' && m.meta && m.meta.nodeId) {
+        previousNodeId = m.meta.nodeId;
+        break;
+      }
+    }
+
     appendMessage(targetId, { role: 'user', text: question });
     setInput('');
     setSending(true);
 
     try {
-      const data = await askQuestion(question, llmMode);
+      const data = await askQuestion(question, llmMode, previousNodeId);
       appendMessage(targetId, {
         role: 'agent',
         text: data.answer,
         meta: {
+          nodeId: data.node_id,
           showMeta: !!data.node_id,
           method: data.method,
           score: data.score,

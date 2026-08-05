@@ -1829,3 +1829,109 @@ sandbox, as with the earlier `$PORT` fix). The fix is verified correct
 verified to remove the actual heavy operation from the runtime request
 path entirely - but the real proof is Adem's next Render deploy
 attempt succeeding, not a claim made here.
+
+## 2026-08-06 (yet later still) - Hosting platform churn: Vercel, Netlify/Pages, Cloudflare, Koyeb all ruled out
+
+Adem tried several alternatives to Render in quick succession, live,
+mid-session. Each was checked against this app's actual architecture
+(one persistent FastAPI process, in-memory startup state, a Docker
+multi-stage build) rather than assumed to just work:
+
+- **Vercel** ("FastAPI preset"): serverless functions, not a
+  persistent container - ignores the repo's `Dockerfile` entirely, so
+  neither the React build step nor the nodes-cache build step would
+  run, and the app's single-process in-memory `state` dict has no
+  equivalent in a cold-start-per-invocation model.
+- **GitHub Pages**: static files only, by design - literally cannot
+  execute Python. Not a preference, a hard wall.
+- **Netlify**: same serverless/no-Dockerfile mismatch as Vercel.
+- **Cloudflare**: the piece that would actually fit (Containers)
+  requires the Workers Paid plan, $5/month - no free tier covers it.
+  Confirmed via direct search, not assumed.
+- **Koyeb**: architecturally the right fit (Docker-native, same model
+  as Render) and was set up as the new primary recommendation in
+  `docs/hosting.md` - then Adem's own dashboard showed "Koyeb is
+  joining Mistral! Stay tuned for a revamped Agentic experience,"
+  confirmed via search to be a real Feb 2026 acquisition by Mistral
+  AI, platform being folded into "Mistral Compute." Not disqualifying
+  on its own, but the self-serve dashboard visibly not showing a
+  normal "create service" flow mid-acquisition-transition is a real
+  risk against a graded deadline - not worth trusting for this.
+
+Ended back at Render, which was the right call from the start: the
+actual OOM root cause was already fixed (previous entry) and had
+simply never been retried. `docs/hosting.md` updated to lead with
+Render again; the Koyeb section kept as a documented, ruled-out
+alternative rather than deleted, so the reasoning isn't lost if free
+hosting needs revisiting later.
+
+## 2026-08-06 (later once more) - Chat follow-ups losing context: the 2.118/3.226 misfire
+
+Adem's live test: "who approves of Communication with Co-Financiers of
+projects" correctly resolved 2.118. The natural chat follow-up "who
+are the informed parties for that activity?" landed on 3.226 - a
+completely different node that happens to have an almost identical
+title ("...Communication with Co-Financiers of projects and third
+parties"). Root cause confirmed directly, not guessed: the follow-up
+names no real subject of its own - "informed", "parties", "activity"
+aren't in 2.118's title at all. Its only real content word,
+"parties", happens to appear in 3.226's title instead ("...and third
+parties"), so TF-IDF scored 3.226 at a comfortably "confident" 0.42 -
+well above `MIN_TEXT_SEARCH_SCORE` (0.15). This isn't a threshold-
+tuning problem (0.42 already clears any reasonable bar) - the backend
+genuinely had zero legitimate signal for the true intended target, and
+happened to get unlucky on which unrelated node it coincidentally
+overlapped with instead. The deeper issue: nothing in this app ever
+carried conversation context between turns at all, despite the
+frontend already keeping a full per-conversation message history in
+localStorage (2026-08-06, multi-conversation sidebar entry) purely for
+display.
+
+Fix, kept deterministic on purpose - same principle as
+`knowledge/typo_correct.py`, this project's LLM is scoped to only
+phrase already-retrieved facts and never touches retrieval/
+understanding: added `_refers_to_previous_context()` to `agent/qa.py`,
+a small fixed set of anaphoric trigger phrases ("that activity", "this
+one", "for that", "about this", etc.) plus a standalone "it" pronoun
+check. `answer_question()` gained a `previous_node_id=None` parameter;
+when the query has no digit-shaped substring (an explicit id always
+still wins - checked first) AND matches the referential pattern AND a
+`previous_node_id` was supplied, that node is used directly as the
+answer's subject (`method: "context_carryover"`) instead of running
+`resolve_query()` at all - skipping the exact trap that caused the
+misfire, not just working around it after the fact.
+
+Wired end to end: `webapp/backend.py`'s `Question` model gained an
+optional `previous_node_id` field, passed straight through to
+`answer_question()`. `webapp/frontend/src/api.js`'s `askQuestion()`
+now takes and sends it. `Chat.jsx` now stores `nodeId` on each agent
+message's `meta` (it wasn't being kept at all before, only used
+inline for one render check) and, before sending each new question,
+scans the active conversation's own message history backward for the
+most recent agent `node_id` - the exact same "read before mutating"
+pattern already used for `targetId`. The UI also labels these answers
+distinctly ("carried over from previous question" instead of "matched
+by text search") so it's visible, not silent, when this path fires.
+
+**Known, deliberate trade-off**: a bare "it"/"that"/"this" pronoun
+always assumes the user means the previous subject once a
+`previous_node_id` exists - there's no way to distinguish "who checks
+it" (meaning the same task) from a new, self-contained question that
+just happens to contain the word "it" incidentally. Judged the right
+default for a chat UI (matches how people actually use pronouns in
+conversation) rather than something to solve with more machinery right
+now.
+
+Regression tests added: `tests/test_agent.py` (3 new - the exact
+2.118/3.226 reproduction with the real follow-up wording, an explicit-
+id follow-up correctly ignoring `previous_node_id`, and a pronoun
+follow-up with no `previous_node_id` falling through to normal
+resolution unaffected) and `tests/test_backend.py` (2 new - the same
+reproduction through the real `/api/ask` endpoint, and confirming
+omitting `previous_node_id` entirely still works). 43 tests across
+both files pass. Frontend rebuilt via the established `/tmp` workaround
+(copying only source files, not the stale `node_modules` already
+sitting in the OneDrive-synced `webapp/frontend/` from an earlier
+session - copying that over the slow FUSE mount was itself the first
+attempt's timeout) and re-verified against `test_backend.py` +
+`test_frontend_source.py` (24 passed) after the rebuild.

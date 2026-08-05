@@ -1,39 +1,35 @@
 # Free hosting
 
-## Chosen: Koyeb
+## Recommendation: Render
 
-Adem's Render deploy hit an OOM before the nodes-cache fix existed, and he'd
-rather not go back - reasonable, no need to relitigate it. Koyeb is a real
-lateral move, not a downgrade: same Docker-native model as Render (builds
-straight from the repo's `Dockerfile` via its Git-driven deploy, no code
-changes needed beyond what's already there for Render), genuinely free tier,
-no card required.
+The OOM that killed the first Render attempt is fixed (see the nodes-cache
+entry in `docs/decisions.md`, 2026-08-06) - it just hadn't been retried yet.
+Render remains the best fit: genuinely Docker-native, builds straight from
+the repo's `Dockerfile`, no credit card required.
 
-- 1 free web service, 0.1 vCPU, 512MB RAM, 2GB SSD
-- Builds directly from a connected GitHub repo, auto-detects the root
-  `Dockerfile` (same as Render's flow)
-- Also injects its own `PORT` env var at runtime - the `Dockerfile`'s
-  `CMD uvicorn ... --port ${PORT:-8000}` already handles this, same fix
-  that was made for Render
-- Supports a per-port health check the same way Render does
+- 750 free instance-hours/month, 512MB RAM
+- Free services sleep after 15 minutes of no inbound traffic, ~30-60s
+  cold-start wake - **ping the app a minute or two before a live demo**.
 
-Also considered and ruled out (checked 2026-08-06): GitHub Pages is static-
-only, cannot run a Python backend at all - a hard wall, not a preference.
-Netlify's free tier is serverless-functions-first (Node/Go), doesn't build
-from a Dockerfile, and doesn't fit this app's single persistent process with
-in-memory startup state. Cloudflare's Containers product (the piece that
-would actually work) requires the $5/month Workers Paid plan - no free tier
-covers it. Vercel has the same serverless/no-Dockerfile mismatch as Netlify.
+Alternatives tried or considered, and why they don't fit (checked
+2026-08-06): **Koyeb** is architecturally the right shape (Docker-native,
+same model as Render) but was acquired by Mistral AI in Feb 2026 and is
+mid-transition into "Mistral Compute" - the self-serve dashboard currently
+shows a "stay tuned for a revamped experience" banner instead of a normal
+create-service flow. Not worth trusting against a graded deadline; worth
+revisiting later if the transition settles. **Vercel** ("FastAPI preset")
+is serverless functions, not a persistent container - ignores the repo's
+`Dockerfile` entirely, so neither the frontend build nor the nodes-cache
+build step would run, and the app's single in-memory `state` dict has no
+equivalent in a cold-start-per-invocation model. **GitHub Pages** is static
+files only, by design - cannot execute Python at all, a hard wall not a
+preference. **Netlify** has the same serverless/no-Dockerfile mismatch as
+Vercel. **Cloudflare**'s Containers product (the piece that would actually
+fit) requires the $5/month Workers Paid plan - no free tier covers it.
 Earlier-ruled-out platforms unchanged: Railway's free tier is gutted to
 ~$1/month credit, Fly.io has no free tier and requires a card, Hugging Face
 Spaces' Docker SDK is paid-only, Google Cloud Run needs a card and more GCP
 setup than this project warrants, Back4App's 256MB is too tight.
-
-Render is still a fallback worth knowing about: the OOM root cause is fixed
-(see the nodes-cache entry in `docs/decisions.md`, 2026-08-06) and it hasn't
-actually been retried with that fix - if Koyeb's cold starts or region
-latency ever become a problem, Render remains a one-click retry, not a dead
-end. Steps are below in case that's ever useful.
 
 ## Drop Ollama for the hosted deployment
 
@@ -46,24 +42,7 @@ if Groq is unreachable. So the hosted version only needs `docker-compose.yml`'s
 `ollama` service deployed - just the `app` service, built from the root
 `Dockerfile`, with `GROQ_API_KEY` set as an environment variable.
 
-## Deploy steps (Koyeb)
-
-1. Push this repo to GitHub if it isn't already.
-2. On Koyeb: create a Service -> GitHub deployment method -> select the repo
-   and branch (`main`).
-3. Builder: choose **Dockerfile** (not a buildpack) - Koyeb auto-detects it
-   at the repo root, same as Render.
-4. Health check path: `/api/health` (same endpoint used for Render and for
-   the local `docker-compose` healthcheck).
-5. Environment Variables: add `GROQ_API_KEY` with the real key. Never commit
-   `.env` to the repo - this is exactly why the key lives in the platform's
-   dashboard instead.
-6. Port: leave it to Koyeb's default/`PORT` injection - no manual override
-   needed, the `Dockerfile`'s `CMD` already reads `${PORT:-8000}`.
-7. Deploy. First build takes a few minutes (npm install + vite build + pip
-   install, per the Dockerfile's layer order).
-
-## Deploy steps (Render, fallback)
+## Deploy steps (Render)
 
 1. Push this repo to GitHub if it isn't already.
 2. On Render: New -> Web Service -> connect the GitHub repo.
@@ -71,7 +50,11 @@ if Groq is unreachable. So the hosted version only needs `docker-compose.yml`'s
 4. Health Check Path: `/api/health`.
 5. Environment Variables: add `GROQ_API_KEY`.
 6. Leave the port field alone - Render injects its own `PORT`.
-7. Deploy.
+7. If the service already exists from an earlier failed attempt, use
+   **Manual Deploy -> Clear build cache & deploy**, not a plain retry - a
+   plain retry can reuse cached layers from the old, OOM-ing build.
+8. Deploy. First build takes a few minutes (npm install + vite build + pip
+   install + the nodes-cache build step, per the Dockerfile's layer order).
 
 ## Known gap
 

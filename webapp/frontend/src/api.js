@@ -10,11 +10,11 @@ export async function getLlmConfig() {
   return res.json();
 }
 
-export async function askQuestion(question, llm) {
+export async function askQuestion(question, llm, previousNodeId) {
   const res = await fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, llm }),
+    body: JSON.stringify({ question, llm, previous_node_id: previousNodeId ?? null }),
   });
   return res.json();
 }

@@ -1,3 +1,4 @@
+import re
 
 from modeling.graph import responsible_roles
 from knowledge.search import resolve_query
@@ -10,6 +11,34 @@ from agent.glossary import (
 )
 
 MIN_TEXT_SEARCH_SCORE = 0.15
+
+# Deterministic follow-up detection, same principle as
+# knowledge/typo_correct.py - query understanding stays out of the
+# LLM's hands entirely (see docs/decisions.md). Real bug this fixes:
+# a chat follow-up like "who are the informed parties for THAT
+# ACTIVITY?" names no real subject of its own, so resolve_query has
+# zero legitimate signal about which node it means - it was landing
+# on coincidentally-overlapping, unrelated nodes instead (e.g. 2.118
+# "Communication with Co-Financiers of projects" vs the entirely
+# different 3.226 "Communication with Co-Financiers of projects and
+# third parties" - the follow-up's stray word "parties" just happened
+# to overlap with 3.226's title, not 2.118's, at a comfortably
+# "confident" score). See the 2026-08-06 entry in docs/decisions.md.
+_REFERENCE_TRIGGERS = (
+    "that activity", "this activity", "that task", "this task",
+    "that process", "this process", "that one", "this one",
+    "the same activity", "the same task", "for that", "for this",
+    "about that", "about this", "on that", "on this",
+)
+_STANDALONE_PRONOUN = re.compile(r"\bit\b", re.IGNORECASE)
+_HAS_DIGIT = re.compile(r"\d")
+
+
+def _refers_to_previous_context(query):
+    lowered = query.lower()
+    if any(trigger in lowered for trigger in _REFERENCE_TRIGGERS):
+        return True
+    return bool(_STANDALONE_PRONOUN.search(lowered))
 
 
 def _empty_result(answer, method, score=None):
@@ -203,7 +232,7 @@ def _format_full_answer(node, roles, nodes, graph):
     return "\n".join(lines)
 
 
-def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids):
+def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, previous_node_id=None):
     """
     Returns {"answer": str, "node_id": str|None, "method": str|None,
     "score": float|None, "roles": list|None, "node_title": str|None,
@@ -213,6 +242,15 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids):
     facts "answer" was built from) so a caller can show that evidence
     directly, or hand "roles" to something else (e.g. an LLM phrasing
     layer) as verified ground truth instead of re-deriving it.
+
+    `previous_node_id`: the node_id this same conversation last
+    resolved to, if any (the caller - webapp/backend.py - gets this
+    from the frontend, which tracks it per chat thread). Used only as
+    a fallback anchor for pronoun-style follow-ups (see
+    _refers_to_previous_context) - an explicit id or a real text match
+    in `query` itself always takes priority, since resolve_query is
+    still tried first for anything that looks like it names its own
+    subject.
     """
 
     smalltalk_reply = detect_smalltalk(query)
@@ -225,31 +263,47 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids):
         method = "glossary" if glossary_detection["found"] else "glossary_not_found"
         return _empty_result(answer, method)
 
-    resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
+    node_id = None
+    method = None
+    score = None
 
-    if resolution["method"] == "invalid_id":
-        answer = _format_invalid_id_answer(resolution["invalid_id"], resolution["suggestions"])
-        return _empty_result(answer, "invalid_id")
+    if (
+        previous_node_id
+        and previous_node_id in nodes
+        and not _HAS_DIGIT.search(query)
+        and _refers_to_previous_context(query)
+    ):
+        node_id = previous_node_id
+        method = "context_carryover"
+    else:
+        resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
 
-    if not resolution["matches"]:
-        return _empty_result(
-            "I couldn't find a task in the DAM matching that question.",
-            resolution["method"],
-        )
+        if resolution["method"] == "invalid_id":
+            answer = _format_invalid_id_answer(resolution["invalid_id"], resolution["suggestions"])
+            return _empty_result(answer, "invalid_id")
 
-    top = resolution["matches"][0]
+        if not resolution["matches"]:
+            return _empty_result(
+                "I couldn't find a task in the DAM matching that question.",
+                resolution["method"],
+            )
 
-    if resolution["method"] == "text_search" and top["score"] < MIN_TEXT_SEARCH_SCORE:
-        suggestions = ", ".join(
-            f"{m['id']} ({nodes[m['id']].title!r})" for m in resolution["matches"][:3]
-        )
-        return _empty_result(
-            f"I'm not confident which task that refers to. Closest matches: {suggestions}.",
-            resolution["method"],
-            score=top["score"],
-        )
+        top = resolution["matches"][0]
 
-    node_id = top["id"]
+        if resolution["method"] == "text_search" and top["score"] < MIN_TEXT_SEARCH_SCORE:
+            suggestions = ", ".join(
+                f"{m['id']} ({nodes[m['id']].title!r})" for m in resolution["matches"][:3]
+            )
+            return _empty_result(
+                f"I'm not confident which task that refers to. Closest matches: {suggestions}.",
+                resolution["method"],
+                score=top["score"],
+            )
+
+        node_id = top["id"]
+        method = resolution["method"]
+        score = top["score"]
+
     node = nodes[node_id]
     roles = responsible_roles(graph, node_id)
 
@@ -266,8 +320,8 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids):
     return {
         "answer": answer,
         "node_id": node_id,
-        "method": resolution["method"],
-        "score": top["score"],
+        "method": method,
+        "score": score,
         "roles": facts,
         "node_title": node.title,
         "node_type": node.node_type,

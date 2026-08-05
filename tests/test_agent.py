@@ -217,6 +217,61 @@ def test_genuinely_unrelated_query_is_still_honestly_unresolved(setup):
     assert result["node_id"] is None
 
 
+def test_pronoun_followup_carries_over_previous_node_not_a_lookalike_title(setup):
+    # The real bug Adem found live: 2.118 ("Communication with
+    # Co-Financiers of projects") and 3.226 ("Communication with
+    # Co-Financiers of projects and third parties") are two DIFFERENT
+    # nodes with near-identical titles. A first question correctly
+    # resolves 2.118 by title match; the natural chat follow-up "who
+    # are the informed parties for that activity?" names no subject of
+    # its own - its only real content word, "parties", happens to
+    # overlap with 3.226's title instead, and text search alone landed
+    # there at a comfortably "confident" 0.42 score. previous_node_id
+    # should override that and keep the conversation on 2.118.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves of Communication with Co-Financiers of projects",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+    )
+    assert first["node_id"] == "2.118"
+
+    followup = answer_question(
+        "who are the informed parties for that activity?",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id=first["node_id"],
+    )
+
+    assert followup["node_id"] == "2.118"
+    assert followup["method"] == "context_carryover"
+    assert followup["intent"] == "informed"
+
+
+def test_followup_with_its_own_explicit_id_ignores_previous_context(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who approves 3.111",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id="2.118",
+    )
+
+    assert result["node_id"] == "3.111"
+    assert result["method"] == "id"
+
+
+def test_pronoun_followup_with_no_previous_context_falls_through_normally(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who are the informed parties for that activity?",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id=None,
+    )
+
+    assert result["method"] != "context_carryover"
+
+
 def test_reference_entirely_out_of_document_scope_says_so_honestly(setup):
     # Adem's real screenshot: 2.312.2's row on the actual DAM page is
     # just "See DAM 16.100, 16.200, 16.300, and 16.400" spanning the

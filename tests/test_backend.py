@@ -32,6 +32,31 @@ def test_ask_by_id_and_by_title_agree(client):
     assert by_id.json()["answer"] == by_title.json()["answer"]
 
 
+def test_ask_pronoun_followup_uses_previous_node_id_from_request(client):
+    first = client.post(
+        "/api/ask",
+        json={"question": "who approves of Communication with Co-Financiers of projects"},
+    )
+    assert first.json()["node_id"] == "2.118"
+
+    followup = client.post(
+        "/api/ask",
+        json={
+            "question": "who are the informed parties for that activity?",
+            "previous_node_id": first.json()["node_id"],
+        },
+    )
+    body = followup.json()
+    assert body["node_id"] == "2.118"
+    assert body["method"] == "context_carryover"
+
+
+def test_ask_without_previous_node_id_defaults_to_normal_resolution(client):
+    res = client.post("/api/ask", json={"question": "who approves 3.111"})
+    assert res.status_code == 200
+    assert res.json()["node_id"] == "3.111"
+
+
 def test_ask_invalid_code_is_honest(client):
     res = client.post("/api/ask", json={"question": "what happens with 9.999.999"})
     assert res.status_code == 200

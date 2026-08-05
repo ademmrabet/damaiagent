@@ -58,6 +58,13 @@ def load_dam():
 class Question(BaseModel):
     question: str
     llm: Optional[str] = None
+    # The node_id this same chat thread last resolved to, if any - the
+    # frontend tracks this per conversation (see Chat.jsx) and sends it
+    # back so pronoun-style follow-ups ("who are the informed parties
+    # for THAT ACTIVITY?") have a real anchor instead of resolve_query
+    # guessing off incidental word overlap. See agent/qa.py's
+    # answer_question docstring and docs/decisions.md, 2026-08-06.
+    previous_node_id: Optional[str] = None
 
 
 @app.post("/api/ask")
@@ -69,6 +76,7 @@ def ask(payload: Question):
         state["vectorizer"],
         state["matrix"],
         state["searchable_ids"],
+        previous_node_id=payload.previous_node_id,
     )
     deterministic_answer = result["answer"]
 
