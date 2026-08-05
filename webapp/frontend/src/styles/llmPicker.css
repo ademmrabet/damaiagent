@@ -1,0 +1,75 @@
+.llm-picker {
+  position: relative;
+}
+
+.llm-picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.llm-picker-toggle:hover {
+  border-color: var(--green);
+}
+
+.llm-picker-caret {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+.llm-picker-menu {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  min-width: 230px;
+  z-index: 20;
+}
+
+.llm-picker-menu[hidden] {
+  display: none;
+}
+
+.llm-picker-option {
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  transition: background-color 0.1s ease;
+}
+
+.llm-picker-option:hover {
+  background: var(--gray-bg);
+}
+
+.llm-picker-option.selected {
+  background: var(--green-soft);
+}
+
+.llm-picker-option .option-model {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.llm-picker-option .option-sub {
+  color: var(--text-faint);
+  font-size: 11px;
+}

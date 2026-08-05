@@ -72,6 +72,30 @@ def test_3226_title_not_stolen_by_3225():
     assert extract_title(raw, "3.226") == case["expected_title"]
 
 
+@pytest.mark.parametrize("task_id", ["1.115.1", "1.115.2", "1.117.1", "1.117.2"])
+def test_see_id_references_extracted_from_real_pages(task_id):
+    case = CASES[task_id]
+    blocks = _blocks_by_id(case["page_index"])
+    raw = blocks[task_id]
+
+    assert extract_title(raw, task_id) == case["expected_title"]
+    assert extract_references(raw) == case["expected_references"]
+
+
+@pytest.mark.parametrize("task_id", ["1.114.1", "1.114.2"])
+def test_hyphen_suffixed_digit_survives_title_extraction(task_id):
+    # Real regression: "3-Year Rolling Business Plan" was coming out
+    # as "-Year Rolling Business Plan" - the digit before a hyphen was
+    # being stripped as if it were a footnote number.
+    case = CASES[task_id]
+    blocks = _blocks_by_id(case["page_index"])
+    raw = blocks[task_id]
+
+    title = extract_title(raw, task_id)
+    assert title == case["expected_title"]
+    assert "3-Year" in title
+
+
 def test_threshold_variant_ids_reconstructed():
     blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
 
@@ -80,7 +104,6 @@ def test_threshold_variant_ids_reconstructed():
         assert get_parent_task_id(variant_id) == THRESHOLD_VARIANT_PARENT
         assert get_node_type(variant_id) == "threshold_variant"
 
-    # and the parent itself should still parse as an ordinary child_task
     assert THRESHOLD_VARIANT_PARENT in blocks
     assert get_node_type(THRESHOLD_VARIANT_PARENT) == "child_task"
 

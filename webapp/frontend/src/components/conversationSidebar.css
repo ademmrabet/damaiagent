@@ -1,0 +1,98 @@
+.conversation-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--gray-bg);
+  border-right: 1px solid var(--gray-border);
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--white);
+  border: 1px solid var(--green);
+  color: var(--green-dark);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.new-chat-btn:hover {
+  background: var(--green);
+  color: var(--white);
+}
+
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+.conversation-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text);
+  transition: background-color 0.12s ease;
+}
+
+.conversation-item:hover {
+  background: var(--gray-border);
+}
+
+.conversation-item.active {
+  background: var(--green-soft);
+  border-left: 3px solid var(--green);
+  padding-left: 7px;
+}
+
+.conversation-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversation-delete {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease, color 0.12s ease, background-color 0.12s ease;
+}
+
+.conversation-item:hover .conversation-delete {
+  opacity: 1;
+}
+
+.conversation-delete:hover {
+  color: var(--red);
+  background: rgba(200, 8, 21, 0.08);
+}
+
+@media (max-width: 720px) {
+  .conversation-sidebar {
+    width: 100%;
+    max-width: 220px;
+  }
+}

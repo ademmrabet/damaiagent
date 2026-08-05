@@ -1,20 +1,3 @@
-# Pulls title / actions / footnote references / cross-references out
-# of a task's raw merged text.
-#
-# v1 had a real bug here, found by testing against real pages (2.312.2):
-# extract_title() and extract_note_references() each tried to strip
-# "See DAM 16.100, 16.200..." cross-reference text independently, and
-# only ONE of the two paths actually did it. The other (the one title
-# went through) just ran NOTE_PATTERN (a bare 1-3 digit matcher) over
-# the raw text, which doesn't know "16.100" is a reference and instead
-# treats each digit group in it as footnote noise and deletes them -
-# producing titles like "See DAM ., ., ., and . technical cooperation".
-#
-# Fix: reference-stripping happens in exactly ONE place
-# (`remove_references`), and every other function that needs
-# reference-free text calls it first. One source of truth instead of
-# two paths that can silently disagree - same lesson as the
-# authority_rules.py / authority_codes.json duplication in v1.
 
 import re
 
@@ -26,30 +9,28 @@ ACTION_PATTERN = re.compile(
     r"|\b[CRA]\d*\b"
 )
 
-# v2 bug, found via the threshold_variant test on 2.513.3.a ("Up to
-# UA 2,000,000"): a bare \b\d{1,3}\b footnote-number matcher also
-# matches the digit groups inside a comma-formatted amount - "2" and
-# each "000" in "2,000,000" - and strips them, corrupting the title
-# into "Up to UA ,,". Real footnote-reference digits in this DAM are
-# always comma-free (surrounded by spaces or attached to an action
-# letter, e.g. "5 I6" or "2 2"), so excluding any digit group directly
-# touching a comma is a safe, evidence-based fix - not a guess.
-NOTE_PATTERN = re.compile(r"(?<!,)\b\d{1,3}\b(?!,)")
+NOTE_PATTERN = re.compile(r"(?<![,-])\b\d{1,3}\b(?![,-])")
 
 REFERENCE_PATTERN = re.compile(
     r"See\s+DAM\s+([\d.,\sand]+)",
     re.IGNORECASE
 )
 
-# Second reference style, found in chapter 3 (task 3.225): a task
-# whose entire row is a redirect, e.g. "Refer to Activities 2.114 -
-# 2.117 in Section 2." - a RANGE, not a comma list, and it needs
-# expanding (2.114..2.117), not just capturing the two endpoints.
 RANGE_REFERENCE_PATTERN = re.compile(
     r"Refer\s+to\s+Activit(?:y|ies)\s+"
     r"(\d+(?:\.\d+)+)"
     r"(?:\s*[-–]\s*(\d+(?:\.\d+)+))?"
     r"\s+in\s+Section\s+\d+\.?",
+    re.IGNORECASE
+)
+
+SEE_ID_COLON_PATTERN = re.compile(
+    r"\bSee\s+(\d+(?:\.\d+)+)\s*:",
+    re.IGNORECASE
+)
+
+SEE_ID_SLASH_PATTERN = re.compile(
+    r"\(\s*See\s+(\d+(?:\.\d+)+)\s*/\s*(\d+(?:\.\d+)+)\s*\)",
     re.IGNORECASE
 )
 
@@ -63,8 +44,6 @@ def _expand_id_range(start_id, end_id):
     end_parts = end_id.split(".")
 
     if start_parts[:-1] != end_parts[:-1]:
-        # Different prefixes (e.g. different chapter) - can't safely
-        # assume a numeric range makes sense, just keep both ends.
         return [start_id, end_id]
 
     try:
@@ -100,6 +79,14 @@ def extract_references(text):
 
     'Communication to Government Refer to Activities 2.114 - 2.117 in
     Section 2.' -> ['2.114', '2.115', '2.116', '2.117']
+
+    'CSP / RISP Dialogue Mission (during CSP / See 2.120: Organization
+    of mission RISP preparation)' -> ['2.120'] (the "See <id>:" form -
+    a redirect to a whole process rather than a specific activity)
+
+    'Interim CSP/RISP... (See 1.114.1 / 1.114.2)' -> ['1.114.1',
+    '1.114.2'] (the parenthetical "See <id> / <id>" form, pointing to
+    two alternative activities rather than a range)
     """
 
     if not text:
@@ -121,20 +108,35 @@ def extract_references(text):
             if ref_id not in references:
                 references.append(ref_id)
 
+    for match in SEE_ID_COLON_PATTERN.finditer(text):
+        ref_id = match.group(1)
+        if ref_id not in references:
+            references.append(ref_id)
+
+    for match in SEE_ID_SLASH_PATTERN.finditer(text):
+        for ref_id in match.groups():
+            if ref_id not in references:
+                references.append(ref_id)
+
     return references
 
 
 def remove_references(text):
-    """The one place reference phrases get stripped - both 'See DAM
-    ...' and 'Refer to Activities ... in Section ...'. Everything
-    downstream (title, note-hunting) calls this first, so a reference
-    phrase can never be mistaken for footnote-number noise."""
+    """The one place reference phrases get stripped - 'See DAM ...',
+    'Refer to Activities ... in Section ...', 'See <id>:', and
+    '(See <id> / <id>)'. Everything downstream (title, note-hunting)
+    calls this first, so a reference phrase can never be mistaken for
+    footnote-number noise - the exact corruption these last two
+    patterns were added to fix (their ids were being silently eaten,
+    digit by digit, by the footnote-digit stripper instead)."""
 
     if not text:
         return ""
 
     text = REFERENCE_PATTERN.sub("", text)
     text = RANGE_REFERENCE_PATTERN.sub("", text)
+    text = SEE_ID_SLASH_PATTERN.sub("", text)
+    text = SEE_ID_COLON_PATTERN.sub("", text)
 
     return text
 
@@ -154,9 +156,6 @@ def extract_actions(text):
             clean_actions.append(action)
 
         elif len(action) >= 2 and action[0] in {"I", "C", "R", "A"}:
-            # OCR fused an action letter to a stray footnote digit
-            # (e.g. "C4" meant to be "C" + footnote "4") - keep the
-            # letter, the digit gets picked up separately as a note.
             clean_actions.append(action[0])
 
     return clean_actions
@@ -175,7 +174,7 @@ def extract_note_references(text, identifier=None):
 
     text = clean(text)
     text = strip_identifier(text, identifier)
-    text = remove_references(text)  # <- fixed: was missing on the title path, present here
+    text = remove_references(text)
 
     notes = NOTE_PATTERN.findall(text)
 
@@ -207,6 +206,13 @@ def remove_note_references(text):
     return NOTE_PATTERN.sub("", text)
 
 
+WORD_BOUNDARY_CORRUPTION_PATTERN = re.compile(r"[a-z][A-Z]")
+
+
+def looks_word_boundary_corrupted(text):
+    return bool(text) and bool(WORD_BOUNDARY_CORRUPTION_PATTERN.search(text))
+
+
 def extract_title(text, identifier=None):
     if not text:
         return ""
@@ -214,7 +220,7 @@ def extract_title(text, identifier=None):
     text = clean(text)
     text = re.sub(r"\bI(\d+)\b", "I", text)
     text = strip_identifier(text, identifier)
-    text = remove_references(text)     # <- fixed: this line didn't exist in v1's title path
+    text = remove_references(text)
     text = remove_actions(text)
     text = remove_note_references(text)
     text = " ".join(text.split())

@@ -1,14 +1,6 @@
-# Turns a DAM identifier string into hierarchy facts, purely from the
-# numbering scheme - no PDF layout involved. This logic checked out
-# correct against real data in the schema review (chapter "X",
-# process "X.XX0", task "X.XXX", child "X.XXX.X") - ported unchanged.
 
 import re
 
-# Trailing (?:\.[a-z])? handles threshold_variant ids like "2.513.3.a"
-# - task_blocks.py constructs these itself (the PDF only ever prints
-# the bare "(a)", never the full id), so this only needs to round-trip
-# what task_blocks.py already built, not parse it from raw PDF text.
 ID_PATTERN = re.compile(r"^\d+(?:\.\d+)+(?:\.[a-z])?")
 
 
@@ -28,7 +20,6 @@ def get_identifier(line):
 
 
 def get_chapter(identifier):
-    # 2.221.1 -> '2'
     if not identifier:
         return None
 
@@ -88,11 +79,6 @@ def get_process_id(identifier):
 
 
 def get_parent_task_id(identifier):
-    # 2.221.1 -> 2.221 ; 2.112 -> None (tasks have no parent_task_id,
-    # only child_tasks do - their "parent" is the process, tracked
-    # via process_id, not parent_task_id)
-    # 2.513.3.a -> 2.513.3 (a threshold_variant's parent is the
-    # child_task it's a condition of)
     if not identifier:
         return None
 
@@ -108,13 +94,59 @@ def get_parent_task_id(identifier):
 
 
 def get_children(task_id, all_ids):
+    """
+    Direct children only, derived from each candidate's OWN parent
+    pointer - not string-prefix guessing.
 
-    prefix = task_id + "."
+    Real bug found testing modeling/build_nodes.py against the full
+    document once threshold_variant ids were in the mix: prefix
+    matching ("does this id start with task_id + '.'") is only
+    actually true for child_task->threshold_variant and
+    task->child_task, because those ids are literally longer strings
+    built from their parent's id. It's FALSE for process->task
+    ("2.513" does not start with "2.510." - task ids aren't string
+    extensions of their process id, they're grouped into it by
+    get_process_id()'s round-down-to-10 math) and for chapter->process
+    (a chapter's "children" under prefix matching becomes every
+    descendant at every depth flattened together, not just its
+    processes). Silently wrong in two of four cases, not caught until
+    threshold_variant ids made a task's grandchildren start colliding
+    with its direct children under the same prefix.
 
-    children = [
-        identifier for identifier in all_ids
-        if identifier.startswith(prefix)
-    ]
+    Fix: ask each candidate id what ITS parent actually is (the same
+    get_process_id/get_parent_task_id/get_chapter functions already
+    used to populate the node's own fields) and keep only the ones
+    that point back at task_id. Same information, just read in the
+    correct direction instead of guessed from string shape.
+    """
+
+
+    node_type = "chapter" if "." not in task_id else get_node_type(task_id)
+    children = []
+
+    for identifier in all_ids:
+
+        if identifier == task_id:
+            continue
+
+        candidate_type = get_node_type(identifier)
+
+        if node_type == "chapter":
+            if candidate_type == "process" and get_chapter(identifier) == task_id:
+                children.append(identifier)
+
+        elif node_type == "process":
+            if candidate_type == "task" and get_process_id(identifier) == task_id:
+                children.append(identifier)
+
+        elif node_type == "task":
+            if candidate_type == "child_task" and get_parent_task_id(identifier) == task_id:
+                children.append(identifier)
+
+        elif node_type == "child_task":
+            if candidate_type == "threshold_variant" and get_parent_task_id(identifier) == task_id:
+                children.append(identifier)
+
 
     return sorted(children)
 

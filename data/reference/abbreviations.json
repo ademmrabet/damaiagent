@@ -1,0 +1,682 @@
+[
+  {
+    "term": "ADB",
+    "definition": "African Development Bank (non-concessional financing window)"
+  },
+  {
+    "term": "ADF",
+    "definition": "African Development Fund (also, the concessional financing window)"
+  },
+  {
+    "term": "ADF Charter",
+    "definition": "The Agreement Establishing the African Development Fund (signed 1972; current edition published in 2010)"
+  },
+  {
+    "term": "ADOA",
+    "definition": "Additionality and Development Outcomes Assessment"
+  },
+  {
+    "term": "AfDB / Bank",
+    "definition": "The African Development Bank"
+  },
+  {
+    "term": "AfDB Charter",
+    "definition": "The Agreement Establishing the African Development Bank (signed 1964; current edition published in 2010)"
+  },
+  {
+    "term": "AfDB Group",
+    "definition": "The African Development Bank Group"
+  },
+  {
+    "term": "AHAI",
+    "definition": "Agriculture & Agro-Industry"
+  },
+  {
+    "term": "AHFR",
+    "definition": "Agricultural Finance & Rural Development"
+  },
+  {
+    "term": "AHGC",
+    "definition": "Gender, Women & Civil Society"
+  },
+  {
+    "term": "AHHD",
+    "definition": "Human Capital, Youth & Skills Development"
+  },
+  {
+    "term": "AHVP",
+    "definition": "Vice-Presidency, Agriculture, Human and Social Development"
+  },
+  {
+    "term": "AHWS",
+    "definition": "Water & Sanitation"
+  },
+  {
+    "term": "ALCO",
+    "definition": "Assets and Liabilities Management Committee"
+  },
+  {
+    "term": "AMBD",
+    "definition": "Committee on Administrative Matters Concerning the Board of Directors"
+  },
+  {
+    "term": "APPR",
+    "definition": "Annual Portfolio Performance Review"
+  },
+  {
+    "term": "AUFI",
+    "definition": "Audit and Finance Committee"
+  },
+  {
+    "term": "Bank Group",
+    "definition": "The African Development Bank, The African Development Fund, The Nigeria Trust Fund and other Special Funds"
+  },
+  {
+    "term": "BCP",
+    "definition": "Business Continuity Plan"
+  },
+  {
+    "term": "BCRM",
+    "definition": "Compliance Review and Mediation (Also see ICRM)"
+  },
+  {
+    "term": "BDEV",
+    "definition": "Independent Development Evaluation Department (Also see IDEV)"
+  },
+  {
+    "term": "BDIR",
+    "definition": "Board of Directors"
+  },
+  {
+    "term": "BGOV",
+    "definition": "Board of Governors"
+  },
+  {
+    "term": "BIA",
+    "definition": "Business Impact Analysis"
+  },
+  {
+    "term": "BTOR",
+    "definition": "Back-to-Office Report"
+  },
+  {
+    "term": "CAHR",
+    "definition": "Committee on Administrative Affairs and Human Resources Policy Issues"
+  },
+  {
+    "term": "CM",
+    "definition": "Country Manager"
+  },
+  {
+    "term": "CO",
+    "definition": "Country Office"
+  },
+  {
+    "term": "CODE",
+    "definition": "Committee on Development Effectiveness"
+  },
+  {
+    "term": "Concerned VP / Manager",
+    "definition": "The Vice-President / Manager under whom a specific activity or responsibility falls."
+  },
+  {
+    "term": "CP",
+    "definition": "Condition Precedent"
+  },
+  {
+    "term": "CPO",
+    "definition": "Country Programme Officer"
+  },
+  {
+    "term": "CPPR",
+    "definition": "Country Programme Performance Report"
+  },
+  {
+    "term": "CRC",
+    "definition": "Credit Risk Committee"
+  },
+  {
+    "term": "CSP",
+    "definition": "Country Strategy Paper"
+  },
+  {
+    "term": "CWHOLE",
+    "definition": "Committee for the Whole on the Budget"
+  },
+  {
+    "term": "DAM",
+    "definition": "Delegation of Authority Matrix"
+  },
+  {
+    "term": "DDG",
+    "definition": "Deputy Director-General"
+  },
+  {
+    "term": "DG",
+    "definition": "Director General; Chief Officer of a Regional Hub"
+  },
+  {
+    "term": "DMT",
+    "definition": "Department Management Team"
+  },
+  {
+    "term": "DOM",
+    "definition": "Disbursement Order Memorandum"
+  },
+  {
+    "term": "ECAD",
+    "definition": "African Development Institute"
+  },
+  {
+    "term": "ECAM",
+    "definition": "Communications and the Preparation of the Bank Group’s Annual Meetings"
+  },
+  {
+    "term": "ECBD",
+    "definition": "Ethics Committee (Committee for the Enforcement of the Code of Conduct for Executive Directors)"
+  },
+  {
+    "term": "ECC",
+    "definition": "Executive Crisis Committee"
+  },
+  {
+    "term": "ECCE",
+    "definition": "Country Economics Department"
+  },
+  {
+    "term": "ECGF",
+    "definition": "Governance & Public Financial Management Coordination Office"
+  },
+  {
+    "term": "ECMR",
+    "definition": "Macroeconomic Policy, Forecasting & Research Department"
+  },
+  {
+    "term": "ECNR",
+    "definition": "African Natural Resources Centre"
+  },
+  {
+    "term": "ECST",
+    "definition": "Statistics Department"
+  },
+  {
+    "term": "ECVP",
+    "definition": "Chief Economist & Vice-Presidency for Economic Governance and Knowledge Management"
+  },
+  {
+    "term": "EDCC",
+    "definition": "Equity Deal flow Clearance Committee"
+  },
+  {
+    "term": "EMT",
+    "definition": "Emergency Management Team"
+  },
+  {
+    "term": "EOI",
+    "definition": "Expression of Interest"
+  },
+  {
+    "term": "ESCON",
+    "definition": "Environmental and Social Compliance Note"
+  },
+  {
+    "term": "ESW",
+    "definition": "Economic and Sector Work"
+  },
+  {
+    "term": "EVC",
+    "definition": "Equity Valuation Committee"
+  },
+  {
+    "term": "FIFC",
+    "definition": "Financial Control Department"
+  },
+  {
+    "term": "FIFM",
+    "definition": "Financial Management Department"
+  },
+  {
+    "term": "FIRM",
+    "definition": "Resource Mobilisation & Partnerships Department"
+  },
+  {
+    "term": "FISR",
+    "definition": "Staff Retirement Plan Unit"
+  },
+  {
+    "term": "FIST",
+    "definition": "Syndication and Client Solutions Unit"
+  },
+  {
+    "term": "FITR",
+    "definition": "Treasury Department"
+  },
+  {
+    "term": "FIVP",
+    "definition": "Vice-Presidency, Finance"
+  },
+  {
+    "term": "FO",
+    "definition": "Front Office"
+  },
+  {
+    "term": "FPWG",
+    "definition": "Financial Products Working Group. (This is a working group of ALCO)"
+  },
+  {
+    "term": "Fund",
+    "definition": "The African Development Fund"
+  },
+  {
+    "term": "GCC",
+    "definition": "Governors’ Consultative Committee"
+  },
+  {
+    "term": "GDRC",
+    "definition": "Guidance Documents Review Committee"
+  },
+  {
+    "term": "HQ",
+    "definition": "AfDB Headquarters (Abidjan, Côte d’Ivoire)"
+  },
+  {
+    "term": "ICRM",
+    "definition": "Independent Compliance Review and Mediation (Also see BCRM)"
+  },
+  {
+    "term": "IDEV",
+    "definition": "Independent Development Evaluation Department (Also see BDEV)"
+  },
+  {
+    "term": "IOP",
+    "definition": "Indicative Operations Program"
+  },
+  {
+    "term": "JCAS",
+    "definition": "Joint Country Assistance Strategy"
+  },
+  {
+    "term": "KMC",
+    "definition": "Knowledge Management Committee"
+  },
+  {
+    "term": "LOTB",
+    "definition": "Lapse of Time Basis"
+  },
+  {
+    "term": "NSO",
+    "definition": "Non-Sovereign Operations"
+  },
+  {
+    "term": "NTF",
+    "definition": "The Nigeria Trust Fund"
+  },
+  {
+    "term": "NTF Charter",
+    "definition": "The Agreement Establishing the Nigeria Trust Fund (signed in 1976; current edition published in 2010)"
+  },
+  {
+    "term": "OCC",
+    "definition": "Operational Crisis Committee"
+  },
+  {
+    "term": "OPsCOM",
+    "definition": "Operations Committee"
+  },
+  {
+    "term": "PAGL",
+    "definition": "Office of the Auditor-General"
+  },
+  {
+    "term": "PAR",
+    "definition": "Project Appraisal Report"
+  },
+  {
+    "term": "PAS",
+    "definition": "Procurement Accredited Staff"
+  },
+  {
+    "term": "PAT",
+    "definition": "Project Appraisal Team (This terminology is used in the NSO Ecosystem.)"
+  },
+  {
+    "term": "PCER",
+    "definition": "Communication and External Relations"
+  },
+  {
+    "term": "PCN",
+    "definition": "Project Concept Note"
+  },
+  {
+    "term": "PCR",
+    "definition": "Project Completion Report"
+  },
+  {
+    "term": "PD",
+    "definition": "Presidential Directive"
+  },
+  {
+    "term": "PDT",
+    "definition": "Project Development Team (This terminology is used in Public Sector Operations.)"
+  },
+  {
+    "term": "PECG",
+    "definition": "Climate Change & Green Growth"
+  },
+  {
+    "term": "PEN",
+    "definition": "Preliminary Evaluation Note"
+  },
+  {
+    "term": "PENP",
+    "definition": "Energy Partnerships"
+  },
+  {
+    "term": "PERN",
+    "definition": "Renewable Energy & Energy Efficiency"
+  },
+  {
+    "term": "PESD",
+    "definition": "Power & Systems Development"
+  },
+  {
+    "term": "PESR",
+    "definition": "Energy Financial Solutions, Policy & Regulation"
+  },
+  {
+    "term": "PEVP",
+    "definition": "Vice-Presidency, Power, Energy, Climate and Green Growth"
+  },
+  {
+    "term": "PGCL",
+    "definition": "Office of the General Counsel and Legal Services"
+  },
+  {
+    "term": "PGRF",
+    "definition": "Group Risk Management Function"
+  },
+  {
+    "term": "PICU",
+    "definition": "Infrastructure, Cities and Urban Development"
+  },
+  {
+    "term": "PIFD",
+    "definition": "Financial Sector Development"
+  },
+  {
+    "term": "PIN",
+    "definition": "Portfolio Issue Note is related to Country Portfolio Performance Review (see PPPR Guidelines)"
+  },
+  {
+    "term": "PINS",
+    "definition": "NSO and Private Sector Support Department"
+  },
+  {
+    "term": "PITD",
+    "definition": "Industry & Trade Development"
+  },
+  {
+    "term": "PIU",
+    "definition": "Project or Program Implementation Unit"
+  },
+  {
+    "term": "PIVP",
+    "definition": "Vice-Presidency, Private Sector, Infrastructure and Industrialisation"
+  },
+  {
+    "term": "PPR",
+    "definition": "Post-Procurement Review"
+  },
+  {
+    "term": "PRC",
+    "definition": "Procurement Review Committee"
+  },
+  {
+    "term": "PRST",
+    "definition": "Office of The President of the Bank Group"
+  },
+  {
+    "term": "PRT",
+    "definition": "Prior Review Table"
+  },
+  {
+    "term": "PSB",
+    "definition": "Procurement Sector Board"
+  },
+  {
+    "term": "PSEC",
+    "definition": "Security"
+  },
+  {
+    "term": "PSEG",
+    "definition": "Office of the Secretary General & General Secretariat"
+  },
+  {
+    "term": "PSO",
+    "definition": "Public Sector Operation"
+  },
+  {
+    "term": "PSRC",
+    "definition": "Public Sector Operations Review Committee"
+  },
+  {
+    "term": "PTCE",
+    "definition": "Talent, Performance, and Staff Development Department"
+  },
+  {
+    "term": "PTCS",
+    "definition": "HR Operations, Recruitment, and Client Services Department"
+  },
+  {
+    "term": "PTCW",
+    "definition": "Staff Welfare Services, Compensation & Employment Policy"
+  },
+  {
+    "term": "PTCW.1",
+    "definition": "Compensation & Employment Policy Division"
+  },
+  {
+    "term": "PTCW.2",
+    "definition": "Medical Services & Staff Welfare Division"
+  },
+  {
+    "term": "PTF",
+    "definition": "Project Transfer Form"
+  },
+  {
+    "term": "PTSB",
+    "definition": "Staff Benefits Plan, Retirement & Medical Plan Administration Unit"
+  },
+  {
+    "term": "PTVP",
+    "definition": "People & Talent Management"
+  },
+  {
+    "term": "QA",
+    "definition": "Quality Assurance"
+  },
+  {
+    "term": "RD",
+    "definition": "Regional Directorate"
+  },
+  {
+    "term": "RDG",
+    "definition": "Regional Director-General. (Note: In the DAM, the acronym “RDG” also covers the Director of the Nigeria Country Office.)"
+  },
+  {
+    "term": "RDRI",
+    "definition": "Regional Integration Coordination Office"
+  },
+  {
+    "term": "RDVP",
+    "definition": "Vice-Presidency, Regional Development, Integration, and Business Delivery"
+  },
+  {
+    "term": "RISP",
+    "definition": "Regional Integration Strategy Paper"
+  },
+  {
+    "term": "RMC",
+    "definition": "Regional Member Country"
+  },
+  {
+    "term": "ROM",
+    "definition": "Regional Operations Manager"
+  },
+  {
+    "term": "RPC",
+    "definition": "Regional Procurement Coordinator"
+  },
+  {
+    "term": "RPO",
+    "definition": "Regional Program Officer"
+  },
+  {
+    "term": "RSM",
+    "definition": "Regional Sector Manager"
+  },
+  {
+    "term": "SMCC",
+    "definition": "Senior Management Coordination Committee"
+  },
+  {
+    "term": "SNBT",
+    "definition": "Business Transformation Department"
+  },
+  {
+    "term": "SNBT.1",
+    "definition": "Organization and Methods Division"
+  },
+  {
+    "term": "SNBT.2",
+    "definition": "Business Process Re-engineering Division"
+  },
+  {
+    "term": "SNDR",
+    "definition": "Development Impact & Results"
+  },
+  {
+    "term": "SNDR.1",
+    "definition": "Corporate Performance & Accountability Division"
+  },
+  {
+    "term": "SNDR.2",
+    "definition": "Implementation Delivery Division"
+  },
+  {
+    "term": "SNDR.3",
+    "definition": "Quality Assurance & Learning"
+  },
+  {
+    "term": "SNFI",
+    "definition": "Fiduciary & Inspection Department"
+  },
+  {
+    "term": "SNMO",
+    "definition": "Directorate of SNVP & Management Operations"
+  },
+  {
+    "term": "SNMO.0",
+    "definition": "SNVP Front Office"
+  },
+  {
+    "term": "SNMO.1",
+    "definition": "OPsCOM Secretariat"
+  },
+  {
+    "term": "SNMO.2",
+    "definition": "SMCC Secretariat"
+  },
+  {
+    "term": "SNOU",
+    "definition": "Special Operations Unit"
+  },
+  {
+    "term": "SNPB",
+    "definition": "Programming & Budget Department"
+  },
+  {
+    "term": "SNSC",
+    "definition": "Safeguard and Compliance Department"
+  },
+  {
+    "term": "SNSP",
+    "definition": "Strategy & Operational Policies Department"
+  },
+  {
+    "term": "SNVP",
+    "definition": "Senior Vice-Presidency"
+  },
+  {
+    "term": "SO",
+    "definition": "Sovereign Operations (also, Public Sector Operations)"
+  },
+  {
+    "term": "STS",
+    "definition": "Short Term Staff"
+  },
+  {
+    "term": "SVP",
+    "definition": "Senior Vice President"
+  },
+  {
+    "term": "TCBC",
+    "definition": "Business Continuity Unit"
+  },
+  {
+    "term": "TCCM",
+    "definition": "Consultants Management Unit"
+  },
+  {
+    "term": "TCCY",
+    "definition": "Cybersecurity Unit"
+  },
+  {
+    "term": "TCGS",
+    "definition": "General Services & Corporate Procurement Department"
+  },
+  {
+    "term": "TCIS",
+    "definition": "Corporate Information Technology Services Department"
+  },
+  {
+    "term": "TCLS",
+    "definition": "Language Services Department"
+  },
+  {
+    "term": "TCVP",
+    "definition": "Vice-Presidency, Technology and Corporate Services"
+  },
+  {
+    "term": "TIC",
+    "definition": "Technical and Investment Committee"
+  },
+  {
+    "term": "TM",
+    "definition": "Task Manager"
+  },
+  {
+    "term": "ToR",
+    "definition": "Terms of Reference"
+  },
+  {
+    "term": "TQAC",
+    "definition": "Technical and Quality Assurance Committee"
+  },
+  {
+    "term": "UA",
+    "definition": "Unit of Account"
+  },
+  {
+    "term": "USD",
+    "definition": "United States Dollars"
+  },
+  {
+    "term": "VP",
+    "definition": "Vice President"
+  },
+  {
+    "term": "XSR",
+    "definition": "Extended Supervision Report"
+  }
+]

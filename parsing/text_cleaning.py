@@ -1,15 +1,8 @@
-# Low-level OCR/spacing cleanup that runs before anything tries to
-# interpret text as a title, action, or reference. Not implicated in
-# any bug found - ported unchanged, except `fix_known_ocr_errors`
-# is flagged below as debt worth knowing about, not debt worth
-# fixing under a 9-day clock.
 
 import re
 
 
 def normalize_split_numbers(text):
-    # "1 6.100" -> "16.100" - pdfplumber sometimes reports digits of
-    # the same number as separate words with a gap between them.
     if not text:
         return ""
 
@@ -17,9 +10,6 @@ def normalize_split_numbers(text):
 
 
 def collapse_spaced_words(text):
-    # "R e c o m m e n d a t i o n s" -> "Recommendations", but never
-    # collapse runs of action-code letters (I/C/R/A) - "I C C R A" is
-    # four separate action columns, not the word "ICCRA".
     if not text:
         return ""
 
@@ -60,7 +50,6 @@ def fix_known_ocr_errors(text):
     text = text.replace("Region alPortfolio", "Regional Portfolio")
     text = text.replace("CPPR/ RPPR", "CPPR / RPPR")
 
-    # Split first letter: "R ecommendations" -> "Recommendations"
     text = re.sub(r"\b([A-Z])\s([a-z]{3,})", r"\1\2", text)
 
     return text

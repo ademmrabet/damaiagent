@@ -162,3 +162,1601 @@ alignment rule proven correct, anchor detection still has real,
 uncatalogued gaps." Needs either more real examples to diagnose
 against, or a conscious decision to ship with text-based counts as the
 trusted source and geometry as best-effort supplementary detail only.
+
+Decision with Adem: move on to role/column attribution, treat the
+text-based action count as the trusted source for the rest of the
+build (don't keep chasing the 14%).
+
+## 2026-07-21 - Column headers extracted (parsing/column_roles.py), role attribution built
+
+Confirmed via real characters: column headers are rotated 90 degrees
+(pdfplumber's upright=False). Reading order is DESCENDING top, not
+left-to-right - checked "Task" letter by letter, each next character
+has a smaller top. x0 is constant per column, same role x-clustering
+plays for rows on the y-axis.
+
+Two-line-wrapped headers ("Task Manager" / "Team Members" as adjacent
+vertical strips) needed a two-pass cluster: a tight pass (gap<=3pt)
+groups each physical text run in correct reading order FIRST, then a
+wider pass (gap<=14pt, calibrated against real gaps - wrapped lines
+~10-12pt apart, distinct columns ~19-27pt apart) concatenates runs in
+x0 order. Doing one wide pass without the tight pass first interleaves
+the two runs character-by-character (their y-ranges can overlap).
+
+Extracted headers for page 29 match the real table exactly (21
+columns, "Task Manager1 & Project Team Members2" through "BOARD OF
+DIRECTORS"). Combined with action_geometry's x0 per action + nearest-
+neighbor matching (max 20pt distance, no match = None rather than a
+guessed wrong role): 940 actions checked across all 79 pages, 929
+resolved to a role (98.8%) on pages where headers were found.
+
+43/79 pages had no rotated header text at all - checked each one:
+42 are legitimately non-table pages (glossary, notes, cover pages) -
+correct to have no headers. Exactly 1 (page 45) is a genuine multi-
+page table continuation - "2.434 Misprocurement: (a) Declaration of
+misprocurement..." starts the page directly, header was only printed
+on the previous page. Needs the eventual page-walking pipeline to
+carry forward the last successfully-found header set to any page that
+has none, rather than treating a missing header as page-specific -
+that's an integration detail for the orchestration/node-building
+stage, not a bug in column_roles.py itself.
+
+## 2026-07-28 - Nodes built end to end (modeling/build_nodes.py) - two real bugs found and fixed
+
+Single page-walk that builds task blocks, then enriches each one into
+a real `schema.Node`: title/references (parsing/metadata.py), actions
+with level/footnote geometry (parsing/action_geometry.py), and role
+attribution (parsing/column_roles.py, with the page-45 header
+carry-forward from the previous entry now actually wired in). Merged
+with the Pass-1 skeleton (modeling/hierarchy_skeleton.py) to add
+chapter and process nodes, which task_blocks.py never emits (chapter
+titles left blank - chasing chapter cover-page titles wasn't worth
+the time against the 9-day budget, flagged here rather than silently
+skipped). Full 79-page run: 327 nodes (3 chapter, 35 process, 138
+task, 102 child_task, 49 threshold_variant), 937 responsibilities
+extracted, only 11 (1.2%) with an unresolved role. 2 pre-existing
+empty titles unchanged (2.516, 2.522 - still not chased, same as the
+2026-07-21 entry).
+
+Two real bugs found by testing against the full document, not assumed
+away:
+
+1. **`get_children()` was silently wrong for two of four hierarchy
+   levels.** It matched children by string prefix ("does this id
+   start with task_id + '.'"), which only happens to be true for
+   child_task->threshold_variant and task->child_task, because those
+   ids are literally longer strings built from their parent's id.
+   It's false for process->task ("2.513" does not start with
+   "2.510." - tasks are grouped into a process by
+   get_process_id()'s round-down-to-10 math, not by string
+   containment) and for chapter->process (prefix matching returns
+   every descendant at every depth flattened together, not just the
+   chapter's own processes). This was invisible until
+   threshold_variant ids existed in the id set and a task's
+   grandchildren started colliding with its direct children under
+   the same prefix - caught by a consistency check (every node's
+   children must be the correct node_type, and every child's own
+   parent pointer must point back), not by inspection. Fixed by
+   deriving children from each candidate's own parent-pointer field
+   (process_id / parent_task_id / chapter), read in the correct
+   direction instead of guessed from string shape. Regression tests
+   in tests/test_build_nodes.py check every node's children against
+   its expected node_type and specifically pin process 2.510's
+   children (previously always []) and chapter 2's children
+   (previously a 211-item blob, now its 15 direct processes).
+
+2. **"(i)" informed-marker characters were never matched.**
+   `extract_informed_instances` scanned raw characters for a
+   consecutive "(", "i", ")" run, but the real PDF characters for
+   this marker are five separate characters - "(", " ", "i", " ",
+   ")" - the space between the parenthesis and the "i" is a genuine
+   PDF character, not just visual spacing. The 3-in-a-row scan
+   always missed because band[i+1] was a space, never "i". Confirmed
+   directly against 2.126's real characters (page 24) before fixing.
+   Fix: filter out whitespace-only characters before scanning. This
+   is the actual fix for the v1 gap noted throughout this project -
+   174/276 v1 nodes had "(i)" with no role ever attached to it -
+   2.126 now resolves both of its informed markers to real roles.
+
+Decision (my own, not yet run past Adem): both bugs fixed and
+covered by new tests rather than flagged and deferred, since both
+were cheap, well-understood fixes with a clear real-data repro, not
+open-ended geometry work like the still-deferred 14% action-geometry
+mismatch. Flagging here for him to review, per the "explain
+everything, don't silently change things" agreement - the
+`get_children()` fix in particular was surfaced as a decision point
+before being implemented.
+
+## 2026-07-28 - Five more real bugs found and fixed, chasing "is the header footnote the same pool as the action footnote"
+
+Adem asked a scoping question about the graph plan (role nodes need
+canonical role strings, and headers carry a trailing footnote digit -
+is that the same footnote numbering as action-level footnote_refs?).
+Answering it with real evidence, not a guess, opened a chain of five
+more real bugs - each found and fixed with the same discipline as
+before (real coordinates or a real screenshot before touching code),
+documented here in the order they were found.
+
+**1. Confirmed: same footnote pool.** Page 58 (NSO 3.110, printed
+page 46) - header "Regional NSO Lead2" and Notes item 2 ("Regional
+NSO Lead: PL-2 or PL-1 staff...") are the same footnote; header
+"Origination Sector Manager3" and Notes item 3 match the same way.
+One numbered list per table, referenced from both role headers and
+action cells.
+
+**2. ALIGNMENT_TOLERANCE was dropping real footnote digits at the
+boundary.** Task 3.111's "A3" digit has a top-diff of 1.50432pt from
+its letter - 0.004pt past the old `<= 1.5` cutoff - while its
+bottom-diff (4.02pt) was nowhere near level-aligned either, so it
+matched neither rule and got silently dropped. Checked document-wide
+before changing anything: 30/345 digit decorations were being
+dropped, 23 with this exact near-miss signature (top-diff 1.504,
+bottom-diff 4.024) and 7 genuinely unrelated (diffs of 10.4-21.2pt).
+Raised `ALIGNMENT_TOLERANCE` from 1.5 to 2.0 - re-checked against the
+two examples that originally calibrated 1.5 (diffs of 0.16 and 0.64)
+to confirm they're unaffected.
+
+**3. Real row-splitting bug, confirmed via screenshot.** Requested
+and got a screenshot of page 58's real table. It proved task 3.111's
+own "A3"/"A4" approval codes render on a row-bucket ABOVE 3.111's
+identifier row - a genuine PDF quirk where a wide table row's
+rightmost cells land ~1pt off from its leftmost cells, enough to
+round into a different bucket in `build_rows()`. This was systematic
+across the whole 3.110 table (3.112's I2/I3/I4/A5/A6 were landing on
+3.111, 3.113's I5/I6 were landing on 3.112 - a one-row cascade), not
+an isolated case.
+
+Tried a blanket fix first (merge any two row-buckets within 5pt that
+have zero overlapping word x-ranges) and rejected it after checking:
+1614 candidates document-wide, several unsafe - rotated header
+fragments, footnote list markers, and one case ("Directors:17"
+immediately before the next task's bare identifier "2.224") that
+would have spliced two different tasks together. Narrowed to a safe
+signal instead: only merge a row-bucket if it's ENTIRELY action-code
+content (no real standalone row can be just action codes with
+nothing else) - added `_merge_split_action_rows()` to
+`parsing/rows.py`, called from `build_rows()`.
+
+**4. Bug in my own new code, found testing #3.** The purity check
+used raw `ACTION_PATTERN.sub()`, which can't match "I2"/"I3"/"I4" -
+`ACTION_PATTERN`'s I-branch is `\bI\b`, and there's no word boundary
+between a letter and an immediately-following digit.
+`metadata.extract_actions()` already normalizes this
+(`\bI(\d+)\b -> I`) before matching; my check didn't, so it silently
+skipped merging rows that were genuinely pure action content. Applied
+the same normalization instead of inventing a second, disagreeing
+check for the same thing - exactly the single-source-of-truth lesson
+from earlier in this project, just self-inflicted this time.
+
+**5. Second instance of the comma-adjacency footnote bug, via
+hyphens.** Fixing #3 surfaced 3.111's real title for the first time -
+"Concerned Staff members below PL-2 level" was coming out as "...
+below PL- level". `NOTE_PATTERN`'s comma exclusion (see the
+2026-07-21 threshold_variant entry) doesn't cover hyphens - "PL-2"
+has a word boundary between "-" and "2", so the bare digit matched
+and got stripped as a false footnote number. Checked document-wide
+(6 affected blocks, 5 clean "PL-N" cases, one - 3.524 - with
+unrelated pre-existing garbling not touched here) before extending
+the exclusion to `(?<![,-])`.
+
+**6. One more bug, found writing the regression test for #3.**
+After the row-merge fix, 3.111/3.112/3.113's merged TEXT was correct,
+but their extracted ACTIONS vanished entirely. Root cause:
+`ordered_lines()` reported both "top" and "bottom" as the row-
+bucket's single key y, never the words' real min/max span - harmless
+before, since every word in an unmerged row was within ~1pt of that
+key anyway. After `_merge_split_action_rows()` can combine words up
+to 5pt apart into one bucket, that single point plus
+`action_geometry.py`'s +/-1pt search pad was too narrow to still
+reach the merged content - 3.111's genuinely-merged "A3"/"A4" text
+existed, but geometry extraction's search band didn't cover its real
+y-position. Fixed by having `ordered_lines()` report the row's actual
+`min(top)`/`max(bottom)` across its words instead of repeating the
+bucket key - correct for merged rows and a no-op for ordinary ones.
+
+Full re-test after all six: 19/19 existing tests pass, plus 5 new
+regression tests in `tests/test_row_merge.py` pinning the exact
+(action, level, footnote) values from the screenshot for 3.111/
+3.112/3.113 and the two "PL-2"/"PL-1" titles. Full 79-page rebuild:
+327 nodes (unchanged), 1772 responsibilities (up from 937 - the
+row-split fix recovers real actions that were previously dropped or
+misattributed across ~25 affected rows document-wide), 2.5%
+unresolved role.
+
+**Column-header duplicate bug, fixed (two separate root causes).**
+The 50 exact-duplicate responsibilities found above traced to
+`parsing/column_roles.py`, not today's earlier changes - and turned
+out to be two distinct bugs, not one, both only visible once headers
+were checked across the whole document rather than spot-checked on
+one page (29, as before).
+
+**Bug A - character interleaving.** On page index 43, two adjacent
+but genuinely DIFFERENT columns ("Regional Implementation Support
+Manager (RISM)" and "Country Manager / DDG") sit only ~2.04pt apart
+in x0 - closer than `TIGHT_CLUSTER_GAP` (3.0), so the tight-cluster
+pass merged their characters into one cluster. Since both are full
+header strings spanning the same y-range, sorting by top alone
+interleaved them letter-by-letter: "...Support Manager (CRoIuSntMr) y
+Manager / DDG". Tried detecting this via y-range overlap between
+adjacent characters first and rejected it - checked document-wide,
+838/841 clusters showed overlap (rotated character bounding boxes
+routinely overlap due to font metrics, nothing to do with
+interleaving), so it doesn't distinguish anything. Found a real
+signal instead: the corrupted cluster's characters split cleanly into
+two x0 values with zero internal variance and a real gap between them
+(bimodal), not smeared/continuous jitter like a genuine single run.
+Checked this detector document-wide before using it: it flags exactly
+the one real corrupted cluster and nothing else. Added
+`_split_if_interleaved()` to `parsing/column_roles.py`.
+
+**Bug B - false merge of different columns.** Fixing Bug A revealed
+the SAME two columns still merging into one header string
+("...Support Manager (RISM) Country Manager / DDG") - a second,
+separate problem: `COLUMN_MERGE_GAP`'s gap-only logic can't
+distinguish them, because the WRONG merge gap on this page (~2pt,
+between two different columns) is smaller than the RIGHT merge gap
+elsewhere on the same page (~9pt, between wrapped lines of one
+column). No threshold value can separate a 2pt "wrong" case from a
+9pt "right" case when the wrong one is smaller. Added a second,
+non-geometric signal: stop merging once the accumulated text already
+ends in a balanced closing paren (e.g. "...(RISM)"), regardless of
+gap. Checked this document-wide against the old gap-only merge before
+keeping it: changed only 4 pages out of 79 - the 3 with the known
+bug, plus one genuine additional find (page 26: four separate
+Director roles, "Director, Safeguards & Compliance (SNSC) Director,
+Resources Mobilisation & Partnerships (FIRM) Director, Syndications &
+Client Solutions (FIST) Manager – Programming (SNPB.1)", were merged
+into one blob and are now correctly split into four). No other page
+changed - not introducing new false splits elsewhere.
+
+**Result:** exact-duplicate responsibilities 50 -> 3 (all three on
+page 43, the page with the tightest column spacing in the document -
+a small, localized, understood residual, not chased further), 19/19
++ new tests pass, full 79-page rebuild still 327 nodes, unresolved
+role rate 3.2% -> 0.5%.
+
+## 2026-07-28 - Role-header footnote digit stripped (blocker for graph role-node identity)
+
+Before starting the knowledge graph, went back to the original
+scoping question that kicked off this whole chain: role headers carry
+a trailing footnote digit ("Regional NSO Lead2"), which fragments one
+real role into several different strings and would fragment the
+graph's role nodes the same way. Confirmed still present after all
+the fixes above (62/172 role strings ending in a digit) and fixed it
+in `parsing/column_roles.py` - three rounds, each caught by testing
+against real data before trusting it:
+
+1. First attempt checked `ordered_chars[-1]` directly and never fired
+   at all - the run's actual last character is almost always a
+   trailing space (a real positioned character, not just a join
+   artifact), not the digit. Fixed to find the last NON-space
+   character instead.
+2. Second attempt only stripped ONE trailing digit - multi-digit
+   footnote numbers ("Specialist14" -> footnote 14, "FIFC Officer 11"
+   -> footnote 11) only lost their last digit ("...14" -> "...1").
+   Fixed to walk back over every consecutive small trailing digit,
+   the same way action_geometry.py already concatenates multi-digit
+   footnote numbers.
+3. Found and excluded a real false-positive risk before it caused
+   damage: "Manager FIFC.4" / "Manager FITR.2" / "Manager PGCL.1" are
+   real department codes, not footnote references, but also end in a
+   digit. Excluded by checking the character immediately before the
+   digit run isn't a literal "." - every confirmed real footnote case
+   is preceded by a letter or closing paren, never a period. Also
+   found while checking this: the exact same code ("FIFC.4") renders
+   at NORMAL digit size on pages 33/48 but SHRUNK (footnote-style)
+   size on page 49 - a rendering inconsistency size alone can't
+   resolve, which is exactly why the period-check matters as an
+   independent second signal rather than relying on size alone.
+4. Also handled: a footnote digit can be an entire run by itself with
+   nothing else in it (e.g. a bare "1 " run split off on its own) -
+   confirmed document-wide that an isolated small-digit-only run is
+   always a stray footnote, safe to drop entirely.
+
+Result: 172 -> 132 distinct role strings, all remaining trailing-digit
+cases are the 5 legitimate department codes. Full re-test: all
+existing + 3 new tests pass. Full rebuild: 327 nodes (unchanged), 1772
+responsibilities, 0.5% unresolved, 3 duplicates (unchanged - the
+page-43 residual is unrelated to role-header footnotes).
+
+Test suite is getting slow (~60-90s total across files, several of
+which do their own full 79-page rebuild with no shared caching) -
+noted, not fixed now; would be worth a session-scoped fixture shared
+across test files if this keeps growing.
+
+## 2026-07-28 - Day 5-6: knowledge graph built (modeling/graph.py)
+
+Chose networkx (`MultiDiGraph`, not `DiGraph` - a role can have two
+separate responsibilities on the same task, e.g. checks AND later
+approves, which is two parallel edges between the same pair of nodes,
+not one edge with two labels) over continuing to query the flat
+`{id: Node}` dict directly. Reasoning: the two founding example
+questions from the very first project brief - "who approves task X"
+and "who needs to be informed for task X" - are the same shape of
+question (who's connected to X by a particular kind of edge, filtered
+by action), and a role like "Country Manager / DDG" is a real,
+recurring entity referenced from dozens of tasks - worth being a
+first-class node with its own identity rather than a string repeated
+across 168 different Responsibility lists.
+
+Schema: every schema.Node becomes a graph node (kept keyed by its own
+DAM id); one node per canonical role string, prefixed `role::` so a
+role name can never collide with a real DAM id; one shared
+`role::__unresolved__` node for responsibilities whose role never
+resolved to a header (kept visible rather than silently dropped, so a
+"who's responsible for X" query still surfaces that something
+couldn't be attributed). Three edge types: `contains` (parent->child,
+straight from the now-fixed `get_children()`), `references`
+(task->task, only wired if the target id actually exists in the node
+set - schema.py's own documented caution, confirmed real: task
+2.312.2's "See DAM 16.100/16.200/16.300/16.400" references point
+outside this document's ~79-page scope and are correctly skipped, not
+silently wired to nothing), `responsible_for` (role->task, action/
+level/footnote_refs as edge attributes).
+
+Full build: 459 graph nodes (327 DAM nodes + 132 distinct roles,
+including the unresolved placeholder), 2098 edges. Validated against
+the same real screenshot used earlier (NSO 3.110, page 58): task
+3.111's approvers via `responsible_roles(graph, "3.111", action="A")`
+returns exactly "Origination Sector Manager" (footnote 3) and
+"Supporting Dept. Division Manager" (footnote 4), matching the
+screenshot exactly - not just count-of-edges, the specific roles and
+footnote numbers. 7 new tests in `tests/test_graph.py`, all passing.
+
+Added `requirements.txt` entry for `networkx`.
+
+## 2026-07-28 - Day 6: NLP component (knowledge/search.py) - TF-IDF chosen over pretrained embeddings
+
+Closed the loop on the embeddings question raised in the very first
+project conversation ("do I need embeddings and normalization").
+Ruled out training a custom embedding model outright: 327 short
+titles and no labeled query-title pairs is nowhere near enough data
+to train an embedding model that beats a general-purpose pretrained
+one - that would risk visible overfitting, not a real capability
+gain, and "there isn't enough data" is the honest, correct answer if
+a jury asks why one wasn't trained.
+
+That left two real options: TF-IDF (classical, lexical, via
+scikit-learn) vs. pretrained sentence embeddings
+(`sentence-transformers`, semantic, needs PyTorch). Tried installing
+`sentence-transformers` first to see if it was practical - it didn't
+finish even after two attempts in this dev sandbox (PyTorch is a
+large dependency) - a real signal about deployment weight, though not
+necessarily disqualifying on a better-resourced machine. Presented
+both options with their tradeoffs to Adem; he chose TF-IDF for
+reliability/portability (installs in ~17s, no heavy dependency, works
+anywhere).
+
+Built `knowledge/search.py`: a two-path resolver.
+1. **ID fast-path** (`find_ids_in_query`): if the question already
+   contains a literal DAM id, look it up directly - 100% accurate, no
+   model involved. Covers most of this project's own founding example
+   questions ("who approves task X"), which are phrased with an
+   explicit id.
+2. **TF-IDF fallback** (`search_by_text`): vectorizes every task/
+   child_task/threshold_variant/process title and ranks by cosine
+   similarity to the query, for questions phrased by title/description
+   instead of id.
+
+One real gap found testing this before trusting it: process titles
+("3.110 ORGANIZATION OF NSO MISSIONS...") were originally excluded
+from the searchable corpus (reasoned that processes have no
+responsibilities of their own, since build_nodes.py only extracts
+those for task/child_task/threshold_variant) - but a query for
+"organization of nso missions" then matched nothing meaningful,
+because the one node whose title actually says that wasn't indexed at
+all. Fixed by including process titles too - what the agent does with
+a process-type match (e.g. aggregate its child tasks) is Day 7's
+concern, not this module's; the search module's only job is finding
+the right node.
+
+Explicitly labeled: TF-IDF is LEXICAL (shared words), not semantic
+(shared meaning) - `resolve_query()` always returns a "method" field
+("id" or "text_search") precisely so this distinction stays visible
+to callers and to the report, rather than being quietly overstated as
+"the agent understands your question" when what's actually happening
+is word-overlap ranking. A query using different words than the title
+(e.g. "sign off on" vs. "Signature of") will score lower than an
+exact phrase match - a known, documented limitation of this choice,
+not a bug.
+
+5 new tests in `tests/test_search.py`, all passing. Added
+`requirements.txt` entry for `scikit-learn`.
+
+## 2026-07-28 - Day 7: agent built (agent/qa.py, agent/authority.py)
+
+Ties knowledge/search.py (resolve a question to a node) and
+modeling/graph.py (look up who's responsible) together into
+`answer_question()` - one function, UI-agnostic, that Day 8's web
+backend just has to wrap. `agent/authority.py` maps how people
+actually phrase questions ("who signs off on X", "who checks X") to
+the DAM's own authority codes, built to read the code/level structure
+from `data/reference/authority_codes.json` rather than a hand-written
+vocabulary that could drift from it. The "C" trap (documented back on
+2026-07-21 - C1/C2 = Check and Verify, C3/C4 = Consult, two unrelated
+concepts sharing a letter, with bare "C" defaulting to Check per the
+reference data's own note) is encoded directly in each intent's match
+predicate and covered by a dedicated test - a "consult" question can
+never surface Check and Verify responsibilities or vice versa.
+
+Confirmed both phrasings of this project's own founding example
+question from the very first conversation - "who are the informed
+parties for [Task_ID]" and "who needs to be informed for
+[Task_title]" - resolve to the identical answer, one via the id
+fast-path, one via TF-IDF, proving the id/text-search split in
+knowledge/search.py actually delivers what it was designed for.
+
+One real UX gap found testing this: a question matching a
+process-type node (e.g. "organization of nso missions" -> process
+3.110) used to answer "has no recorded responsibilities" - technically
+true (processes don't carry responsibilities directly, only their
+child tasks do) but a dead end. Fixed by pointing to the node's
+children instead when it has no direct responsibilities.
+
+### OCR title corruption - root cause found and fixed (not just patched)
+
+Testing the agent's own output surfaced the "OCR-spacing" titles
+flagged as known debt back on 2026-07-21 in a way that made them
+impossible to ignore - they're user-facing now. Investigated properly
+rather than re-applying the existing patch-list approach:
+
+**Bug 1 - a real parsing bug, not OCR noise.** Task 3.524's title had
+swallowed its entire footnote section AND the page footer ("Page
+57"). Root cause: page index 69's footnote header reads "Notes to NSO
+3.510 - 3.520" - a one-off typo in the source PDF (checked
+document-wide: 21 pages say "Notes on", exactly 1 says "Notes to").
+`task_blocks.py`'s `NOTES_PATTERN` only matched "on", so it never
+recognized the section boundary and kept attaching every following
+line to task 3.524. Fixed by matching both "on" and "to".
+
+**Bug 2 - the real root cause of the other 5.** Checked the raw
+characters for 2.223.2's title and found this was never actually
+"OCR spacing" - it's pdfplumber's OWN `extract_words()` merging
+characters from TWO overlapping lines of real text ("Project
+Appraisal Report (PAR) for a non-" / "exceptional operation11", an
+ordinary wrapped two-line title) into garbled single words like
+'ro', 'je', 'c' - corruption that exists in the word list handed to
+this project's code, not introduced by it. Confirmed the fix by
+grouping raw CHARACTERS by rounded top (exactly like `build_rows()`
+already does for words) and concatenating directly within each row -
+real space characters are already present in the character stream,
+so no word-boundary guessing is needed at all once cross-row
+contamination is eliminated. Added `build_char_rows()` /
+`char_lines()` to `parsing/rows.py` as a character-level parallel to
+`build_rows()`/`ordered_lines()`, used ONLY as a fallback in
+`modeling/build_nodes.py` when `parsing.metadata.
+looks_word_boundary_corrupted()` flags a title (a lowercase letter
+immediately followed by an uppercase letter, checked document-wide
+before using it - found exactly the 6 known cases, 0 false positives
+among the other ~320) - deliberately scoped to title recovery, not a
+replacement for the word-based pipeline everything else depends on.
+
+**Trade-off found and accepted, not silently hidden:** character
+concatenation is exactly right for prose, but the actions/footnote
+row within the same block has no real spacing between adjacent
+footnote digits from different columns - they land glued together
+("13131316"), which `NOTE_PATTERN`'s `\b\d{1,3}\b` can't split (no
+word boundary exists inside an unbroken digit run). Added a narrow
+cleanup (strip digit runs of 4+, strip stray standalone periods) for
+the character-reconstructed path specifically, rather than
+reimplementing action/footnote-column separation at the character
+level - `task_blocks.py`/`action_geometry.py` already do that job
+well from words/geometry. Result: 1/6 titles (2.222.1) still trips
+the corruption detector after recovery (a stray "aI" adjacency from a
+superscript digit landing in an unexpected row-bucket) - down from
+6/6, not a claim of 100% resolution. Documented via a regression test
+(`test_corruption_rate_stays_low`) that fails loudly if this regresses
+further, rather than silently accepting any level of corruption.
+
+16 new tests across `tests/test_title_corruption.py` and
+`tests/test_agent.py`, all passing. Full test suite re-run with no
+regressions.
+
+## 2026-08-03 - Day 8: web page + backend (webapp/backend.py, webapp/static/index.html)
+
+Thin FastAPI wrapper around `agent.qa.answer_question()` - deliberately
+no new logic in the web layer, every real decision already lives in
+Day 7's agent module. Builds nodes/graph/search-index ONCE at startup
+(`@app.on_event("startup")`, stored in a module-level `state` dict),
+not per-request: a full 79-page rebuild takes ~15-20s, and the DAM
+doesn't change between requests, so rebuilding per-question would be
+both slow and pointless. Exposes `POST /api/ask`, `GET /api/health`,
+serves the frontend at `/` and its static assets at `/static`.
+
+Frontend color palette per Adem's explicit instruction: white
+background, `#228b22` (forest green) as primary, `#c80815` (red) used
+sparingly as an accent - specifically tied to low-confidence/no-match
+answers (small header dot, plus a red left-border + "⚠ low
+confidence" flag on any agent message where `!node_id` or
+`method === 'text_search' && score < 0.3`), not decorative. The color
+itself carries the same meaning the agent already reports via its own
+`method`/`score` fields, rather than being arbitrary styling.
+
+**Verification hit a real environment constraint, not a code bug.**
+Starting the server in one shell call, then trying to `curl` it from a
+separate, later shell call, failed every time (connection refused) -
+this dev sandbox tears down each shell call's background processes
+before the next call starts, the same constraint already hit earlier
+in this project with a backgrounded `pip install`. Confirmed by
+starting the server AND running every curl check within a single
+shell call: `/api/health` -> `{"status":"ok","nodes_loaded":327}`;
+both phrasings of the founding example question
+("who are the informed parties for 2.126" / "who needs to be informed
+for quarterly mission program") returned the identical correct answer
+through the actual HTTP endpoint, one via the id path and one via
+text-search, matching Day 7's own test; the unresolvable-query case
+returned the honest "couldn't find" answer, not a fabricated one; `/`
+served the real HTML with the correct title, `/static/index.html`
+served directly too.
+
+That manual check isn't a repeatable test though, so also added
+`tests/test_backend.py` using FastAPI's `TestClient` (in-process,
+fires the real startup event itself) instead of a real uvicorn
+process - sidesteps the shell-call-isolation problem entirely rather
+than working around it, and is the correct way to test an API layer
+regardless. 5 tests: health, both id/title phrasings agreeing through
+HTTP, honest no-match, frontend served at `/`, static mount. All pass
+(~17s, dominated by the one real PDF rebuild the module-scoped fixture
+does). Needed `httpx` as a test-only dependency for `TestClient` (not
+added to `requirements.txt` - it's not a runtime dependency of the
+app itself, only of the test).
+
+Added `fastapi`/`uvicorn` to `requirements.txt`. Noted, not fixed:
+`@app.on_event("startup")` is deprecated in favor of lifespan handlers
+in current FastAPI - cosmetic, not worth the churn mid-project, flagged
+here so it's a visible, intentional choice rather than an oversight.
+
+## 2026-08-03 - Comments pulled out of the codebase into docs/code_notes.md
+
+Ahead of showing the code to the professor: moved every inline `#`
+comment across all 25 Python source/test files (plus the one CSS
+comment in `webapp/static/index.html`) into a new `docs/code_notes.md`,
+organized by file, so the reasoning stays fully available without
+cluttering the code itself. Docstrings were left in place - they're
+the code's own API reference, not the running commentary this was
+about consolidating.
+
+Mechanical, not manual: used Python's `tokenize` module to locate
+every `COMMENT` token precisely (never mistakes a `#` inside a string
+literal for a real comment, unlike a regex approach would), grouped
+consecutive comment-only lines into blocks, recorded each block's
+line range and nearest enclosing `def`/`class` for context, then
+blanked each comment from its source line and dropped any line left
+empty as a result. Every rewritten file was `compile()`-checked before
+being written, and the full test suite (every file in `tests/`, run
+in small batches to fit the sandbox's per-call time limit) was
+re-run afterward end to end - all passing, confirming the strip was a
+true no-op against behavior, not just "the file still parses."
+
+160 comment blocks moved in total, heaviest in `parsing/task_blocks.py`
+(19), `parsing/column_roles.py` (18), and `modeling/build_nodes.py`
+(13) - unsurprising, those are exactly the files with the most
+hard-won, non-obvious fixes documented earlier in this log.
+
+## 2026-08-05 - Post-meeting additions: dashboard, hybrid LLM (Ollama + Groq), grounded RAG
+
+The professor asked for three things after seeing the working agent:
+a dashboard, "an AI module," and RAG with hybrid local/API LLMs
+(Ollama for local, Groq for the API - confirmed with Adem it was Groq,
+not Grok/xAI, since "hybrid local + API" tutorials almost always pair
+Ollama with Groq, and the two names get mixed up constantly).
+
+**Scoping decision made before writing any code, and worth recording
+because it reopens the project's founding premise.** "Integrate RAG"
+could mean two very different things: (a) textbook RAG - chunk the
+PDF, embed it, let an LLM freely reason over whatever gets retrieved,
+or (b) grounded generation - keep retrieval exactly as it already is
+(the graph + TF-IDF, deterministic, validated against real
+screenshots since Day 5), and only let the LLM rephrase the facts
+that retrieval already found, never decide what the facts are. Option
+(a) would have quietly undone the entire reason this project exists -
+it was built specifically to avoid an LLM hallucinating who approves
+a transaction, by using a structured knowledge graph instead of raw
+document search. Went with (b), confirmed with Adem before building:
+retrieval is unchanged, the LLM only touches phrasing, and a
+grounding check (`agent/generate.py: _mentions_expected_facts`)
+verifies every role name from the retrieved facts is still present,
+verbatim, in the LLM's output - if it isn't, the app falls back to
+the deterministic template answer instead of showing the LLM's
+version. This is still legitimately RAG (retrieval-augmented
+generation), just the retrieval was already correct and doesn't need
+an LLM anywhere near it.
+
+### Hybrid LLM layer (`llm/`)
+
+`llm/base.py` defines one interface (`LLMProvider.chat(system, user)`)
+and one exception (`LLMUnavailableError`) that both providers raise
+for every kind of failure - missing config, network error, timeout,
+unexpected response shape - so callers only ever need to catch one
+thing. `llm/ollama_provider.py` talks to a local Ollama server's
+`/api/chat` (default `http://localhost:11434`, model `llama3.1`,
+both overridable via env vars). `llm/groq_provider.py` talks to
+Groq's OpenAI-compatible `/chat/completions` endpoint (default model
+`llama-3.3-70b-versatile`, confirmed current via Groq's own docs
+rather than assumed from training knowledge, since API model names
+change). `llm/router.py` resolves a requested mode ("off" / "ollama"
+/ "groq" / "auto") to a concrete provider; "auto" prefers Ollama
+(free, no network dependency) and only falls back to Groq if Ollama
+isn't reachable and a `GROQ_API_KEY` is actually set - a real, useful
+demo point (the agent keeps answering if the venue's wifi drops).
+
+Config is env-var-only (`GROQ_API_KEY`, `GROQ_MODEL`, `OLLAMA_HOST`,
+`OLLAMA_MODEL`), loaded from an optional `.env` via `python-dotenv`.
+Added `.env.example` documenting each var and added `.env` to
+`.gitignore` (it wasn't there before - checked and fixed, since a
+leaked API key is a real, avoidable risk, not a hypothetical one).
+
+### Grounded generation (`agent/generate.py`)
+
+`agent/qa.py: answer_question()` was extended (additively - existing
+keys unchanged, existing tests unaffected) to also return the exact
+structured facts behind its answer: `roles` (the filtered role list
+if there's an intent, otherwise the full list - literally what the
+template string was built from, not re-derived) plus `node_title`/
+`node_type`/`intent`. `agent/generate.py: humanize_answer()` builds a
+strict system prompt ("use ONLY the facts given, never add a role/
+action/footnote not listed, if the fact list is empty say so
+plainly"), calls the resolved provider, and applies the grounding
+check described above. Two cases never even reach the LLM: no
+provider configured, and no node resolved at all (nothing to phrase,
+and handing an LLM a near-empty prompt just invites it to invent
+something plausible-sounding).
+
+### Dashboard (`webapp/dashboard_data.py`, `webapp/static/dashboard.html`)
+
+Scoped to DAM structure visualization per Adem's call, not agent
+usage/monitoring - shows off the actual data model (327 nodes, 1776
+responsibilities, 131 distinct roles, 459 graph nodes / 2102 edges)
+rather than synthetic example data. `build_summary()` computes every
+number live from the current `nodes`/`graph` at request time (same
+"one source of truth, queried live" reasoning as reading authority
+codes from their own reference file rather than a hand-copied
+vocabulary) - node counts by type, action-code distribution, top 15
+roles by responsibility count, unresolved-role rate. One honest
+finding surfaced by building this: the action-code distribution has a
+handful of single-digit-count stray entries ("F", "o", " ", "O") -
+pre-existing extraction noise, ~5 occurrences out of 1776, not
+introduced by this work and too small to be worth chasing right now;
+noted here rather than silently smoothed out of the chart data (the
+frontend does roll small categories into an "other" bucket for
+chart readability, but the API itself returns the real counts,
+unrounded).
+
+### New endpoints and UI
+
+`GET /api/dashboard/summary` (backend). `POST /api/ask` gained an
+optional `llm` field (`"off"` default / `"ollama"` / `"groq"` /
+`"auto"`); response gained `used_llm`, `llm_provider`, `llm_error`,
+and `deterministic_answer` (the original template answer, always
+present, so the chat UI can show "phrased by Ollama" alongside a
+"show structured (template) answer" toggle - useful for exactly the
+demo point above, showing the same facts phrased two ways side by
+side). `webapp/static/dashboard.html` (new page, same palette,
+Chart.js from cdnjs) and `webapp/static/index.html` (added the LLM
+mode dropdown, a nav link to the dashboard, and the used-llm/
+fallback/toggle UI) round out the frontend.
+
+### Testing
+
+All new logic is tested without needing a real Ollama install or a
+real Groq key: `tests/test_llm.py` mocks `requests.post`/`requests.get`
+at the provider level (15 tests - success, network failure, missing
+key, malformed response, router mode resolution). `tests/test_generate.py`
+uses a fake in-test provider to check the grounding check itself (8
+tests - passthrough when no provider/no match, success, dropped-role
+fallback, exception fallback, empty-response fallback). `tests/
+test_backend.py` gained 6 more tests including one that patches
+`llm.ollama_provider.requests.post` to raise a real `ConnectionError`
+and confirms the live HTTP endpoint falls back cleanly - and one
+that does NOT mock anything, sending `llm: "ollama"` against this
+sandbox's real (nonexistent) Ollama server, to prove the fallback
+path works against a genuine failure, not just a mocked one.
+`tests/test_dashboard_data.py` (6 tests) checks the summary against
+the known 327-node / 1776-responsibility build. All 36 new/changed
+tests pass; full existing suite re-run with no regressions.
+
+Also live-tested the whole stack end to end in one shell call (server
+start + curl checks together, the same pattern needed since separate
+shell calls don't share a running process): dashboard summary,
+dashboard page, chat page's new nav/toggle markup, a plain `/api/ask`
+call, and an `/api/ask` call with `llm: "ollama"` against this
+sandbox's real absence of an Ollama server - confirmed the response
+came back `used_llm: false` with a real connection-refused error
+message and the correct deterministic answer, not a crash or a stall.
+
+Not yet done, flagged for Adem: real end-to-end verification against
+an actual running Ollama and a real Groq key can't happen in this
+sandbox (no GPU/model weights here, and I won't ask for or handle a
+real API key) - needs to happen on his own machine before the
+meeting, instructions in `docs/llm_setup.md`.
+
+## 2026-08-06 - Small talk handling + fixed a real "wrong task" bug in invalid-code queries
+
+Adem tested the agent and found two real gaps: plain greetings ("hi",
+"hello") got run through the DAM lookup pipeline instead of a normal
+reply, and asking about a task/code that doesn't exist could come back
+answering about a completely different, unrelated task instead of
+saying the code was wrong.
+
+**Small talk (`agent/smalltalk.py`).** `detect_smalltalk(query)` checks
+the whole normalized query against a small set of anchored patterns
+(greetings, farewells, thanks, "how are you", help/capability
+questions) and returns a canned reply, short-circuiting before
+`resolve_query` ever runs. Anchored with `^...$` against the full
+message, not a substring search - deliberately, since a substring
+check would false-positive on real questions containing "hi" (e.g.
+"history of the DAM") or starting with a greeting word before a real
+question ("hi, who approves 3.111"). Wired into `answer_question()`
+as the very first check. Node id, roles, score all come back `None`
+with `method: "smalltalk"` - the frontend's low-confidence flag had to
+be updated too (`data.method !== 'smalltalk' && ...`), since a null
+node id used to always mean "uncertain match" and would otherwise have
+painted a friendly "hello" reply with the same red low-confidence
+border as a failed lookup.
+
+**Invalid codes (`knowledge/search.py`, `agent/qa.py`) - a real bug,
+not just a missing feature.** Root cause: `resolve_query()` only ever
+checked whether an id-shaped substring existed in `nodes`; if it
+didn't, the code silently fell through to `search_by_text()` on the
+ENTIRE query, including the bogus id. That's dangerous, not just
+unhelpful - the leftover words in the query (e.g. "task", "who",
+"approves") can share enough vocabulary with some unrelated real
+task's title to score above zero and get returned as a confident
+answer, with nothing telling the user the code they actually asked
+about doesn't exist. Confirmed this was reachable, not hypothetical,
+before fixing it (see 2026-07-28's `test_unresolvable_query_is_honest_
+not_fabricated`, which used exactly this kind of query and got lucky
+that "what happens with 9.999.999" had too little shared vocabulary to
+match anything - a different invalid-code phrasing would not have been
+so lucky).
+
+Fixed by adding a third path to `resolve_query()`: `_all_id_candidates()`
+finds every id-SHAPED substring regardless of validity; if one exists
+and none of them are real, the method is `"invalid_id"` (not
+`"text_search"`) and the whole-query text-search fallback never runs.
+Suggestions come from two sources, tried in order: `suggest_ids_near()`
+(real siblings under the same chapter number, ranked by longest shared
+dotted prefix - simple and explainable, not fuzzy matching) if the
+chapter itself is real; otherwise the query with the bogus id stripped
+out is run through the normal text search, so genuinely descriptive
+words in the query (e.g. "quarterly mission program 9.999") still
+surface a real, relevant suggestion even though the code itself was
+wrong. `agent/qa.py: _format_invalid_id_answer()` turns this into a
+message that says plainly the code doesn't exist and never mentions a
+different task as if it were the answer.
+
+Had to update three existing tests whose queries happened to contain
+an id-shaped-but-fake number and asserted on the old, less-safe
+message ("couldn't find" instead of "doesn't exist") - `tests/
+test_agent.py` and `tests/test_backend.py`'s versions of
+`test_unresolvable_query...`. Renamed and re-asserted rather than
+deleted, plus added a companion test with a genuinely non-id free-text
+query so the original "I couldn't find a task" path still has direct
+coverage of its own.
+
+24 new tests total (`tests/test_smalltalk.py`: 37 cases across 6
+categories; `tests/test_search.py`: 3 new `resolve_query` cases;
+`tests/test_agent.py`/`tests/test_backend.py`: smalltalk + invalid-id
+integration cases) - all passing, plus the full existing suite
+re-run with no regressions. Live-tested against the real running
+server: "hi"/"thanks" get canned replies, "who approves 3.999"
+suggests real chapter-3 tasks, "who approves the quarterly mission
+program 9.999" recovers 2.126 from the leftover words despite the
+bogus code, and "who approves 3.111" (a real question) is unaffected.
+
+## 2026-08-06 (later) - "See X" reference formats were silently corrupting titles AND dead-ending real questions
+
+Adem reported a specific case: "who initiates 1.117.2" answered "no
+one is recorded" even though the real DAM page shows 1.117.1/1.117.2
+both say "See 2.120: Organization of mission" and 2.120's own table
+(screenshot provided) clearly has an initiator. Investigated with the
+raw PDF text rather than guessing, and found a chain of three real
+bugs, not one.
+
+**Root cause.** `extract_references()` only recognized two reference
+phrasings: "See DAM X, Y, Z" and "Refer to Activities X - Y in
+Section Z". Two more real phrasings exist in the document and were
+never recognized: "See <id>: <description>" (a redirect to a whole
+process, e.g. 1.117.1/1.117.2 -> 2.120) and "(See <id> / <id>)" (a
+redirect to one of two alternative activities, e.g. 1.115.1/1.115.2 ->
+1.114.1 or 1.114.2). Because neither was recognized, the id inside
+them was never protected from `NOTE_PATTERN`'s bare-digit stripper -
+`extract_title` calls `remove_references` BEFORE `remove_note_
+references`, specifically so a reference's digits can't be mistaken
+for footnote noise (see the 2026-07-21 entry), but that protection
+only covers phrasings the code knows to strip. The result: "See
+2.120: Organization of mission" had its "2" and "120" stripped
+individually as two separate footnote-looking digit runs, leaving the
+garbled "See .: Organization of mission" sitting inside 1.117.1's and
+1.117.2's titles - and, separately, the reference itself was just
+gone, never making it into `node.references`.
+
+Checked document-wide before fixing (the project's standing rule):
+exactly 6 nodes affected, all in chapter 1 - `1.115.1`/`1.115.2` (the
+slash form), `1.117.1`/`1.117.2` (the colon form). Fixed by adding
+`SEE_ID_COLON_PATTERN` and `SEE_ID_SLASH_PATTERN` to `parsing/
+metadata.py`, wired into both `extract_references()` (captures the
+id(s)) and `remove_references()` (strips the phrase before the
+footnote-digit stripper ever sees it) - same pattern the two existing
+reference types already use, not a new mechanism.
+
+**A second, unrelated bug found in the same 6 nodes.** `1.114.1`/
+`1.114.2`'s titles read "...with a -Year Rolling Business Plan" -
+missing digit again, but a different cause: `NOTE_PATTERN`'s hyphen
+exclusion (`(?<![,-])\b\d{1,3}\b(?!,)`) only excluded a digit
+PRECEDED by a hyphen ("PL-2", fixed 2026-07-28) - it never excluded a
+digit FOLLOWED by one. The real text is "a 3-Year Rolling Business
+Plan" (confirmed against the raw page text before touching the
+regex), and "3-Year" is the mirror-image case the original fix
+didn't cover. Extended the lookahead to match the lookbehind:
+`(?<![,-])\b\d{1,3}\b(?![,-])`. Checked this doesn't regress the
+already-covered cases (footnote digits, comma-formatted amounts,
+`PL-2`) via `tests/test_metadata.py` before trusting it.
+
+**Third: even with the reference now captured correctly, the agent
+still had no way to USE it.** `responsible_roles()` only looks up
+direct `responsible_for` edges on the queried node itself; a node
+whose only real content is a redirect has none, by design - that's
+what a redirect means. Added `agent/qa.py: _format_reference_pointer()`,
+tried as a second fallback (after the existing children-pointer,
+which already handles the analogous "process node with no direct
+responsibilities" case) whenever a node has no responsibilities and no
+children but does have `references`. It follows the reference and:
+if the referenced node itself carries responsibilities, surfaces those
+(filtered by intent, so "who initiates" only shows initiators, not
+every role on the target); if the referenced node has no
+responsibilities of its own but has children (2.120's actual shape -
+a process whose child tasks 2.121-2.126 carry the real
+responsibilities), points to those instead, reusing the same
+child-listing logic as the existing children-pointer rather than a
+second copy of it (extracted into `_children_list_text()` so both
+call sites share one implementation). Verified against the exact
+reported case: "who initiates 1.117.2" now reads "1.117.2 (...)
+redirects to 2.120 (...), a process that doesn't carry
+responsibilities directly. Its activities: 2.121 (...), ..." - and
+"who initiates 1.115.1" (a redirect to a task that DOES carry its own
+responsibilities, not a process) correctly surfaces "Country
+Economist" directly rather than another children list.
+
+**Grounding gap found and closed while wiring this up, before it
+became a real problem.** A pointer/redirect answer has a real
+`node_id` but an empty `roles` list (the facts live on the referenced
+node, not the queried one). `agent/generate.py: humanize_answer()`
+previously only skipped the LLM when `node_id` was `None` - it would
+have handed a pointer answer to the LLM with an empty facts list, and
+`_mentions_expected_facts`'s check (`all(... for r in roles)`) is
+vacuously true over an empty list, so the grounding check would have
+passed regardless of what the LLM said. Closed by also skipping
+whenever `roles` is falsy, not just when `node_id` is `None` - caught
+by reasoning through the new code's interaction with the existing LLM
+layer, not by observing a live failure, and added a dedicated test
+(`test_pointer_answer_with_a_resolved_node_still_never_calls_the_
+provider`) to keep it caught.
+
+12 new tests (`tests/test_metadata.py`: 11 unit tests on the regex
+functions directly; `tests/test_task_blocks.py`: 6 new integration
+cases against the real PDF pages; `tests/test_agent.py`: 2 reference-
+redirect cases; `tests/test_generate.py`: 1 grounding-gap case) plus 6
+new real cases added to `tests/fixtures/known_cases.py`. Full existing
+suite re-run with no regressions; full 79-page rebuild still 327 nodes,
+1776 responsibilities (unchanged - this was a title/reference fix, not
+an action-extraction one), corruption count still 1/327 (the same
+already-documented `2.222.1` residual, untouched by this fix), 14
+references now captured document-wide (up from 8), graph edges 2108
+(up from 2102, the 6 new valid reference edges). Live-verified against
+the real running server with the exact query Adem reported.
+
+## 2026-08-06 (later still) - Dockerized for portability, live status dot, LLM picker defaults + model names
+
+Three asks aimed at making the professor demo more self-contained and
+transparent.
+
+**Docker.** Two services, not one: `app` (this project's own code)
+and `ollama` (the official `ollama/ollama` image), on a shared
+Compose network - not because splitting them is required, but because
+that's genuinely what they are: two independent services with
+independent lifecycles (the app rebuilds on every code change; Ollama
+never needs to, it just needs a model pulled once into a persistent
+named volume). Groq needs no container at all - it's a cloud API,
+reached the same way from inside Docker as outside it. `Dockerfile`
+binds uvicorn to `0.0.0.0` (not `127.0.0.1` - a container bound to
+localhost is unreachable from outside itself, a common first-time
+Docker mistake). `.dockerignore` explicitly excludes `.env` - `COPY .
+.` would otherwise bake a real Groq key straight into an image layer,
+which is worse than a plaintext file lying around since image layers
+tend to get shared/pushed without a second thought.
+
+One real problem caught before it could bite: Compose's `env_file:
+- .env` fails the whole stack immediately if `.env` doesn't exist, and
+`.env` is gitignored on purpose (2026-08-06 entry) - meaning a fresh
+checkout, exactly the "hand this to the professor" scenario this was
+built for, would refuse to start at all with no real explanation.
+Fixed with Compose's `env_file: - path: .env / required: false` form,
+plus `docs/docker_setup.md` telling people to `cp .env.example .env`
+as the first step regardless, so it works whether or not their
+Compose version is new enough to support `required: false`.
+
+Couldn't build or run the containers here - no `docker` binary in
+this sandbox (`docker --version` returns "command not found").
+Validated what's checkable without it: `docker-compose.yml` parses as
+valid YAML with the exact structure intended (checked via `PyYAML`),
+`Dockerfile`'s CMD matches the same uvicorn invocation already proven
+to work bare-metal. Flagged clearly for Adem: an actual `docker
+compose up --build` run on his own machine is the one verification
+step this couldn't do itself, and should happen before relying on it
+for the meeting.
+
+**Live status dot.** The header's small red dot was purely decorative
+before (tied to the white/green/red palette, not to anything real).
+Now polls `/api/health` every 8s from both `index.html` and
+`dashboard.html`; green while the backend answers, red the moment it
+doesn't (page load with the server down, or the server dying mid-
+session). A `try/catch` around the `fetch` treats a network error the
+same as a non-200 response - either way, red. Small, but a real
+signal for a live demo: if something goes wrong, "is the server even
+alive" is answered before anyone has to ask.
+
+**LLM picker: default to Auto, show model names.** The mode dropdown
+defaulted to "off" only because "No LLM" was listed first, not because
+anyone had chosen it as the default. Adem asked for it to default to
+Auto - not just cosmetic, since a demo audience will judge "the
+hybrid model" by what they see FIRST, and that should be the actual
+hybrid behavior he asked to build, not the disabled baseline.
+
+Showing the resolved model name next to "Ollama"/"Groq" turned out to
+need swapping the native `<select>` for a small custom dropdown: an
+HTML `<option>` can only ever hold plain text, no nested styling, so
+"model name in dark grey small font, in front of local/API" is
+structurally impossible inside a real `<select>`. Built a minimal
+button + absolutely-positioned menu instead (`.llm-picker-*` in both
+CSS and JS) - each row is a real `<li>` that can hold differently
+styled spans, closes on an outside click, and updates a plain JS
+variable (`selectedLlmMode`) the existing submit handler already reads
+from, so nothing about how `/api/ask` gets called had to change.
+
+The model names themselves come from a new `GET /api/llm/config`
+endpoint that reads `OllamaProvider().model` / `GroqProvider().model`
+directly - not a second, hand-typed copy of `"llama3.1"` in the
+frontend that could drift the moment someone sets `OLLAMA_MODEL` in
+`.env` to something else. Confirmed the override actually flows
+through with a dedicated test (`test_llm_config_respects_env_
+overrides`) rather than assuming the existing provider classes handle
+it correctly just because they were designed to.
+
+9 new tests in `tests/test_backend.py` (config endpoint, env-override
+respected, both pages' new markup present, Auto pre-selected in the
+served HTML) - all passing, full existing suite re-run with no
+regressions, live-verified against the real running server (`/api/
+llm/config` returns the real default model names; both pages' HTML
+contains the expected status-dot and picker markup).
+
+Docker itself worked first try on Adem's machine (screenshot: `app-1`
+and `ollama-1` both up, healthcheck hitting `/api/health` repeatedly,
+`Application startup complete`) - confirms the sandbox-only validation
+(YAML parse + matching the proven uvicorn command) held up in
+practice, not just in theory.
+
+One real usage snag, not a bug: a browser tab tried
+`http://0.0.0.0:8000` (visibly copied from the log line "Uvicorn
+running on http://0.0.0.0:8000") and got `ERR_ADDRESS_INVALID`.
+`0.0.0.0` in that log line means "listening on every network
+interface inside the container" - it's what the server binds TO, not
+an address a browser can connect to. `http://localhost:8000` (or the
+container's mapped host port) is the actual address. Worth a one-line
+callout in `docs/docker_setup.md` since Uvicorn always prints it this
+way and it's an easy, common mix-up - not something to silently fix in
+code (it's log output being accurately literal, not wrong).
+
+## 2026-08-06 (yet later) - Real DAM answer for out-of-scope references, not a generic dead end
+
+Adem tested "who checks 2.312.2" and got "No one is recorded to check
+on 2.312.2 ... in the DAM" - technically consistent with existing
+design (2.312.2's references, 16.100-16.400, point to chapter 16,
+which was never part of this ~79-page export and correctly excluded
+per schema.py's own documented caution and the 2026-07-28 graph
+entry), but misleading: the DAM's actual text for 2.312.2 isn't
+silence, it's an explicit "See DAM 16.100, 16.200, 16.300, and
+16.400" spanning the whole row (confirmed against Adem's screenshot of
+the real page, PSO 2.310). Saying "no one is recorded" reads as "the
+DAM has no answer" when the true situation is "the DAM's answer lives
+in a section this document doesn't include" - a meaningfully different
+and more honest thing to tell someone.
+
+Fixed in `agent/qa.py: _format_reference_pointer()`: now tracks which
+of a node's references don't exist in `nodes` (`out_of_scope`)
+separately from ones that do but lead nowhere useful, and if a node's
+references are ALL out of scope, returns "2.312.2 (...) is governed by
+DAM section(s) 16.100, 16.200, 16.300, 16.400, which are outside the
+scope of this document." instead of falling through to the generic
+"no one is recorded" message. Deliberately narrow: only fires when
+literally none of the references resolve to anything - a node with a
+mix of a real, useful reference and an out-of-scope one still prefers
+the real, useful answer (existing behavior, unchanged).
+
+1 new test (`test_reference_entirely_out_of_document_scope_says_so_
+honestly`), pinned to the exact reported case. Full existing suite
+(`test_agent.py`, `test_generate.py`, `test_backend.py`) re-run with
+no regressions - the grounded-generation skip-when-no-roles fix from
+earlier today already covers this new message too (2.312.2 still
+resolves to `roles: []`, so an LLM mode still never touches it,
+correctly, for the same reason a redirect-to-a-process answer
+doesn't).
+
+## 2026-08-06 (even later) - Abbreviations/acronyms glossary lookup, scoped to pages 2-7 only
+
+Adem asked "wait the agent doesn't know the abbreviations and
+acronyms?" after testing "what does DDG mean" / "what does RDG stand
+for" and getting the generic "I couldn't find a task in the DAM
+matching that question." - a real, confirmed gap: the DAM's own front
+matter (pages 2-11, 0-indexed) defines every role acronym used
+throughout the document, but nothing in the pipeline ever parsed it.
+
+Asked Adem whether abbreviation knowledge should show up as (a) a
+dedicated "what does X mean" lookup, (b) inline auto-expansion of
+acronyms inside normal answers, or (c) both - he chose both.
+
+**Scope decision: Abbreviations section only (pages 2-7), not
+Glossary (pages 8-11).** Both sections are two-column term/definition
+lists with no font-weight distinction between the columns (checked
+directly via `extract_words(extra_attrs=['fontname','size'])` - both
+columns render in the same font/size, so column membership has to
+come from x-position, not styling). The Abbreviations section's
+definitions are short and mostly single-line, so a term and its
+definition stay row-aligned all the way down a page. The Glossary
+section's definitions are long and routinely wrap across several
+lines, which lets the two columns drift out of row-alignment over the
+course of a page - confirmed by checking that the Abbreviations
+pages' term-reading-order stays alphabetical throughout, while the
+same check on the Glossary pages does not (e.g. "Annual Programming
+for Bank Group Operations" reads between "ADF Charter" and "AfDB
+Charter" instead of after both under simple per-row pairing).
+Reconstructing a reliably-ordered Glossary would need real column
+text-flow analysis, not a per-row pairing - deferred as a known,
+documented limitation, since it isn't what was actually needed
+(defining role-code acronyms like DDG/RDG/RISM, which live entirely in
+the Abbreviations section). If the Glossary's longer concept
+definitions (e.g. "Accountability", "Appraisal") are ever needed, this
+is the specific harder problem to come back to.
+
+**Built `parsing/glossary.py: extract_abbreviations()`** - clusters
+words into rows by `top` (with a small merge tolerance, same
+near-miss-alignment issue seen elsewhere in this project: a term and
+its definition sometimes render ~1pt apart in `top`, not perfectly
+aligned), splits each row into term-column / definition-column text by
+x-position, and classifies each row as: a new entry (term text AND
+definition text both present), a continuation of the current entry's
+term (term-only, not colon-terminated - handles a term wrapping onto
+its own next line, e.g. "Concerned VP" / "/ Manager"), a section
+header to skip (term-only OR definition-only text ending in ":", e.g.
+"Committees of the Board of Directors:"), or a continuation of the
+current entry's definition (definition-only, no new term on the row).
+
+Two real bugs found and fixed before trusting the output, both caught
+by manually inspecting the printed extraction against the real pages,
+not assumed correct:
+
+1. **Def-only continuation rows were wrongly starting a new,
+   term-less entry.** The original logic treated "any row with
+   definition-column text" as "start a new entry," so a definition
+   that simply wrapped onto its own line (no new term on that row) got
+   treated as a fresh entry with an empty term - which then silently
+   vanished (filtered out for having no term), while the real term's
+   wrapped continuation landed on the wrong, now-orphaned entry
+   instead. Concretely: "Concerned VP" (term-only row) then "The
+   Vice-President / Manager under whom..." (definition-only row) then
+   "/ Manager" (term-only row) produced a dropped "Concerned VP" entry
+   and a bogus "/ Manager" entry, instead of one correct "Concerned VP
+   / Manager" entry. Fixed by only starting a new entry when a row has
+   BOTH term and definition text; a definition-only row now correctly
+   appends to the CURRENT entry's definition instead.
+2. **Page-footer page numbers leaking into the last definition on
+   each page.** Every one of pages 2-7 ends with its own lowercase
+   roman-numeral page number (xiv, xv, xvi, xvii, xviii, xix - an
+   unbroken sequence, confirming it's a footer artifact and not real
+   content) landing close enough in `top` to the last real row that
+   the row-merge tolerance folded it into that row's definition (e.g.
+   "NSO and Private Sector Support Department xv"). Fixed with a
+   narrow post-process step that strips a trailing lowercase word from
+   a definition only if that word is itself a full, valid roman
+   numeral AND the definition has at least one other word (so a
+   definition that's legitimately a single roman-numeral-shaped word
+   would be left alone, though no real case like that exists in this
+   data).
+
+Also confirmed, not fixed (correct behavior, not a bug): the source
+PDF itself lists 8 terms twice across these pages (EDCC, ECC, EMT,
+OCC, PEN, ECGF, PIVP, PINS), sometimes with slightly different wording
+between the two listings (e.g. PINS: "NSO and Private Sector Support
+Department" vs "NSO & Private Sector Support"). `build_abbreviation_
+glossary()` merges pages 2-7 into one `{term: definition}` dict and
+keeps the longer of the two definitions per term as a tie-break - both
+listings are correct, this is just a preference for the more detailed
+one.
+
+170 entries saved to `data/reference/abbreviations.json` (one
+canonical source, same precedent as `authority_codes.json` - never
+regenerated inline at request time, so behavior can't silently drift
+between runs).
+
+**Agent wiring (`agent/glossary.py`, new), both halves of Adem's
+"both" answer:**
+- Dedicated lookup: `detect_glossary_query()` matches deliberately
+  narrow trigger phrasing only ("what does X mean/stand for", "define
+  X", "what is the meaning of X") - specifically NOT a bare "what is
+  X", since that would collide with real DAM id lookups like "what is
+  2.120". Wired into `agent/qa.py: answer_question()` right after the
+  small-talk check and before DAM node resolution. An unmatched term
+  gets an honest "isn't in the DAM's Abbreviations and Acronyms list"
+  message, not a fabricated guess or a silent fall-through to the
+  generic "couldn't find a task" message.
+- Inline auto-expansion: `expand_acronym_in_role_name()`, wired into
+  `agent/qa.py: _format_role_list()`. Expands a role name that's
+  itself a known acronym (e.g. "RDG" -> "RDG (Regional
+  Director-General)"), or that contains one embedded in a composite
+  role (e.g. "Country Manager / DDG" -> "Country Manager / DDG (DDG =
+  Deputy Director-General)"). Expands each distinct acronym only once
+  per answer (tracked per `_format_role_list()` call) so a long role
+  list with the same acronym repeated doesn't get cluttered.
+
+19 of the DAM's 132 distinct role names are themselves exact
+Abbreviations-list acronyms (CODE, CPO, CRC, DMT, ECVP, EDCC, FIVP,
+IDEV, OPSCOM, PIVP, PRC, PRST, PSEG, PSRC, RDG, RDVP, SMCC, TIC, TQAC -
+checked directly against the real graph before deciding this was worth
+building, not assumed).
+
+28 new tests: `tests/test_glossary_parsing.py` (extraction against the
+real PDF pages - pins both bug fixes, the section-header skip, the
+duplicate-term merge, and the deliberate page-range scoping) and
+`tests/test_glossary_agent.py` (trigger-phrasing detection, the "never
+hijacks a real DAM question" guarantee, honest not-found handling,
+inline expansion including the once-per-answer rule, and full
+`answer_question()` integration). Full existing suite re-run
+file-by-file with no regressions.
+
+**Follow-up same day**: Adem tested this live and hit two things -
+"what's DDG?" / "what's DDG" returned the generic "couldn't find a
+task" message (a real gap: those weren't among the explicit trigger
+phrasings), and the inline expansion wasn't showing up on "who
+approves 2.111" either. Checked both directly against the code: "what
+does DDG stand For?" and the 2.111 inline expansion ("Country Manager
+/ DDG (DDG = Deputy Director-General)") both worked correctly when
+tested straight from this session's code - meaning the server Adem
+was looking at was still running the pre-glossary code (needs a
+restart, or a rebuild if running via Docker). The bare "what's DDG"
+phrasing was a genuine, separate gap though, and a very natural one to
+miss, so fixed it too: added `_BARE_WHATS_PATTERN` in
+`agent/glossary.py`, handled deliberately separately from the explicit
+trigger patterns rather than merged into them, since "what's X" /
+"what is X" is inherently ambiguous with real DAM lookups ("what is
+2.120"). Only treated as a glossary question when the term is a bare
+single token with no dots or spaces (a DAM id always has a dot; a task
+description is always multiple words) AND that token actually resolves
+in the glossary - if it doesn't resolve, returns no match at all
+rather than an honest "not found," since an unresolved bare "what's X"
+could just as easily be a mistyped task question. 6 new parametrized
+cases added to the existing trigger-phrasing tests, all passing.
+
+Noticed in passing, not fixed (out of scope for this feature, flagged
+for a later pass): `tests/test_llm.py`'s
+`test_chat_without_api_key_raises_unavailable_no_network_call` fails
+when run in the same pytest session as `tests/test_backend.py`,
+because importing `webapp.backend` triggers `load_dotenv()`, which
+picks up Adem's real local `.env` (with a real `GROQ_API_KEY`) and
+leaks it into a test that assumes no key is set. Confirmed this is a
+pre-existing test-isolation gap, not something this change introduced
+- passes in isolation, only fails when session-ordered after a module
+that imports the backend. Easy fix later: have that test explicitly
+clear `GROQ_API_KEY` from `os.environ` rather than relying on it being
+absent.
+
+## 2026-08-06 (still later) - Frontend rewritten as React + GSAP, plus a new landing page
+
+Adem asked for the frontend to become real React components, with
+GSAP animation, a loading screen, and a new landing page that lets the
+user choose chat or dashboard - same color palette (white / #228b22 /
+#c80815 accent).
+
+**Flagged the real trade-off before building anything.** The frontend
+had been plain HTML/CSS/JS with zero build step - it just worked the
+moment the container started. A React setup needs a build pipeline
+(Vite + npm), which means a new Node toolchain in the Dockerfile, an
+extra build stage that has to succeed before the app can even start,
+and a new class of "works on my machine, not the professor's" risk,
+this close to a demo. Presented the choice explicitly (vanilla JS +
+GSAP, zero new infrastructure, vs. full React + Vite + GSAP, more
+"modern" but more that can break this week) and let Adem decide with
+that trade-off in view, per how this project's decisions get made -
+he chose full React + Vite.
+
+**Architecture: three independent React apps, not one SPA.** Each
+page (landing, chat, dashboard) is its own Vite build entry
+(`webapp/frontend/{landing,chat,dashboard}.html`) mounting its own
+React root, rather than a single-page app with client-side routing.
+Deliberate: the backend already serves each page as its own static
+file at its own FastAPI route (`/`, `/chat`, `/dashboard`), so this
+keeps that same simple model - no history-API fallback route needed in
+FastAPI, no risk of a hard refresh 404ing on a client-side-only route,
+smaller per-page JS bundles. `webapp/frontend/vite.config.js` builds
+straight into `webapp/static/` (now a build artifact, not committed -
+see `.gitignore` - `webapp/frontend/` is the real source from here on).
+
+**What got built**, all reusing the same color palette
+(`webapp/frontend/src/styles/theme.css`):
+- `Landing` (new page) - hero + two GSAP-animated cards routing to
+  `/chat` and `/dashboard`, slow-drifting background accents, wrapped
+  in the new `LoadingScreen` component gated on a real health-check
+  call (not a fake timer - the splash means "is the backend actually
+  reachable," not just padding for effect).
+- `Chat` - ported every behavior from the old `index.html` faithfully:
+  message list, low-confidence flagging, the LLM picker (off/ollama/
+  groq/auto, live model names from `/api/llm/config`), the
+  "show structured (template) answer" toggle. New: each message
+  animates in with GSAP on arrival instead of just appearing.
+- `Dashboard` - ported the cards + all three Chart.js charts
+  unchanged (same `ChartCanvas` wrapper around real Chart.js, not a
+  React chart library swap - lowest-risk way to keep the exact working
+  chart configs). Wrapped in `LoadingScreen` gated on
+  `/api/dashboard/summary` actually resolving - the old "Loading
+  summary…" text state became a real animated loading screen instead
+  of disappearing outright.
+- `LoadingScreen` (new, shared) - GSAP-crossfades from an animated
+  ring into the real page content once a page's own `ready` condition
+  is true. Deliberately NOT applied to `Chat` - that page has no real
+  blocking data dependency (the old version was usable instantly,
+  with model names filling in a moment later), so forcing a loading
+  gate there would have been a pure regression dressed up as polish.
+- `Header`, `StatusDot`, `LlmPicker` - componentized versions of the
+  existing header/status-dot/picker, same markup/behavior, shared
+  across pages instead of copy-pasted per HTML file like before.
+
+**Docker**: `Dockerfile` is now a two-stage build - a `node:20-slim`
+stage runs `npm install && npm run build`, and only the built
+`webapp/static/` output gets copied into the final `python:3.11-slim`
+image; Node itself never ships in the image that actually runs.
+`docker compose up --build` needs no new steps from Adem - it just
+takes a little longer on first build now. Bare-metal running needs a
+new one-time step (`cd webapp/frontend && npm install && npm run
+build`), documented in `docs/llm_setup.md` where the "start the server
+as usual" instruction lives.
+
+**Real environment problem hit while building this, worth recording**:
+`webapp/frontend/` lives inside `damaiagent/`, which is synced via
+OneDrive - `npm install` there was consistently too slow to even
+finish (100+ packages, thousands of small files, over what turned out
+to be a FUSE-mounted sync layer, not local disk). Fixed by doing the
+actual `npm install` / `npm run build` in `/tmp` (a real local disk in
+this environment) and copying only the small built output (three HTML
+files + a handful of JS/CSS bundles, not `node_modules`) back into
+`webapp/static/` - fast, since it's a handful of files instead of
+thousands. Not a code change, just how this session did the build;
+Adem's own machine won't have this problem the same way, since running
+`npm install` directly on a local disk (not through a cloud-sync
+layer) is the normal case - but worth knowing if `npm install` ever
+seems to hang for him too, since OneDrive sync can behave the same way
+for any tool that writes many small files quickly.
+
+**Test coverage changed shape, on purpose, documented not hidden**:
+the old `test_backend.py` checks for `id="status-dot"`,
+`id="llm-picker-menu"`, and `class="llm-picker-option selected"
+data-value="auto"` all asserted against raw server-rendered HTML -
+that markup no longer exists server-side at all now, it only exists
+after React runs in a browser. Replaced those assertions with route-
+level checks (the right pages serve, reference a built `/assets/`
+script) and added `tests/test_frontend_source.py`, which checks the
+same real guarantees (Auto is the default LLM mode, every page
+renders the status dot, the landing page links to both other pages) by
+reading the component source directly instead - cheap, no browser
+needed, but honestly weaker than the old check: it can't catch a
+runtime error, a build problem, or components wired together
+incorrectly, only a real browser check can. Attempted an automated
+headless-browser smoke test as a stronger substitute (Playwright) -
+blocked by this sandbox's network allowlist (couldn't download a
+Chromium binary), not a decision to skip it. Live-verified everything
+that curl-based checks over an unauthenticated HTTP API actually can
+check instead: all three routes return 200 with the right content-type
+and reference real built assets, and the `/api/ask` /
+`/api/dashboard/summary` endpoints still return correct data through
+the new frontend's exact request shape. Told Adem directly this gap
+exists and to do one real look-and-click pass himself before the
+demo - not something to quietly consider "done."
+
+15/15 `test_backend.py` tests pass (updated), 7/7 new
+`test_frontend_source.py` tests pass. No changes to `agent/`,
+`modeling/`, `knowledge/`, `parsing/`, or `llm/` in this entry - purely
+a frontend/Docker change, so the whole existing DAM-answering test
+suite is unaffected by construction, not just by re-running it.
+
+## 2026-08-06 (later again) - Five real gaps found from Adem's first live look at the React build
+
+Adem ran the rebuilt frontend and reported back with a real screenshot:
+two glossary queries failed ("what does RDG stands for?", "what does
+RDNG STANDS for?"), the chat felt too wide/sparse with no way to keep
+old conversations, and the agent read as flat/scripted. All five real,
+not cosmetic complaints - fixed in order of how they were found.
+
+1. **"stands for" (not "stand for") never matched.** Adem's exact
+   query used the natural, if grammatically off, third-person form -
+   `agent/glossary.py`'s trigger regex only had the literal substring
+   "stand for", so "stands for" (an extra "s") silently missed it
+   entirely. Widened the pattern to accept `mean|means|stand
+   for|stands for`. 2 new parametrized cases pin the exact query Adem
+   typed.
+
+2. **"RDNG" isn't in the DAM's own Abbreviations list.** Checked
+   directly: `responsible_roles()` shows real DAM role names using
+   "RDNG" verbatim ("RDG / Director RDNG", "Country Manager / DDG RDG
+   / Director RDNG"), but the Abbreviations pages (2-7) only ever
+   define "RDG" - with a note that RDG "also covers the Director of
+   the Nigeria Country Office," never spelling out "RDNG" as its own
+   entry. Not a parsing bug (`abbreviations.json` correctly reflects
+   what the PDF actually says) - a real gap between what the DAM
+   *uses* and what its own front matter *defines*. Fixed by adding a
+   small, clearly-separate `MANUAL_ALIASES` dict in `agent/glossary.py`
+   rather than folding it into `abbreviations.json`, specifically so
+   that file stays what it's documented to be: a pure, reproducible
+   extraction of pages 2-7 you could regenerate from the PDF and get
+   byte-identical - not something with silent hand edits mixed in.
+
+3. **Chat page was full-width with a dead gray gap in the middle.**
+   `#chat` had no max-width, so on anything wider than a laptop the
+   message column stretched edge to edge instead of staying readable.
+   Fixed with a `.chat-inner` / `.form-inner` wrapper (`max-width:
+   760px`, centered) - the same fix ended up doing double duty once
+   the sidebar (next item) also gave the page real horizontal
+   structure instead of one wide empty canvas.
+
+4. **No conversation history.** Asked Adem to pick a scope, since this
+   is genuinely two different amounts of work: persist the current
+   chat across a reload, or a real multi-conversation history like
+   ChatGPT's. He chose the bigger one. Built
+   `webapp/frontend/src/hooks/useConversations.js` (conversations
+   array + active id, persisted to `localStorage` under
+   `dam-agent-conversations-v1`, every read/write wrapped so a private-
+   browsing block or full quota fails open into "just don't persist,"
+   never a crash) and `ConversationSidebar` (new chat, switch, delete -
+   an empty "New chat" you're currently composing in doesn't get its
+   own row, so clicking "+ New chat" repeatedly doesn't pile up blank
+   entries). Conversation titles auto-derive from the first message,
+   ChatGPT-style. One correctness detail worth recording: the
+   in-flight question's target conversation id is captured before the
+   `await`, not read again after - so if you switch conversations
+   while a question is still resolving, the answer lands in the
+   conversation that actually asked it, not whatever's on screen when
+   it comes back. There's still no accounts/backend session layer
+   behind this - it's genuinely per-browser, which is an honest
+   limitation of a `localStorage`-only design, not a shortcut being
+   hidden.
+
+5. **"Doesn't feel alive" - no personality or tone.** Deliberately did
+   NOT touch the deterministic template answers themselves ("For X,
+   the following approve(s): ...") - that rigidity is a feature, not a
+   flaw, it's the always-correct fallback and several tests pin its
+   exact wording. Personality has to live in the parts that were
+   always presentation, not fact-delivery:
+   - `agent/smalltalk.py`: each canned-reply category now has 2-3
+     varied lines (picked via `random.choice`) instead of one fixed
+     string repeated on every greeting - still says the same
+     substantive thing every time, just doesn't read as a script. The
+     tests pin required substrings ("Hello", "Goodbye", "welcome",
+     "Delegation of Authority Matrix"), not exact strings, specifically
+     so this kind of variation stays safe to add.
+   - `agent/generate.py`'s `SYSTEM_PROMPT` (the LLM-phrasing prompt,
+     only used when an LLM mode is on): now explicitly asks for a
+     warm, conversational tone with a named identity ("the DAM Agent")
+     - but the grounding rules right below it are unchanged, and
+     `_mentions_expected_facts()` (the actual enforcement, not just a
+     prompt request) still requires every real role name verbatim in
+     the output. Tone is a request; grounding is a check - only one of
+     those is allowed to be optional.
+   - New `TypingIndicator` component (Chat.jsx) - three animated dots
+     shown while a question is in flight, instead of just a disabled
+     Send button. Small, but a disabled button reads as "broken",
+     three bouncing dots reads as "thinking."
+
+Rebuilt via the same `/tmp` workaround as before (OneDrive-synced
+`webapp/frontend/` is too slow for `npm install`/`node_modules` - see
+the 2026-08-06 "still later" entry). All 61 backend-side tests
+(`test_backend.py`, `test_smalltalk.py`, `test_generate.py`,
+`test_glossary_agent.py`) plus the 7 `test_frontend_source.py` checks
+pass; 4 new tests added (2 for "stands for", 2 for RDNG). Live-verified
+against the rebuilt server: both glossary queries from Adem's
+screenshot now resolve correctly, and three repeated "hi" calls came
+back with different (but still substantively correct) greetings,
+confirming the variation actually reaches a real request and isn't
+just correct in isolation.
+
+## 2026-08-06 (once more) - Deterministic typo tolerance, no LLM required
+
+Adem asked for the agent to "understand human typos alone and fix and
+understand the prompt correctly on its own." Investigated where typos
+actually break the pipeline today before building anything - confirmed
+four real, concrete failures with actual queries: "who aproves 2.126"
+resolved the right node (id matching is a digit pattern, typo-immune)
+but silently lost the "approve" intent filter and dumped every
+responsibility on the task instead - looks like it worked, is actually
+quietly less useful than what was asked. "who aproves the qaurterly
+mision program" (no id at all) put more at risk: TF-IDF text search
+has zero inherent typo tolerance (a misspelled word is just an
+out-of-vocabulary token contributing nothing to the score). "helo"
+missed the anchored smalltalk regex entirely. "waht does DDG men"
+missed the glossary trigger phrasing entirely.
+
+**Design choice: deterministic correction, not an LLM.** The LLM in
+this project has one job by design - rephrase already-retrieved facts,
+never touch retrieval or understanding (see the 2026-08-05 grounded-
+generation entry). Routing query understanding through an LLM instead
+would mean typo tolerance only works when an LLM mode is configured
+and reachable, adds real latency to every question, and makes
+"understanding" non-deterministic - a step backward from every design
+choice this project has made so far (TF-IDF over embeddings, grounded
+phrasing over free generation, honest failure over guessing). Built
+`knowledge/typo_correct.py: correct_words()` instead: offline, no
+network, no dependency beyond the stdlib's `difflib` - works exactly
+the same whether Groq/Ollama are configured or not, same as everything
+else that actually has to be right.
+
+**How it works, and why it's conservative on purpose:** replaces a
+word with its closest match in a supplied vocabulary only when it
+isn't already an exact match but clears a similarity ratio - a word
+with no close-enough match is left exactly as typed, not guessed at,
+the same "don't fabricate" discipline as the rest of this project's
+retrieval logic. Two guards found necessary, not assumed: words under
+4 letters are skipped (edit-distance similarity is close to
+meaningless at 1-3 letters), and ALL-CAPS words are skipped entirely
+so a real DAM acronym (DDG, RDG, PGCL...) never gets "corrected" into
+an unrelated common word just because it's short and out of
+vocabulary.
+
+**A real false positive found and fixed before trusting this at all**:
+the first version (min_ratio=0.82, applied to the ~1400-word DAM title
+vocabulary for text search) broke an existing test -
+`test_unresolvable_free_text_query_is_honest_not_fabricated`, which
+asks about "random unrelated words banana spaceship" and expects an
+honest non-match. Turned out "unrelated" (correctly spelled, not a
+typo) was getting "corrected" into "related" (ratio 0.875 - they share
+a root, a textbook false positive for any edit-distance approach)
+purely because "related" happened to be the closest word in that
+vocabulary. Root cause: a large, organic-language vocabulary makes
+this kind of false positive likely, since real English words often
+resemble each other by coincidence. Fixed by raising the default
+threshold to 0.88 - empirically checked against every real typo case
+that motivated building this (0.889-0.941, all still pass) and against
+the false positive (0.875, now correctly excluded), not picked
+arbitrarily.
+
+**Wired in at four points, each reusing whatever vocabulary was
+already naturally available there** rather than threading a new
+parameter through every function signature in the call chain:
+- `agent/authority.py: detect_intent()` - corrects against the union
+  of every intent's own keyword list (~35 words) before the existing
+  substring-match logic. Only ever changes WHICH intent gets selected;
+  never touches the actual action-code matching rules (A/A1/A2, C vs
+  C1/C2 vs C3/C4) just below, so it can't reopen the "bare C is Check,
+  not Consult" ambiguity that was already carefully fixed (confirmed
+  with a dedicated regression test, not just assumed safe).
+- `agent/smalltalk.py: detect_smalltalk()` - corrects against a small
+  vocabulary of the words the anchored regex patterns actually use
+  ("hello", "goodbye", "thanks", "help"...) before re-attempting the
+  match.
+- `agent/glossary.py: detect_glossary_query()` - corrects against the
+  trigger phrasing's own words ("what", "does", "mean", "define"...)
+  - deliberately NOT including the term being asked about, so "what
+    dose DDG mean" can't risk "correcting" DDG itself.
+- `knowledge/search.py: search_by_text()` - corrects against the
+  fitted TF-IDF vectorizer's own single-word vocabulary (its bigrams,
+  e.g. "country strategy", are excluded - only single words are
+  meaningful to correct an individual query word against).
+
+**Three of the four use a looser 0.75 threshold than the 0.88
+default**, not the same one everywhere - the 0.88 floor exists
+specifically to protect the *large, organic-language* vocabulary
+(knowledge/search.py's ~1400 DAM title words) from false positives
+like "unrelated"/"related". The other three vocabularies (intent
+keywords, smalltalk words, glossary triggers) are each small (16-35
+words), curated, and semantically distinct from each other - checked
+directly against a batch of ~20 unrelated realistic words before
+lowering the threshold there (one weak, low-impact collision found:
+"form" -> "for" in the glossary vocabulary; zero collisions in the
+other two). The looser threshold is what lets short 4-letter trigger
+words survive a typo at all ("dose"/"does" and "waht"/"what" both only
+reach 0.75 - a short word's ratio ceiling under a one-character
+transposition is inherently lower than a longer word's).
+
+**Known, accepted limitation, not silently hidden**: words under 4
+letters are never corrected, by design (see above) - so "waht does DDG
+men" (typo'd "men" instead of "mean", 3 letters) still fails, even
+though "waht does DDG mean" and "what dose DDG mean" (single typos,
+"mean" spelled correctly) both work. Chasing every possible short-word
+typo combination wasn't judged worth the added false-positive risk
+this session - a real trade-off, made deliberately, not an oversight.
+
+7 new tests in `tests/test_typo_correct.py` (the real typo cases, the
+"unrelated"/"related" false positive pinned as a regression guard, the
+short-word and ALL-CAPS guards, capitalization preservation), 4 new
+integration tests in `tests/test_agent.py` (typo'd intent keyword
+still resolves the right *and identical* answer as the clean spelling,
+typo'd free-text query with no id still resolves the right node, the
+consult/check action-code precision explicitly re-confirmed unaffected,
+the false-positive case re-confirmed honest), 3 new tests in
+`tests/test_smalltalk.py`. 144 tests pass across every file touched
+(`test_agent.py`, `test_smalltalk.py`, `test_glossary_agent.py`,
+`test_typo_correct.py`, `test_backend.py`, `test_search.py`,
+`test_generate.py`, `test_dashboard_data.py`) - zero regressions.
+Live-verified against the real running server: typo'd id query,
+typo'd free-text query, typo'd greeting, and single-typo glossary
+query all resolve correctly; the genuinely-unrelated query still
+answers honestly instead of guessing.
+
+## 2026-08-06 (final for now) - Auto now prefers the API over local
+
+Adem asked to reverse Auto's preference order: API (Groq) first, local
+(Ollama) as fallback, not the other way around. Changed
+`llm/router.py: resolve_provider("auto")` - checks `GROQ_API_KEY`
+first and returns `GroqProvider()` immediately if set, only falling
+back to checking `OllamaProvider().is_available()` when no key is
+configured. Updated the 3 router tests in `tests/test_llm.py` for the
+new order (one now asserts `is_available()` is never even called when
+a Groq key is present, not just that Groq wins) and the frontend
+picker label (`webapp/frontend/src/components/LlmPicker.jsx`: "API
+first, local fallback"). Also fixed, not just documented this time,
+the recurring `GROQ_API_KEY` test-isolation leak flagged in the
+2026-08-06 glossary entry (`test_chat_without_api_key_raises_
+unavailable_no_network_call` now explicitly clears the env var via
+`monkeypatch` instead of relying on it being absent) - it kept
+resurfacing every time this session ran the fuller suite, cheap enough
+to close for good rather than re-flag again.
+
+30/30 relevant tests pass. Live-verified: Auto mode now resolves to
+`llm_provider: "groq"` immediately (confirmed via the real `.env` key
+already on this machine) rather than checking Ollama first - the
+actual Groq network call itself failed in this sandbox specifically
+(`ProxyError: 403 Forbidden` reaching `api.groq.com` - this
+environment's own network allowlist, not a code issue), which
+usefully double-confirmed the existing fallback-to-template safety net
+still works correctly under a real provider failure.
+
+## 2026-08-06 (even later still) - Free hosting: Render, docs/hosting.md
+
+Researched free container hosts for the deployed demo. Render is the
+recommendation: Docker-native (builds straight from the existing
+multi-stage `Dockerfile`, no changes needed beyond the port fix
+below), no credit card, 750 free hours/month, 512MB RAM - enough for
+FastAPI + the agent, no local model involved. The real trade-off is a
+15-minute inactivity sleep with a 30-60s cold-start wake, worth
+pinging before a live demo. Alternatives checked and ruled out:
+Railway's free tier is gutted to ~$1/month credit now, Fly.io has no
+free tier and requires a card, Hugging Face Spaces' Docker SDK is
+paid-only now, Back4App's 256MB is too tight, Google Cloud Run is
+capable but needs a card and more setup than this project warrants.
+Koyeb noted as a viable secondary option if Render's cold start is a
+problem for a specific demo window.
+
+Decided to drop Ollama entirely from the hosted deployment - no free
+tier has the RAM for even a small local model. Not a real loss: Auto
+already prefers Groq first (see the entry above), and the
+deterministic template answer is always the fallback if Groq is
+unreachable, so the hosted app only needs the `app` service from
+`docker-compose.yml`, not `ollama`, with `GROQ_API_KEY` set as an
+environment variable in Render's dashboard rather than committed to
+the repo.
+
+One code change made to support this: `Dockerfile`'s `CMD` switched
+from the JSON-array form with a hardcoded `--port 8000` to the shell
+form `CMD uvicorn webapp.backend:app --host 0.0.0.0 --port
+${PORT:-8000}`, because most free hosts (Render included) inject
+their own `PORT` env var at deploy time and expect the container to
+bind to it. Falls back to 8000 when `PORT` is unset, which keeps local
+`docker run` / `docker-compose` behavior unchanged - confirmed
+`docker-compose.yml` doesn't set `PORT` and its healthcheck + port
+mapping are both hardcoded to `8000` already.
+
+**Known gap, not silently hidden**: this Dockerfile change hasn't been
+build-tested. No `docker` binary has been available in this sandbox
+for the whole project, so this was validated by review only (checking
+`docker-compose.yml`'s behavior is unaffected, checking the shell-form
+CMD syntax is correct). Worth one real `docker build` on Adem's own
+machine, or trusting Render's build log on first deploy, before
+relying on it for the actual demo.
+
+Full deploy steps, and the reasoning above, written up in
+`docs/hosting.md` for Adem to follow directly.

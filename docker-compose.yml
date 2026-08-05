@@ -1,0 +1,44 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Inside the Docker network, "localhost" would mean the app
+      # container itself, not the ollama container - Docker Compose
+      # gives every service a DNS name matching its service name
+      # ("ollama"), so that's the address to use here instead. This
+      # line is set explicitly (not left to .env) so it always wins
+      # over anything a bare-metal-oriented .env might contain -
+      # Compose's `environment:` takes precedence over `env_file:` for
+      # the same key.
+      - OLLAMA_HOST=http://ollama:11434
+    env_file:
+      # required: false - .env is gitignored on purpose (it can hold a
+      # real Groq API key) and won't exist on a fresh checkout. Compose
+      # would otherwise refuse to start at all until one exists; this
+      # keeps "no LLM / Auto with just local Ollama" working with zero
+      # setup, and picking up a real GROQ_API_KEY the moment a .env
+      # file is added, without needing a restart-triggering rebuild.
+      - path: .env
+        required: false
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

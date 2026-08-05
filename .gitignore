@@ -1,2 +1,16 @@
 OLD/
 .venv/
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# webapp/static/ is now a BUILD ARTIFACT (Vite output from
+# webapp/frontend/, see webapp/frontend/vite.config.js's outDir) -
+# webapp/frontend/ is the real source of truth from here on, same as
+# not committing a Python venv or __pycache__. Run `npm run build`
+# inside webapp/frontend/ (or `docker compose up --build`, which does
+# it automatically) to regenerate it.
+webapp/static/
+webapp/frontend/node_modules/
+webapp/frontend/dist/

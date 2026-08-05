@@ -1,3 +1,9 @@
 pydantic
 pdfplumber
 pytest
+networkx
+scikit-learn
+fastapi
+uvicorn
+requests
+python-dotenv
