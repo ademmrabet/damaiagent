@@ -8,10 +8,18 @@ header.app-header {
   gap: 12px;
 }
 
+header.app-header .header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 header.app-header .title-block {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 header.app-header .header-right {
@@ -25,12 +33,73 @@ header.app-header h1 {
   margin: 0;
   color: var(--green-dark);
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 header.app-header p {
   margin: 2px 0 0;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* Hidden by default (desktop) - only shown below the mobile
+   breakpoint, where it toggles the off-canvas conversation sidebar
+   (see conversationSidebar.css). Header only renders this button at
+   all when a page passes onMenuClick (currently just Chat). */
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  background: var(--white);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color 0.15s ease;
+}
+
+.hamburger-btn:hover {
+  border-color: var(--green);
+}
+
+.hamburger-btn span {
+  display: block;
+  width: 16px;
+  height: 2px;
+  background: var(--green-dark);
+  border-radius: 1px;
+}
+
+@media (max-width: 720px) {
+  header.app-header {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  header.app-header h1 {
+    font-size: 16px;
+  }
+
+  header.app-header p {
+    display: none;
+  }
+
+  header.app-header .header-right {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .hamburger-btn {
+    display: flex;
+  }
 }
 
 .accent-dot {

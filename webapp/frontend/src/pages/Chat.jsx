@@ -139,6 +139,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [llmMode, setLlmMode] = useState('auto');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const chatRef = useRef(null);
 
   const messages = activeConversation ? activeConversation.messages : [];
@@ -217,15 +218,22 @@ export default function Chat() {
         navHref="/dashboard"
         navLabel="Dashboard →"
         right={<LlmPicker value={llmMode} onChange={setLlmMode} />}
+        onMenuClick={() => setSidebarOpen((o) => !o)}
       />
 
       <div className="chat-body">
+        <div
+          className={'sidebar-backdrop' + (sidebarOpen ? ' visible' : '')}
+          onClick={() => setSidebarOpen(false)}
+        />
         <ConversationSidebar
           conversations={conversations}
           activeId={activeConversation?.id ?? null}
           onSelect={selectConversation}
           onCreate={createConversation}
           onDelete={deleteConversation}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <div className="chat-main">

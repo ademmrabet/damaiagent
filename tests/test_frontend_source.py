@@ -58,6 +58,25 @@ def test_llm_picker_still_has_all_four_modes():
         assert f"value: '{mode}'" in picker_source
 
 
+def test_header_supports_a_hamburger_menu_button():
+    header_source = _read("components", "Header.jsx")
+    assert "onMenuClick" in header_source
+    assert "hamburger-btn" in header_source
+
+
+def test_chat_page_wires_up_the_mobile_sidebar_toggle():
+    chat_source = _read("pages", "Chat.jsx")
+    assert "sidebarOpen" in chat_source
+    assert "onMenuClick" in chat_source
+    assert "sidebar-backdrop" in chat_source
+
+
+def test_conversation_sidebar_becomes_an_off_canvas_drawer_on_mobile():
+    css_source = _read("components", "conversationSidebar.css")
+    assert "position: fixed" in css_source
+    assert ".conversation-sidebar.open" in css_source
+
+
 def test_built_frontend_output_exists():
     # Sanity check the build actually ran and landed where backend.py
     # expects it (webapp/static/, see .gitignore - it's a build

@@ -1988,3 +1988,57 @@ attempt #1) and a test confirming a genuinely strong fresh match
 rather than getting swept into carryover. 21 tests in that file pass,
 17 in `test_backend.py` unaffected (no frontend or endpoint contract
 change this time - the fix is entirely inside `agent/qa.py`).
+
+## 2026-08-06 (final for real this time) - Mobile: hamburger sidebar, responsive header/chat/dashboard
+
+Adem's last frontend ask: the chat and dashboard should look good on a
+phone, and the always-visible 240px conversation column should become
+a hamburger-triggered drawer instead of permanently eating a third of
+a narrow screen.
+
+`Header.jsx` gained an optional `onMenuClick` prop - only Chat passes
+it (Dashboard has no sidebar to toggle), and the hamburger button it
+renders is CSS-hidden by default, only shown below the 720px
+breakpoint (`shared.css`'s `.hamburger-btn`). Same file's header rules
+gained a `flex-wrap` fallback below 720px so the LLM picker + "Dashboard
+→" nav link wrap to their own right-aligned row instead of overflowing
+- measured this was a real risk, not a guess: hamburger + status dot +
+title on one side plus the picker + nav link on the other adds up to
+roughly 400px of content, more than a 375px phone viewport, if forced
+onto one row. The long subtitle text is hidden entirely below that
+breakpoint rather than truncated - it's supporting copy, not something
+worth fighting for space against actual controls.
+
+`ConversationSidebar.jsx` gained `open`/`onClose` props - the aside's
+class now includes `open` when applicable, and selecting a
+conversation or starting a new one also calls `onClose` (auto-closes
+the drawer after a choice is made, standard mobile drawer UX).
+`conversationSidebar.css`'s existing 720px breakpoint (previously just
+shrank the always-visible column) now instead makes the sidebar
+`position: fixed`, transformed off-screen by default and slid in via
+`.open`, with a `.sidebar-backdrop` overlay to close on tap-outside.
+Desktop never sees any of this - the fixed/transform rules only exist
+inside the media query, so `.open` toggling is inert above 720px by
+construction, not by an extra guard that could drift out of sync.
+
+`Chat.jsx` added `sidebarOpen` state, wired to `Header`'s
+`onMenuClick` and the sidebar's `open`/`onClose`/backdrop-click.
+`chat.css` and `dashboard.css` both got a tightened mobile breakpoint
+(smaller padding, narrower message bubbles at 88% width instead of a
+fixed 640px, smaller dashboard cards) - the existing desktop layout
+logic (centered `chat-inner`, `cards` auto-fit grid) already degraded
+reasonably on its own, this just trims the padding that felt
+oversized on a small screen. `.chat-page`'s `height: 100vh` gained a
+`100dvh` companion line (ignored by browsers that don't support it,
+overrides it on ones that do) - accounts for mobile browser chrome
+(address bar) eating into `100vh` and clipping the fixed input bar,
+a well-known mobile Safari/Chrome quirk.
+
+3 new source-level tests in `tests/test_frontend_source.py` (hamburger
+button wiring, Chat's sidebar-toggle state, the sidebar's off-canvas
+CSS) - same "check the source since there's no browser in this
+sandbox" approach as every other frontend guarantee in this file, with
+the same documented gap (a real device/browser check is still worth
+doing before the demo). 10 tests in that file pass, 24 across
+`test_backend.py` + `test_frontend_source.py` combined after the
+rebuild.

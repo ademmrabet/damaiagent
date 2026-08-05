@@ -1,5 +1,9 @@
 .chat-page {
   height: 100vh;
+  /* dvh accounts for mobile browser chrome (address bar) - falls back
+     to the vh above on browsers that don't support it, since an
+     unsupported value is ignored rather than clearing the prior one. */
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -182,4 +186,36 @@
   font-size: 13px;
   text-align: center;
   margin-top: 40px;
+}
+
+@media (max-width: 640px) {
+  #chat {
+    padding: 14px;
+  }
+
+  .chat-inner {
+    gap: 10px;
+  }
+
+  .msg {
+    max-width: 88%;
+    padding: 10px 13px;
+    font-size: 13.5px;
+  }
+
+  #form {
+    padding: 10px 12px;
+  }
+
+  .form-inner {
+    gap: 8px;
+  }
+
+  #question {
+    padding: 10px 12px;
+  }
+
+  #send {
+    padding: 0 16px;
+  }
 }

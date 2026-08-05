@@ -8,6 +8,8 @@ export default function ConversationSidebar({
   onSelect,
   onCreate,
   onDelete,
+  open,
+  onClose,
 }) {
   const listRef = useRef(null);
 
@@ -30,8 +32,15 @@ export default function ConversationSidebar({
   }, [visible.length]);
 
   return (
-    <aside className="conversation-sidebar">
-      <button type="button" className="new-chat-btn" onClick={onCreate}>
+    <aside className={'conversation-sidebar' + (open ? ' open' : '')}>
+      <button
+        type="button"
+        className="new-chat-btn"
+        onClick={() => {
+          onCreate();
+          onClose?.();
+        }}
+      >
         <span aria-hidden="true">+</span> New chat
       </button>
 
@@ -40,7 +49,10 @@ export default function ConversationSidebar({
           <div
             key={c.id}
             className={'conversation-item' + (c.id === activeId ? ' active' : '')}
-            onClick={() => onSelect(c.id)}
+            onClick={() => {
+              onSelect(c.id);
+              onClose?.();
+            }}
           >
             <span className="conversation-title">{c.title}</span>
             {conversations.length > 1 && (
