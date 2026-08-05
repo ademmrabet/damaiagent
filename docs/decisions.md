@@ -1760,3 +1760,72 @@ relying on it for the actual demo.
 
 Full deploy steps, and the reasoning above, written up in
 `docs/hosting.md` for Adem to follow directly.
+
+## 2026-08-06 (later yet again) - Render deploy OOM: cache parsed nodes at build time
+
+First real Render deploy attempt failed: "Ran out of memory (used
+over 512MB)". Root cause, confirmed directly (not guessed): every
+`webapp/backend.py` startup event was calling `build_nodes(PDF_PATH)`,
+which opens the raw PDF with pdfplumber and does word- AND
+character-level extraction across every page, including a
+character-level fallback reconstruction pass for corrupted titles -
+real, repeated work, and real memory (pdfplumber/pdfminer cache font
+and page resources as they go, never explicitly flushed). Measured it
+directly: `build_nodes()` alone takes ~12.7s on this machine, and
+`tests/test_column_roles.py` (which independently re-opens and
+re-parses the whole document three more times across different tests)
+was the single slowest file in the suite - useful confirmation, in the
+test suite itself, that repeating this parse is expensive. Locally
+that's a non-issue; on Render's 512MB free instance it was enough to
+OOM-kill the container before it ever opened a port - the Render log
+showed "No open ports detected, continuing to scan..." right before
+the OOM kill, meaning the process was still parsing when it got
+killed.
+
+`build_graph(nodes)` and `build_search_index(nodes)` were checked and
+confirmed NOT the problem - both are cheap, pure functions of the
+already-parsed nodes (networkx edge-building, TF-IDF over a few
+hundred short titles). The fix only needed to touch the PDF-parsing
+step.
+
+Fix: stop re-parsing the PDF at runtime at all. Added
+`modeling/nodes_cache.py` (`save_nodes()` / `load_nodes()`, using
+`Node.model_dump()` / `Node(**data)` since `Node` is already a
+pydantic model - computed fields `has_children`/`actions` are
+excluded from the dump since they're 100% derivable and recomputed
+for free on load) and `scripts/build_nodes_cache.py` (a one-shot
+script that runs `build_nodes()` once and writes
+`data/processed/nodes.json`). `Dockerfile` now runs that script as a
+build step (`RUN python scripts/build_nodes_cache.py`, after `COPY .
+.` and `pip install`), baking the cache into the image - a build
+environment generally has more headroom than a constrained free
+runtime instance, and this only needs to run once per image build,
+not once per container boot. `webapp/backend.py`'s startup event now
+prefers loading that cache and only falls back to a live
+`build_nodes()` parse if the cache file doesn't exist (fresh checkout
+with no cache built yet) - never a hard dependency on the cache being
+present. `data/processed/nodes.json` added to `.gitignore`, same
+"derived build artifact, not source" treatment as `webapp/static/`.
+
+Verified the fix is actually lossless before trusting it, not just
+plausible: live-parsed and cached-then-reloaded node sets compared
+directly - 0 mismatches across all 327 nodes (`model_dump()` equal
+field-for-field), identical `build_graph()` output on both (same node
+count, same edge count, same skipped-reference list). Added
+`tests/test_nodes_cache.py` (2 new tests: the round-trip losslessness
+check as a permanent regression guard, and a check that computed
+fields are genuinely absent from the serialized JSON). Full existing
+suite re-run in batches (this sandbox's tool has a 45s per-call cap,
+and this project's test suite already took over that just from
+`build_nodes()` being called fresh in ~8 separate module-scoped
+fixtures across different test files, unrelated to this change) - all
+passed, including `test_backend.py`'s `nodes_loaded == 327` health
+check now exercising the actual cache-loading path.
+
+**Known gap, not silently hidden**: this has not been verified inside
+an actual memory-constrained container (no `docker` binary in this
+sandbox, as with the earlier `$PORT` fix). The fix is verified correct
+(lossless data, identical downstream graph/search behavior) and
+verified to remove the actual heavy operation from the runtime request
+path entirely - but the real proof is Adem's next Render deploy
+attempt succeeding, not a claim made here.

@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from modeling.build_nodes import build_nodes
+from modeling.nodes_cache import load_nodes
 from modeling.graph import build_graph
 from knowledge.search import build_search_index
 from agent.qa import answer_question
@@ -22,6 +23,7 @@ load_dotenv()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PDF_PATH = PROJECT_ROOT / "data" / "raw" / "updated dam file.pdf"
+NODES_CACHE_PATH = PROJECT_ROOT / "data" / "processed" / "nodes.json"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(title="DAM AI Agent")
@@ -31,7 +33,18 @@ state = {}
 
 @app.on_event("startup")
 def load_dam():
-    nodes = build_nodes(str(PDF_PATH))
+    # Prefer the pre-built cache (baked into the Docker image at build
+    # time via scripts/build_nodes_cache.py - see that file and
+    # docs/decisions.md, 2026-08-06) - re-parsing the raw PDF with
+    # pdfplumber on every process boot was heavy enough to OOM-kill the
+    # container on Render's free tier. Falls back to a live parse when
+    # no cache exists yet (fresh checkout, or data/raw/ changed and the
+    # cache hasn't been regenerated), so this never hard-depends on the
+    # cache being present.
+    if NODES_CACHE_PATH.exists():
+        nodes = load_nodes(NODES_CACHE_PATH)
+    else:
+        nodes = build_nodes(str(PDF_PATH))
     graph, _ = build_graph(nodes)
     vectorizer, matrix, searchable_ids = build_search_index(nodes)
 

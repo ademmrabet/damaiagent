@@ -31,6 +31,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Pre-parses the raw PDF once, here at build time, and caches the
+# result to data/processed/nodes.json (see scripts/build_nodes_cache.py).
+# webapp/backend.py's startup event loads this cache instead of
+# re-running pdfplumber on every container boot - re-parsing at runtime
+# was heavy enough (word + character extraction across every page) to
+# OOM-kill the container on Render's 512MB free tier before it ever
+# opened a port. Build-time environments generally have more headroom
+# than a constrained free runtime instance, and this only needs to run
+# once per image build, not once per boot.
+RUN python scripts/build_nodes_cache.py
+
 # Overwrites the (gitignored, so possibly-empty-or-stale) webapp/static
 # from the repo copy above with the real build output. Ordered last so
 # it always wins regardless of what COPY . . picked up.

@@ -14,3 +14,8 @@ __pycache__/
 webapp/static/
 webapp/frontend/node_modules/
 webapp/frontend/dist/
+
+# Derived from data/raw/ via scripts/build_nodes_cache.py - same
+# "build artifact, not source" treatment as webapp/static/ above.
+# Baked into the Docker image at build time instead.
+data/processed/nodes.json
