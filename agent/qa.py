@@ -12,33 +12,31 @@ from agent.glossary import (
 
 MIN_TEXT_SEARCH_SCORE = 0.15
 
-# Deterministic follow-up detection, same principle as
-# knowledge/typo_correct.py - query understanding stays out of the
-# LLM's hands entirely (see docs/decisions.md). Real bug this fixes:
-# a chat follow-up like "who are the informed parties for THAT
-# ACTIVITY?" names no real subject of its own, so resolve_query has
-# zero legitimate signal about which node it means - it was landing
-# on coincidentally-overlapping, unrelated nodes instead (e.g. 2.118
-# "Communication with Co-Financiers of projects" vs the entirely
-# different 3.226 "Communication with Co-Financiers of projects and
-# third parties" - the follow-up's stray word "parties" just happened
-# to overlap with 3.226's title, not 2.118's, at a comfortably
-# "confident" score). See the 2026-08-06 entry in docs/decisions.md.
-_REFERENCE_TRIGGERS = (
-    "that activity", "this activity", "that task", "this task",
-    "that process", "this process", "that one", "this one",
-    "the same activity", "the same task", "for that", "for this",
-    "about that", "about this", "on that", "on this",
-)
-_STANDALONE_PRONOUN = re.compile(r"\bit\b", re.IGNORECASE)
+# Real bug this fixes: a chat follow-up like "who are the informed
+# parties for that activity?" names no real subject of its own, so
+# resolve_query has zero legitimate signal about which node it means -
+# it was landing on coincidentally-overlapping, unrelated nodes instead
+# (2.118 "Communication with Co-Financiers of projects" vs the
+# entirely different 3.226 "...and third parties" - the follow-up's
+# stray word "parties" happened to overlap with 3.226's title, not
+# 2.118's, at a comfortably "confident" 0.42).
+#
+# First attempt at this fix matched a fixed list of anaphoric phrases
+# ("that activity", "it", etc.) - defeated immediately by a second,
+# differently-worded live follow-up ("and who are the informed
+# partie?") that resolved to the exact same wrong node at the exact
+# same 0.42 score, with no pronoun and no phrase from the list at all.
+# Measured directly (not guessed) instead: genuine, specific-subject
+# matches in this corpus score 0.71-0.89 ("quarterly mission program"
+# 0.888, "loan grant processing" 0.714); both real coincidental-
+# overlap failures measured here score 0.39-0.42. CONTEXT_OVERRIDE_
+# MAX_SCORE sits at the empirical gap between those two clusters -
+# same "measure the real cases, don't guess the threshold" approach as
+# knowledge/typo_correct.py's DEFAULT_MIN_RATIO. See docs/decisions.md,
+# 2026-08-06, for the measurements and the full comparison table.
+CONTEXT_OVERRIDE_MAX_SCORE = 0.5
+
 _HAS_DIGIT = re.compile(r"\d")
-
-
-def _refers_to_previous_context(query):
-    lowered = query.lower()
-    if any(trigger in lowered for trigger in _REFERENCE_TRIGGERS):
-        return True
-    return bool(_STANDALONE_PRONOUN.search(lowered))
 
 
 def _empty_result(answer, method, score=None):
@@ -246,11 +244,12 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
     `previous_node_id`: the node_id this same conversation last
     resolved to, if any (the caller - webapp/backend.py - gets this
     from the frontend, which tracks it per chat thread). Used only as
-    a fallback anchor for pronoun-style follow-ups (see
-    _refers_to_previous_context) - an explicit id or a real text match
-    in `query` itself always takes priority, since resolve_query is
-    still tried first for anything that looks like it names its own
-    subject.
+    a fallback anchor when a fresh resolution of `query` alone is weak
+    or absent (see CONTEXT_OVERRIDE_MAX_SCORE above) - an explicit id
+    in `query`, or a fresh text match that clears the bar on its own
+    merits, always takes priority. resolve_query still runs first
+    either way; this only decides which result to trust once both are
+    known.
     """
 
     smalltalk_reply = detect_smalltalk(query)
@@ -263,21 +262,23 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         method = "glossary" if glossary_detection["found"] else "glossary_not_found"
         return _empty_result(answer, method)
 
-    node_id = None
-    method = None
-    score = None
+    resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
 
-    if (
+    context_available = (
         previous_node_id
         and previous_node_id in nodes
         and not _HAS_DIGIT.search(query)
-        and _refers_to_previous_context(query)
-    ):
+    )
+
+    resolution_is_weak = resolution["method"] == "text_search" and (
+        not resolution["matches"] or resolution["matches"][0]["score"] < CONTEXT_OVERRIDE_MAX_SCORE
+    )
+
+    if context_available and resolution_is_weak:
         node_id = previous_node_id
         method = "context_carryover"
+        score = None
     else:
-        resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
-
         if resolution["method"] == "invalid_id":
             answer = _format_invalid_id_answer(resolution["invalid_id"], resolution["suggestions"])
             return _empty_result(answer, "invalid_id")

@@ -1935,3 +1935,56 @@ sitting in the OneDrive-synced `webapp/frontend/` from an earlier
 session - copying that over the slow FUSE mount was itself the first
 attempt's timeout) and re-verified against `test_backend.py` +
 `test_frontend_source.py` (24 passed) after the rebuild.
+
+## 2026-08-06 (once more still) - The phrase-list fix above got defeated within one message
+
+Adem tested the fix above live and immediately broke it with a second,
+differently-worded follow-up: "and who are the informed partie?" (a
+typo, no "that activity", no "it" - none of `_REFERENCE_TRIGGERS`
+matched at all). It landed on the exact same wrong node, 3.226, at the
+exact same 0.42 score as the original bug. Measured directly rather
+than patching the phrase list again: `resolve_query()` against both
+worded differently ("...for that activity?" and "and who are the
+informed partie?") returns the identical 0.4223 score for 3.226 either
+way - proof the anaphoric phrase was never actually the operative
+signal, the score was, and a fixed phrase list was always going to be
+whack-a-mole against real rephrasing.
+
+Replaced the phrase-list heuristic entirely with a score-based one,
+measured the same way `knowledge/typo_correct.py`'s threshold was
+tuned - real cases, not a guess. Ran `resolve_query()` against several
+genuine, self-contained new questions with real DAM vocabulary
+("quarterly mission program" -> 0.888, "loan grant processing" ->
+0.714) versus the two confirmed coincidental-overlap failures (0.42,
+0.39 for "who checks it") - a clean gap between roughly 0.4 and 0.7.
+`CONTEXT_OVERRIDE_MAX_SCORE = 0.5` sits in that gap.
+`answer_question()` now always runs `resolve_query()` first (same as
+before typo-correction-era code), then only overrides its result with
+`previous_node_id` when the fresh text-search score is below that bar
+(or there's no match at all) - an explicit id, or a fresh match that
+clears 0.5 on its own merits, always wins regardless of conversation
+history. This is strictly more robust than matching specific wording,
+since it judges the actual evidence quality instead of guessing at
+phrasing patterns.
+
+**Known, deliberate trade-off, sharper than the previous entry's**: a
+genuinely new but weakly-worded question (measured: "who checks the
+annual budget submission" -> 0.263, "what about approvals" -> 0.296)
+will now also get swept into carryover whenever a `previous_node_id`
+exists, even though it's a real, different topic - there's no way to
+tell "this is a follow-up" apart from "this is a new question my
+corpus just doesn't have strong vocabulary overlap for" using lexical
+score alone. Accepted because these were already low-confidence,
+borderline answers before this change existed (both comfortably above
+the 0.15 honesty floor but far from a real distinctive match) - this
+doesn't make an already-uncertain case more wrong, it just resolves
+the uncertainty toward conversational continuity instead of a
+coincidental unrelated node.
+
+Tests: `tests/test_agent.py` gained the literal "and who are the
+informed partie?" reproduction (pinned specifically because it broke
+attempt #1) and a test confirming a genuinely strong fresh match
+("quarterly mission program") still overrides `previous_node_id`
+rather than getting swept into carryover. 21 tests in that file pass,
+17 in `test_backend.py` unaffected (no frontend or endpoint contract
+change this time - the fix is entirely inside `agent/qa.py`).

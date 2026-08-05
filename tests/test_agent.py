@@ -247,6 +247,48 @@ def test_pronoun_followup_carries_over_previous_node_not_a_lookalike_title(setup
     assert followup["intent"] == "informed"
 
 
+def test_differently_worded_pronoun_free_followup_also_carries_over(setup):
+    # The fixed-phrase-list version of this fix (first attempt) was
+    # immediately defeated by this exact live rewording: no "that
+    # activity", no "it" - just "and who are the informed partie?".
+    # It resolved to the same wrong node (3.226) at the identical 0.42
+    # score as the original bug, proving the phrase list was never the
+    # real signal - the score gap was. This pins the score-based fix
+    # against the specific wording that broke the first attempt.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves of Communication with Co-Financiers of projects",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+    )
+    assert first["node_id"] == "2.118"
+
+    followup = answer_question(
+        "and who are the informed partie?",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id=first["node_id"],
+    )
+
+    assert followup["node_id"] == "2.118"
+    assert followup["method"] == "context_carryover"
+
+
+def test_strong_fresh_match_overrides_previous_context(setup):
+    # A follow-up that DOES name a real, distinctive subject of its
+    # own should win on its own merits, not get swept into carryover
+    # just because a previous_node_id exists.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who approves the quarterly mission program",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id="2.118",
+    )
+
+    assert result["node_id"] == "2.126"
+    assert result["method"] == "text_search"
+
+
 def test_followup_with_its_own_explicit_id_ignores_previous_context(setup):
     nodes, graph, vectorizer, matrix, searchable_ids = setup
 
