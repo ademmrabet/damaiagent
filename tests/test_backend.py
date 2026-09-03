@@ -199,6 +199,89 @@ def test_ask_non_english_question_without_llm_gives_honest_translation_error(cli
     assert "Off" in body["translation_error"] or "LLM" in body["translation_error"]
 
 
+def test_ask_frustrated_grounded_question_gets_an_empathetic_prefix(client):
+    # Tone detection (2026-09-03, see docs/decisions.md), applied to a
+    # real grounded DAM answer: the classify call and the phrasing call
+    # are two separate Groq calls here (tone detection is deliberately
+    # NOT folded into humanize_answer's prompt - see docs/decisions.md
+    # for why), so two canned responses in sequence.
+    from llm.groq_provider import GroqProvider
+
+    # humanize_answer() runs BEFORE tone detection in backend.py's
+    # ask() (phrasing first, then the tone-classification call at the
+    # very end) - so the canned replies have to be queued in THAT
+    # order, not the order the two concepts are introduced above.
+    responses = iter([
+        "Origination Sector Manager and Supporting Dept. Division "
+        "Manager both need to approve this.",
+        "frustrated",
+    ])
+    with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
+        res = client.post(
+            "/api/ask",
+            json={"question": "why does this still not work?? who approves 3.111", "llm": "groq"},
+        )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["detected_tone"] == "frustrated"
+    assert body["answer"].startswith("I hear you")
+    assert "Origination Sector Manager" in body["answer"]
+    # The prefix is UX warmth, not a fact - deterministic_answer (used
+    # for the "show structured/template answer" toggle) must stay pure.
+    assert not body["deterministic_answer"].startswith("I hear you")
+
+
+def test_ask_confused_out_of_scope_question_gets_an_empathetic_prefix(client):
+    # Pins the "every response type" requirement - this message never
+    # reaches humanize_answer at all (out_of_scope has no roles/node_id
+    # to ground on), so the prefix has to be applied as its own,
+    # independent step, not smuggled in through the grounded-answer
+    # path only.
+    from llm.groq_provider import GroqProvider
+
+    with patch.object(GroqProvider, "chat", return_value="confused"):
+        res = client.post(
+            "/api/ask",
+            json={
+                "question": "I don't understand any of this, what's happening with the weather today",
+                "llm": "groq",
+            },
+        )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["method"] == "out_of_scope"
+    assert body["detected_tone"] == "confused"
+    assert body["answer"].startswith("No worries")
+
+
+def test_ask_plain_question_never_calls_tone_detection(client):
+    # looks_emotional() should gate the extra Groq call entirely for an
+    # ordinary, neutrally-worded question - confirmed here by asserting
+    # a mock that would return an obviously-wrong tone is never even
+    # consulted, since the answer would otherwise be corrupted by it.
+    from llm.groq_provider import GroqProvider
+
+    with patch.object(GroqProvider, "chat", return_value="frustrated") as mock_chat:
+        res = client.post("/api/ask", json={"question": "who approves 3.111", "llm": "off"})
+    body = res.json()
+    assert body["detected_tone"] == "neutral"
+    assert not body["answer"].startswith("I hear you")
+    mock_chat.assert_not_called()
+
+
+def test_ask_frustrated_question_with_llm_off_stays_neutral(client):
+    # No provider available - tone detection needs an LLM the same way
+    # translation does, so this should silently stay neutral (not
+    # error, not guess) rather than ever fabricate an empathetic prefix
+    # without actually having classified anything.
+    res = client.post(
+        "/api/ask",
+        json={"question": "why does this still not work??", "llm": "off"},
+    )
+    body = res.json()
+    assert body["detected_tone"] == "neutral"
+
+
 def test_ask_vague_single_word_asks_for_clarification(client):
     res = client.post("/api/ask", json={"question": "mission"})
     body = res.json()

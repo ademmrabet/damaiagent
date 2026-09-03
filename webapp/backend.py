@@ -18,6 +18,7 @@ from llm.router import resolve_provider
 from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
 from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
+from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
 from webapp.dashboard_data import build_summary
 
 load_dotenv()
@@ -181,6 +182,29 @@ def ask(payload: Question):
     result["detected_language"] = detected_language
     result["answer_language"] = answer_language
     result["translation_error"] = translation_error
+
+    # Tone detection (2026-09-03, see docs/decisions.md) - applies to
+    # EVERY response type (Adem's explicit choice), not just grounded
+    # DAM answers, which is exactly why this runs as a deterministic
+    # prefix applied here at the very end rather than folded into
+    # humanize_answer()'s prompt above: that path only runs for
+    # grounded answers, but a frustrated "why won't this work AGAIN"
+    # deserves the same warmer opening whether the answer underneath is
+    # a fact lookup, a glossary lookup, or an honest out-of-scope
+    # refusal. looks_emotional() gates the actual Groq call so ordinary
+    # neutral questions (the large majority) never pay for it - same
+    # pattern as looks_non_english() gating translation above. Detected
+    # from payload.question (what the user actually typed), never the
+    # translated/English version - tone is about how they expressed
+    # themselves, not the retrieval-pipeline text.
+    detected_tone = "neutral"
+    if provider is not None and looks_emotional(payload.question):
+        tone_result = detect_tone(payload.question, provider)
+        detected_tone = tone_result["tone"]
+
+    result["detected_tone"] = detected_tone
+    result["answer"] = apply_tone_prefix(result["answer"], detected_tone, answer_language)
+
     return result
 
 

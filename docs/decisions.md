@@ -2740,3 +2740,102 @@ facts-vs-brevity conflicts, fewer false rejections from formatting
 noise) rather than a measured before/after rate. Worth Adem watching
 whether "LLM unavailable" shows up less often in practice after this
 deploys.
+
+## 2026-09-03 - Chatbot major 4/4: LLM-based tone detection
+
+Last of the four chatbot majors Adem asked for this session (multi-
+language, mandatory Check/Verify notes, action-code fix, and this).
+Request: detect when a user sounds frustrated or confused and respond
+more warmly - "let's go with the tone detection," confirmed earlier in
+the session as LLM-based (over a keyword-only heuristic) since tone is
+exactly the kind of thing a small classification call handles far more
+reliably than regex.
+
+Two scoping questions asked via AskUserQuestion before building:
+
+1. **Scope: every response type, not just grounded DAM answers.**
+   Adem's choice. This matters architecturally - it rules out folding
+   tone into `agent/generate.py`'s `humanize_answer()` prompt, since
+   that path only runs when there's a real node/roles to ground an
+   answer on. A frustrated "why won't this work AGAIN" asked as an
+   out-of-scope question, or a confused "what does C1 mean" glossary
+   lookup, still needed the same warmer opening. So tone is applied as
+   a separate, final step in `webapp/backend.py`'s `ask()`, after
+   `result["answer"]` is already fully built by whichever path produced
+   it (grounded/LLM-phrased, translated-only, or fully deterministic).
+
+2. **Cheap pre-filter before the LLM call.** Same cost-avoidance shape
+   as `looks_non_english()` already established for translation:
+   `llm/tone.py`'s `looks_emotional()` is a deterministic regex check
+   (repeated `!!`/`??`, ALL-CAPS words, and phrase patterns like "still
+   not working" / "I don't understand") that has to return True before
+   `detect_tone()` ever spends a Groq call. An ordinary "who approves
+   3.111" never pays for tone classification at all.
+
+**Architecture, deliberately two separate concerns:**
+
+- **Detection** (`detect_tone()`): one cheap LLM call, `temperature=0`,
+  `max_tokens=8`, asks for exactly one word (frustrated/confused/
+  neutral). Always defaults to `"neutral"` on any failure - no
+  provider, network error (`LLMUnavailableError`), or an unparseable
+  reply - the same "never guess wrong, fail safe" principle as
+  `detect_and_translate_to_english()`. Tolerates incidental formatting
+  noise in the reply (`"Frustrated."` still parses as frustrated).
+- **Response adaptation** (`apply_tone_prefix()`): NOT a second LLM
+  call. A small, hand-translated, deterministic prefix
+  (`EMPATHY_PREFIXES`, keyed by tone + language) prepended to whatever
+  answer text already exists. Same reasoning as `i18n.js`'s UI strings
+  and the note templates in `agent/qa.py`: this is a tiny, fixed set of
+  strings, not dynamic content, so hand-translating once beats an LLM
+  round trip on every use. Covers all 5 supported languages (en/fr/es/
+  pt/ar), matching the language picker's own set.
+
+**Detected from `payload.question` (what the user actually typed),
+never the English-translated pipeline text** - tone is about how
+someone expressed themselves, not the retrieval-internal text. And the
+prefix itself is applied in `answer_language` (the same explicit-
+override-or-detected language the rest of the answer is already in),
+not the question's own language - so a French answer to a frustrated
+English question gets the French prefix, matching what the user
+actually sees.
+
+`deterministic_answer` (the structured/template answer, used for the
+"show without LLM" toggle) deliberately never gets the prefix - it's a
+warmth/UX layer on top of an already-decided answer, not part of the
+trusted facts, and mixing it into the fact-bearing field would blur
+that boundary for no reason.
+
+**Tests.** `tests/test_tone.py` (25 tests): the pre-filter's true/false
+cases against realistic phrasing, `detect_tone()`'s parsing/fallback
+behavior (including the no-provider and unparseable-reply paths), and
+`apply_tone_prefix()` across all 5 languages plus the neutral no-op and
+unsupported-language fallback. `tests/test_backend.py` (4 new
+integration tests): a frustrated grounded answer gets prefixed (with
+the two canned Groq replies queued in the actual call order - phrasing
+happens before tone classification in `ask()`, a real ordering
+dependency worth keeping documented in the test itself, not just
+assumed); a confused *out-of-scope* question also gets prefixed,
+specifically to pin the "every response type" requirement since that
+path never touches `humanize_answer()`; a plain neutral question
+confirmed to never even call the LLM (`mock_chat.assert_not_called()`);
+and an LLM-off frustrated question stays neutral rather than
+fabricating a prefix with no real classification behind it. Full suite
+(all 23 test files) re-run after this feature: all pass, no
+regressions - the only surprise was that running every file back-to-
+back can exceed a 120s wall-clock budget purely from cumulative
+PDF-parsing time in the ~8 heaviest files (`test_build_nodes.py`,
+`test_graph.py`, etc., each ~12s alone), not from any actual hang;
+confirmed by isolating and timing each file individually.
+
+**Not independently verified against a real Groq call** - same sandbox
+network restriction noted in every LLM-dependent feature this session.
+Deployed behavior (does "frustrated" actually show up, does the model
+respect the exactly-one-word format reliably) is worth Adem watching
+for after this ships, same as the grounding-fallback-frequency fix
+above.
+
+**No frontend changes needed.** The prefix is baked directly into
+`result["answer"]`'s text server-side, not a separate UI element or
+badge - so despite covering "every response type," this shipped as a
+backend-only change (`llm/tone.py` + `webapp/backend.py`), with
+`Chat.jsx` untouched and no rebuild required.
