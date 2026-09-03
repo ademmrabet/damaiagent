@@ -11,6 +11,7 @@ from agent.glossary import (
     format_glossary_answer,
     expand_acronym_in_role_name,
 )
+from agent.action_codes import detect_action_code_query, format_action_code_answer
 
 MIN_TEXT_SEARCH_SCORE = 0.15
 
@@ -380,6 +381,20 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         answer = format_glossary_answer(glossary_detection)
         method = "glossary" if glossary_detection["found"] else "glossary_not_found"
         return _empty_result(answer, method)
+
+    # Action-code legend questions ("what's I, A and (i)?", "what does
+    # C2 mean") have to be caught here, before resolve_query/context-
+    # carryover run - a real live bug found this the hard way: these
+    # questions have too few "real content words" (bare letters get
+    # stripped by _content_word_count) to look like anything but an
+    # under-specified follow-up, so they were silently getting
+    # swallowed by the context-carryover fallback below and re-
+    # answering whatever task was already open instead. See
+    # agent/action_codes.py, docs/decisions.md 2026-09-03.
+    action_code_detection = detect_action_code_query(query)
+    if action_code_detection:
+        answer = format_action_code_answer(action_code_detection)
+        return _empty_result(answer, "action_code_legend")
 
     resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
 

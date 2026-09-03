@@ -365,6 +365,36 @@ def test_followup_with_its_own_explicit_id_ignores_previous_context(setup):
     assert result["method"] == "id"
 
 
+def test_action_code_followup_never_gets_swallowed_by_context_carryover(setup):
+    # The real live bug this was built for (2026-09-03, see docs/
+    # decisions.md): asking "what's I, A and (i)?" right after a task
+    # question got silently absorbed by the context-carryover fallback
+    # instead of answering the actual question - the bare letters are
+    # too short to count as "real content words" (_content_word_count
+    # strips anything under 3 characters), so it looked exactly like
+    # an under-specified follow-up about the same task. The action-
+    # code detector has to run and short-circuit BEFORE context-
+    # carryover ever gets a chance to fire, or this regresses silently.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves 2.126", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+    assert first["node_id"] == "2.126"
+
+    followup = answer_question(
+        "what's I, A and (i)?",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id=first["node_id"],
+    )
+
+    assert followup["node_id"] is None
+    assert followup["method"] == "action_code_legend"
+    assert "Initiate" in followup["answer"]
+    assert "Approve" in followup["answer"]
+    assert "informed" in followup["answer"].lower()
+
+
 def test_pronoun_followup_with_no_previous_context_falls_through_normally(setup):
     nodes, graph, vectorizer, matrix, searchable_ids = setup
 

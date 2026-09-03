@@ -2574,4 +2574,70 @@ script now also shows this feature in the same answer, so a short
 explanation of the new behavior was added right there rather than as a
 separate section.
 
+## 2026-09-03 (once more) - Real live bug: action-code questions swallowed by context-carryover
+
+Adem hit this live: asked "tell me about 2.515.2", then as a natural
+follow-up "what's I, A and (i)?" - expecting an explanation of what
+those action-code letters mean. Instead the agent just re-answered
+2.515.2's full breakdown again, unchanged, labelled "carried over from
+previous question."
+
+Root cause, found by tracing the actual code path rather than guessing:
+`_content_word_count()` (the signal `_needs_clarification`/context-
+carryover both key off) strips any word under 3 characters, which
+means bare letters like "I", "A", "C" - and stopwords like "what's" -
+all get stripped, leaving a content-word count of 0. That's
+indistinguishable, to the existing heuristic, from a genuinely vague
+follow-up like "and that one?" - so it fell straight into the
+context-carryover path and just re-answered the open task.
+
+The actual right fix wasn't a tweak to the vague-question threshold -
+it was that this class of question needed its own detection path
+entirely, run BEFORE context-carryover ever gets a chance to fire,
+same as smalltalk and glossary questions already do. And the data to
+answer it correctly already existed: `data/reference/authority_codes.
+json`, with the DAM's own action-code legend text extracted (role of
+I/C/C1-C4/R/A/A1-A3/(i), levels, colors) - carried over from v1's work,
+and `schema/schema.py`'s own `AuthorityCode` model was literally
+designed for this back on 2026-07-21 ("needed as reference data for
+the agent's `explain_authority` / glossary-lookup capability") - but
+nothing in the v2 agent had ever actually read it. This was unfinished
+planned scope, not new scope.
+
+**New `agent/action_codes.py`**, same shape as `agent/glossary.py`:
+`detect_action_code_query()` + `format_action_code_answer()`. The
+detection is deliberately conservative about bare single-letter codes -
+"I" in particular collides constantly with the pronoun - so a bare
+code only counts as a real mention when it appears alongside a second
+code (a list, like the real "I, A and (i)" case) or is itself
+unambiguous on its own (`( i )`, or a letter+digit combination like
+"A2"/"C1" that isn't a plausible English word). Checked directly
+against a batch of ordinary questions before trusting this ("what is
+2.120", "I approve this", "A2 is fine", "C is for cookie" - all
+correctly non-matches) - same verify-before-trust discipline used for
+every other regex-based detector in this project. A specific code gets
+its full DAM-sourced definition; a generic "explain the action codes"
+with no code named gets the six top-level codes (I, C, C3, R, A, ( i ))
+with a pointer to ask about a specific numbered level for more detail.
+
+Wired into `agent/qa.py`'s `answer_question()` right after glossary
+detection, before `resolve_query()`/context-carryover ever run - the
+same position in the pipeline glossary and smalltalk already occupy,
+for the same reason: these are all "answer this without touching node
+resolution at all" cases.
+
+**Verified against the exact real failure**, live, via `TestClient`:
+asked "tell me about 2.515.2" then "what's I, A and (i)?" with
+`previous_node_id` set to 2.515.2 - now returns `method:
+"action_code_legend"`, `node_id: None`, and the real three definitions,
+instead of re-answering 2.515.2. New `tests/test_action_codes.py` (8
+tests: the real screenshot query, five more real trigger phrasings,
+ten deliberately-tricky non-matches including the "I" pronoun
+collision risk, and the two "unambiguous alone" cases for suffixed
+codes and `( i )`). New regression test in `test_agent.py` pinning the
+exact end-to-end scenario (open a task, then ask the action-code
+question, confirm it does NOT carry over). 102 tests pass across
+`test_agent.py` + `test_action_codes.py` + `test_backend.py` + `test_
+generate.py` + `test_dashboard_data.py`.
+
 36 tests pass across `test_backend.py` + `test_llm.py`.
