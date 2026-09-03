@@ -149,6 +149,20 @@ def extract_column_headers(chars):
         already_closed = _ends_with_balanced_parens(group_text)
 
         if not already_closed and x0 - group_x0s[-1] <= COLUMN_MERGE_GAP:
+            # NOT safe to unconditionally insert a space at this merge
+            # boundary - tried that live on 2026-09-03 as a candidate
+            # fix for the "Task Manager1 & Project Team Members" glued-
+            # role-name bug (see docs/decisions.md) and it broke a
+            # DIFFERENT, previously-correct case instead: "Sector
+            # Manager (HQ-based / Region-based)" became "HQ- based"
+            # because that merge boundary falls right after a hyphen,
+            # which needs NO space. Confirmed by direct re-extraction
+            # that the Task Manager1 case isn't even a wrapped-header-
+            # merge issue in the first place (the missing space is
+            # inside a single run, between "Manager" and a shrunk "1"
+            # that looks like an unstripped mid-string footnote digit -
+            # a real, separate, narrower issue, left as a known
+            # limitation rather than chasing a risky general fix here).
             group_text += text
             group_x0s.append(x0)
         else:

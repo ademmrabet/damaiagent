@@ -1,5 +1,10 @@
 from llm.base import LLMUnavailableError
-from agent.generate import SYSTEM_PROMPT, build_grounding_prompt, humanize_answer
+from agent.generate import (
+    SYSTEM_PROMPT,
+    MANY_FACTS_THRESHOLD,
+    build_grounding_prompt,
+    humanize_answer,
+)
 
 RESOLVED = {
     "answer": (
@@ -43,6 +48,35 @@ POINTER_ANSWER = {
     "node_title": "CSP / RISP Dialogue Mission",
     "node_type": "child_task",
     "intent": "initiate",
+}
+
+
+# Mirrors a real answer with mandatory-notes appended (2026-09-03, see
+# docs/decisions.md) - a task with an approve role plus a check/verify
+# note plus multiple informed parties easily reaches 4+ facts, the
+# exact case MANY_FACTS_THRESHOLD/_LONG_ANSWER_RULE exist for.
+MANY_FACTS = {
+    "answer": (
+        "For 2.126 ('Quarterly Mission program'), the following "
+        "approve(s): RDG / Director RDNG. This task must also be "
+        "checked/verified by Sector Manager, Supporting Dept. Division "
+        "Manager. Concerned Sector VP, RDVP, Task Manager must also be "
+        "informed."
+    ),
+    "node_id": "2.126",
+    "method": "id",
+    "score": 1.0,
+    "roles": [
+        {"role": "RDG / Director RDNG", "action": "A", "level": None, "footnote_refs": []},
+        {"role": "Sector Manager", "action": "C", "level": None, "footnote_refs": []},
+        {"role": "Supporting Dept. Division Manager", "action": "C", "level": None, "footnote_refs": []},
+        {"role": "Concerned Sector VP", "action": "( i )", "level": None, "footnote_refs": []},
+        {"role": "RDVP", "action": "( i )", "level": None, "footnote_refs": []},
+        {"role": "Task Manager", "action": "( i )", "level": None, "footnote_refs": []},
+    ],
+    "node_title": "Quarterly Mission program",
+    "node_type": "task",
+    "intent": "approve",
 }
 
 
@@ -186,3 +220,77 @@ def test_grounding_prompt_carries_question_facts_and_reference_answer():
 def test_grounding_prompt_no_facts_case():
     system, user = build_grounding_prompt("random query", NO_MATCH)
     assert "no responsibilities recorded" in user
+
+
+# Sentence-cap scaling with fact count (2026-09-03, see docs/
+# decisions.md) - real gap found live: the mandatory Check/Verify +
+# informed-party notes feature routinely pushes real answers to 4-6
+# facts, and the original "1-3 sentences" cap put real pressure on the
+# model to drop or paraphrase a role name to stay short, which the
+# grounding check would then (correctly) reject - so answers with many
+# facts kept falling back to the deterministic template far more than
+# answers with few facts ever did.
+def test_few_facts_keeps_the_short_sentence_cap():
+    system, _ = build_grounding_prompt("who approves 3.111", RESOLVED)
+    assert "1-3 sentences" in system
+    assert len(RESOLVED["roles"]) < MANY_FACTS_THRESHOLD
+
+
+def test_many_facts_switches_to_the_uncapped_rule():
+    system, _ = build_grounding_prompt("who approves 2.126", MANY_FACTS)
+    assert "1-3 sentences" not in system
+    assert "as many sentences as you need" in system
+    assert len(MANY_FACTS["roles"]) >= MANY_FACTS_THRESHOLD
+
+
+def test_many_facts_answer_succeeds_when_the_llm_states_every_role():
+    # The actual point of the feature: a real multi-fact answer that
+    # DOES faithfully state every role should now succeed instead of
+    # needlessly falling back just because it ran to more sentences.
+    provider = FakeProvider(
+        response=(
+            "RDG / Director RDNG approves this one. It also needs "
+            "checking by Sector Manager and Supporting Dept. Division "
+            "Manager. Once that's done, Concerned Sector VP, RDVP, and "
+            "Task Manager should be kept informed."
+        )
+    )
+    result = humanize_answer("who approves 2.126", MANY_FACTS, provider)
+    assert result["used_llm"] is True
+    assert result["error"] is None
+
+
+def test_many_facts_answer_still_fails_grounding_if_a_role_is_dropped():
+    # The safety guarantee itself is unchanged - a shorter answer that
+    # actually omits one of the six roles still correctly fails,
+    # regardless of the relaxed sentence cap.
+    provider = FakeProvider(
+        response="RDG / Director RDNG approves this, and Sector Manager checks it."
+    )
+    result = humanize_answer("who approves 2.126", MANY_FACTS, provider)
+    assert result["used_llm"] is False
+    assert "grounding" in result["error"].lower()
+
+
+# Whitespace/case-normalized grounding match (2026-09-03) - a model
+# introducing trivial formatting noise (double space, different
+# capitalization) around an otherwise-faithful role name shouldn't
+# trigger a false rejection.
+def test_grounding_check_tolerates_incidental_whitespace_and_case_differences():
+    provider = FakeProvider(
+        response=(
+            "origination sector  manager and supporting dept. division "
+            "manager both need to approve this."
+        )
+    )
+    result = humanize_answer("who approves 3.111", RESOLVED, provider)
+    assert result["used_llm"] is True
+
+
+def test_grounding_check_still_catches_a_genuinely_different_name():
+    # Normalizing whitespace/case must not become a loophole - a role
+    # name that's actually wrong (not just differently formatted)
+    # still has to fail.
+    provider = FakeProvider(response="The Origination Manager approves this one alone.")
+    result = humanize_answer("who approves 3.111", RESOLVED, provider)
+    assert result["used_llm"] is False

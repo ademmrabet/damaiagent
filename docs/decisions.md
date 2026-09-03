@@ -2640,4 +2640,103 @@ question, confirm it does NOT carry over). 102 tests pass across
 `test_agent.py` + `test_action_codes.py` + `test_backend.py` + `test_
 generate.py` + `test_dashboard_data.py`.
 
-36 tests pass across `test_backend.py` + `test_llm.py`.
+## 2026-09-03 (yet again) - Real live bug: "LLM unavailable" fallback firing too often
+
+Adem reported the Groq-phrased answers were falling back to the
+deterministic template too frequently - specifically flagged via a
+screenshot showing "LLM output failed the grounding check (missing/
+altered role names)" on an otherwise-ordinary full-breakdown answer.
+Investigated two candidate causes; found and fixed one real bug along
+the way, chased and correctly abandoned a second one.
+
+**Candidate 1 (chased, then abandoned): the "Task Manager1" garbled
+role name.** The screenshot's node (2.224.1) has a role literally
+stored as `"Task Manager1 & Project Team Members"` - no space before
+the `1`. Scanned the entire dataset first (not just this one node):
+exactly one distinct garbled role name across all 327 nodes (also
+affects 2.325.2, same shared role text), so this is narrow, not
+systemic. Traced it to the actual character geometry on the source
+PDF page via `pdfplumber` (not guessed): the raw character stream
+has `...r` (the last letter of "Manager") immediately followed by a
+shrunk `1` (size 3.24 vs. neighboring letters' 3.99-4.5) with NO space
+character between them anywhere in the extracted stream, while real
+spaces DO exist immediately before and after that `1` elsewhere in the
+same run. This looks like a mid-string shrunk footnote-style digit
+that `parsing/column_roles.py`'s `_strip_trailing_footnote_digit`
+doesn't catch, because that function - correctly, given every other
+known real case - only strips a shrunk digit from the very END of a
+run, and this one sits mid-run (before "& Project Team Members"
+continues after it).
+
+First attempted fix: always insert a space at the header-line merge
+boundary in `extract_column_headers` (reasoning: `COLUMN_MERGE_GAP`
+merges wrapped header-line runs, and `" ".join(group_text.split())`
+already collapses any resulting double space, so this looked safe).
+Rebuilt and checked against the real 2.224.1 data: **the "Task
+Manager1" text was completely unchanged** - confirming this merge
+boundary was never where the actual bug lives (the missing space is
+inside a single character run, not between two merged runs). Worse,
+running the full test suite turned up a real regression this
+"fix" introduced elsewhere: `"Sector Manager (HQ-based / Region-
+based)"` on node 2.126 became `"Sector Manager (HQ- based / Region-
+based)"` - a DIFFERENT merge boundary that happens to fall right after
+a hyphen, which correctly needs NO space, and this change forced one
+in anyway. **Reverted the change entirely** rather than keep a "fix"
+that didn't fix its target and broke a previously-correct case -
+verified via `test_column_roles.py`'s full 8-test suite passing again
+after the revert. The narrow mid-run shrunk-digit case is left as a
+known, honestly-documented data-quality limitation (affects 2 of 327
+nodes) rather than risking another blind fix to geometry code that
+several other real, hard-won bug fixes already depend on staying
+correct.
+
+**Candidate 2 (the real fix): fact count outgrew the sentence budget.**
+The mandatory Check/Verify + informed-party notes feature (shipped
+earlier the same day) routinely pushes a real answer's fact count from
+1-2 roles (just the specific action asked about) to 4-6 roles. `agent/
+generate.py`'s system prompt rule 5 ("Answer in 1-3 sentences") was
+never revisited when that feature was built - and squeezing 4-6 role
+names into 3 sentences while ALSO keeping every one of them verbatim
+intact (rule 4) is a genuinely hard constraint to satisfy at once. The
+model's honest ways to resolve that pressure are to drop a role,
+paraphrase/shorten a name, or run longer than 3 sentences - only the
+third doesn't silently fail the grounding check.
+
+Fix: `MANY_FACTS_THRESHOLD = 4` - when `structured_result["roles"]` has
+4 or more entries, `build_grounding_prompt()` swaps rule 5 for a
+variant that explicitly lifts the sentence cap ("use as many sentences
+as you need... a longer, complete answer is much better than a short
+one that drops or blends any of them") instead of leaving the model to
+guess how to trade off length against accuracy. Rule 4 (verbatim
+accuracy) is completely untouched - this only removes brevity
+pressure, never relaxes what has to survive.
+
+**Also fixed alongside it, a smaller but real gap**: `_mentions_
+expected_facts()` compared the LLM's text against each role name with
+a raw, case-sensitive, whitespace-sensitive substring check. A model
+introducing purely incidental formatting noise - a double space, or
+different capitalization mid-sentence - would fail the grounding check
+over nothing but that noise, not an actual missing or altered fact.
+Added `_normalize_for_match()` (collapse whitespace, lowercase) applied
+to both sides of the comparison before checking. Deliberately does
+NOT weaken the actual guarantee: the same words, in the same order,
+still have to be present - checked directly with a test that a
+genuinely different/wrong role name still correctly fails after
+normalization, not just the incidental-formatting case.
+
+**Tests.** 6 new tests in `test_generate.py`: few-facts keeps the
+short cap, many-facts switches to the uncapped rule, a real many-facts
+answer that faithfully states every role now succeeds, a many-facts
+answer that drops a role still correctly fails, whitespace/case noise
+is tolerated, and a genuinely wrong name still fails. 101 tests pass
+across `test_generate.py` + `test_backend.py` + `test_agent.py` +
+`test_action_codes.py` + `test_column_roles.py`.
+
+**Not independently verified against a real Groq call** - same sandbox
+network restriction as the earlier Groq-model fix (outbound requests
+to `api.groq.com` are proxy-blocked here) - so the actual real-world
+reduction in fallback frequency rests on the reasoning above (fewer
+facts-vs-brevity conflicts, fewer false rejections from formatting
+noise) rather than a measured before/after rate. Worth Adem watching
+whether "LLM unavailable" shows up less often in practice after this
+deploys.
