@@ -183,6 +183,54 @@ def _matching_roles(roles, intent):
     return [r for r in roles if intent["matches"](r["action"], r["level"])]
 
 
+def _check_verify_roles(roles):
+    # C/C1/C2 (check, verify) only - deliberately excludes C3/C4
+    # (consult), same action-code split agent/authority.py's "check"
+    # vs "consult" intents already draw. See _format_mandatory_notes.
+    return [r for r in roles if r["action"] in ("C", "C1", "C2")]
+
+
+def _informed_roles(roles):
+    return [r for r in roles if r["action"] == "( i )"]
+
+
+def _format_mandatory_notes(roles, intent_name):
+    """
+    Domain rule from Adem (2026-09-03, see docs/decisions.md): when a
+    task has a recorded Check/Verify (C/C1/C2) entity in the DAM, that
+    step is mandatory - not optional context, a real part of the
+    process - so it belongs on ANY narrow answer about that task ("who
+    approves", "who initiates", ...), not only when someone happens to
+    ask "who checks this." Same always-surface treatment extended to
+    the informed-party (( i )) entity, for consistency (also Adem's
+    explicit call, over the alternative of gating it behind some vaguer
+    "when it feels needed" heuristic that couldn't be built reliably
+    without either an LLM judgment call or an undertested guess).
+
+    Skipped when the intent actually asked about IS that same action -
+    "who checks 3.111" already answers with the check/verify roles as
+    its main sentence; repeating them as a trailing note would be a
+    redundant echo, not new information.
+    """
+    notes = []
+
+    if intent_name != "check":
+        check_roles = _check_verify_roles(roles)
+        if check_roles:
+            role_list = _format_role_list(check_roles)
+            notes.append(
+                "This task must also be checked/verified by " + ", ".join(role_list) + "."
+            )
+
+    if intent_name != "informed":
+        informed_roles = _informed_roles(roles)
+        if informed_roles:
+            role_list = _format_role_list(informed_roles)
+            notes.append(", ".join(role_list) + " must also be informed.")
+
+    return " ".join(notes)
+
+
 def _format_reference_pointer(node, nodes, graph, intent=None):
     """
     For a node that carries no responsibilities of its own but DOES
@@ -257,16 +305,19 @@ def _format_intent_answer(node, intent, roles, matching, nodes, graph):
                 pointer = _format_reference_pointer(node, nodes, graph, intent)
             if pointer:
                 return pointer
-        return (
+        base = (
             f"No one is recorded to {intent['name']} on {node.id} "
             f"({node.title!r}) in the DAM."
         )
+    else:
+        role_list = _format_role_list(matching)
+        base = (
+            f"For {node.id} ({node.title!r}), the following {intent['verb_phrase']}: "
+            + ", ".join(role_list) + "."
+        )
 
-    role_list = _format_role_list(matching)
-    return (
-        f"For {node.id} ({node.title!r}), the following {intent['verb_phrase']}: "
-        + ", ".join(role_list) + "."
-    )
+    notes = _format_mandatory_notes(roles, intent["name"])
+    return f"{base} {notes}" if notes else base
 
 
 def _format_full_answer(node, roles, nodes, graph):
@@ -419,7 +470,18 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
     if intent:
         matching = _matching_roles(roles, intent)
         answer = _format_intent_answer(node, intent, roles, matching, nodes, graph)
-        facts = matching
+        # facts drives both the deterministic "roles" shown to the user
+        # and what agent/generate.py's grounding check requires an LLM
+        # rephrasing to preserve verbatim - the mandatory Check/Verify
+        # and informed-party notes above are real facts stated in
+        # "answer" now, so they have to be in here too, or an LLM
+        # phrasing pass could silently drop them without the grounding
+        # check ever catching it (see docs/decisions.md, 2026-09-03).
+        facts = list(matching)
+        if intent["name"] != "check":
+            facts.extend(_check_verify_roles(roles))
+        if intent["name"] != "informed":
+            facts.extend(_informed_roles(roles))
     else:
         answer = _format_full_answer(node, roles, nodes, graph)
         facts = roles

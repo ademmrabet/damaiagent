@@ -43,6 +43,62 @@ def test_approve_question_matches_screenshot(setup):
     assert "Supporting Dept. Division Manager" in result["answer"]
 
 
+# Mandatory Check/Verify + informed-party notes (2026-09-03, see docs/
+# decisions.md) - domain rule from Adem: when a task has a recorded
+# Check/Verify entity, that step is mandatory, so it should surface on
+# ANY narrow answer about that task, not just when someone explicitly
+# asks "who checks this." 2.126 is a real node with both a Check (C)
+# role, several action types, and informed-party roles, verified
+# directly against answer_question's real output before writing these
+# assertions - not fabricated node data.
+def test_approve_answer_also_surfaces_the_mandatory_check_and_informed_notes(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who approves 2.126", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert "RDG" in result["answer"]  # the actual approve answer, unchanged
+    assert "must also be checked/verified by" in result["answer"]
+    assert "Sector Manager (HQ-based / Region-based)" in result["answer"]
+    assert "must also be informed" in result["answer"]
+    assert "Concerned Sector VP" in result["answer"]
+    # The mandatory-note roles are real facts now, not just answer
+    # text - they have to be in "roles" too, or an LLM rephrasing could
+    # silently drop them without the grounding check catching it.
+    role_names = {r["role"] for r in result["roles"]}
+    assert "Sector Manager (HQ-based / Region-based)" in role_names
+    assert "Concerned Sector VP" in role_names
+
+
+def test_check_intent_answer_does_not_redundantly_repeat_its_own_note(setup):
+    # "who checks 2.126" already answers WITH the check/verify roles as
+    # its main sentence - the mandatory-note appendix should skip
+    # repeating them a second time, only adding the (different)
+    # informed-party note.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who checks 2.126", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert "check(s) / verifie(s): Sector Manager" in result["answer"]
+    assert "must also be checked/verified by" not in result["answer"]
+    assert "must also be informed" in result["answer"]
+
+
+def test_informed_question_has_no_redundant_informed_note(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who are the informed parties for 2.126",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+    )
+
+    assert "must also be checked/verified by" in result["answer"]
+    assert "must also be informed" not in result["answer"]
+
+
 def test_consult_intent_never_matches_bare_c_or_check(setup):
     intent = detect_intent("who consults on this")
     assert intent["name"] == "consult"

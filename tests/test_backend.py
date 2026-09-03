@@ -68,10 +68,16 @@ def test_ask_french_question_gets_translated_and_answered_in_french(client):
     # resolve it), then phrase the grounded answer back in French.
     from llm.groq_provider import GroqProvider
 
+    # 3.111 also has two recorded informed-party (( i )) entities - the
+    # mandatory-notes feature (see docs/decisions.md, 2026-09-03) folds
+    # those into the grounding-check facts too, alongside the approve
+    # roles, so the canned reply has to preserve all four role names,
+    # not just the two approvers.
     responses = iter([
         "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
         "Pour 3.111, les personnes suivantes approuvent : Origination "
-        "Sector Manager, Supporting Dept. Division Manager.",
+        "Sector Manager, Supporting Dept. Division Manager. CPO et "
+        "Country Manager DDG doivent également être informés.",
     ])
     with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
         res = client.post(
@@ -99,7 +105,8 @@ def test_ask_explicit_target_language_overrides_detected_language(client):
 
     reply = (
         "Pour 3.111, les personnes suivantes approuvent : Origination "
-        "Sector Manager, Supporting Dept. Division Manager."
+        "Sector Manager, Supporting Dept. Division Manager. CPO et "
+        "Country Manager DDG doivent également être informés."
     )
     with patch.object(GroqProvider, "chat", return_value=reply):
         res = client.post(
@@ -140,7 +147,8 @@ def test_ask_explicit_english_target_overrides_a_french_question(client):
     responses = iter([
         "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
         "Origination Sector Manager and Supporting Dept. Division "
-        "Manager both need to approve this.",
+        "Manager both need to approve this. CPO and Country Manager "
+        "DDG must also be informed.",
     ])
     with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
         res = client.post(
@@ -285,7 +293,8 @@ def test_ask_llm_ollama_falls_back_when_unreachable(client):
 def test_ask_llm_success_path_uses_grounded_phrasing(client):
     fake_reply = (
         "Origination Sector Manager and Supporting Dept. Division Manager "
-        "both need to sign off on this one."
+        "both need to sign off on this one. CPO and Country Manager DDG "
+        "must also be informed."
     )
     with patch("llm.groq_provider.requests.post") as post:
         post.return_value.raise_for_status = lambda: None

@@ -2498,4 +2498,80 @@ speakers in a formal setting. The actual DAM facts in every answer are
 never at risk either way - those still go through the grounding check
 in `agent/generate.py`, unchanged by this feature.
 
+## 2026-09-03 (later still) - Domain rule: Check/Verify is mandatory, always surfaced
+
+New domain knowledge from Adem, from the actual internship context
+rather than anything derivable from the DAM PDF's formatting alone:
+when a task's DAM row records a Check/Verify (C/C1/C2) entity, that
+step is a mandatory part of the process - not optional supplementary
+information. The agent's existing behavior was to answer only the
+specific action asked about ("who approves X" showed only the A-coded
+role, nothing else), which meant a real, mandatory obligation on the
+task could be completely invisible to someone who happened to ask a
+narrower question. Adem also asked for the informed-party (( i )) role
+to get the same treatment "when it feels needed."
+
+Two design questions put to Adem directly before writing any code,
+since both changed what every intent-specific answer contains: (1)
+should this note apply to every intent asked about the task (approve,
+review, initiate...) or only to approve-specific questions - chose
+"every intent," since the underlying rule is a property of the task,
+not of the specific question; (2) should the informed-party mention be
+deterministic-always-when-present (matching the Check/Verify rule
+exactly) or left out of this pass, since "when it feels needed" isn't
+buildable as a reliable rule without either an LLM judgment call or an
+undertested heuristic - chose "always," for the same consistency and
+testability reasons the rest of this project has favored deterministic
+rules over LLM guesses throughout (typo correction, intent detection,
+vague/out-of-scope detection are all in this category).
+
+**Implementation (`agent/qa.py`).** Two small filters added -
+`_check_verify_roles()` (action in `C`/`C1`/`C2`, deliberately
+excluding `C3`/`C4` consult - the same split `agent/authority.py`'s
+"check" vs "consult" intents already draw) and `_informed_roles()`
+(action `( i )`). A new `_format_mandatory_notes(roles, intent_name)`
+builds up to two trailing sentences - "This task must also be checked/
+verified by X." and "Y must also be informed." - skipping whichever
+one matches the intent actually asked about, so "who checks 2.126"
+doesn't redundantly repeat its own main answer as a note. `_format_
+intent_answer()` appends this to both of its existing outcomes (a
+normal role-list answer, and the "no one is recorded to X" case - a
+task can have no approver recorded but still have a real, mandatory
+check/verify step, so the note has to survive that branch too).
+
+**Grounding check extended to cover the new facts.** The `roles` list
+returned by `answer_question()` (consumed both directly by the
+frontend and as the "verified facts" an LLM rephrasing must preserve,
+per `agent/generate.py`'s `_mentions_expected_facts`) previously only
+contained the roles matching the asked intent. Now it also includes
+the check/verify and informed roles whenever they're part of the
+answer text - otherwise an LLM-phrased rephrasing could silently drop
+the new mandatory notes without the grounding check ever catching it,
+which would have made this feature's core promise (mandatory
+information is never invisible) untrustworthy the moment Groq/Ollama
+phrasing was turned on.
+
+**Verified against real data before writing tests**, same discipline
+as everywhere else in this project: queried the actual built graph for
+a node with both a Check role and other action types (found 2.126,
+"Quarterly Mission program" - already used elsewhere in this project's
+tests and demo script) and confirmed the real generated answer text
+before pinning it. New tests in `test_agent.py`: the check/informed
+notes appear on an approve question and are included in `roles`
+(grounding-check-safe); a check-intent question doesn't redundantly
+repeat its own note; an informed-intent question doesn't redundantly
+repeat its own note either. 4 existing `test_backend.py` tests needed
+their canned/mocked LLM replies updated to also mention 2.126/3.111's
+real informed-party role names, since the grounding check now
+correctly requires those too - this is the intended behavior showing
+up as expected, not a regression to work around. 81 tests pass across
+`test_agent.py` + `test_backend.py` + `test_generate.py` + `test_
+dashboard_data.py`.
+
+**Demo script updated** (`docs/demo_script.md`, section 1) - the
+existing "who approves 2.126" question already used in the live-demo
+script now also shows this feature in the same answer, so a short
+explanation of the new behavior was added right there rather than as a
+separate section.
+
 36 tests pass across `test_backend.py` + `test_llm.py`.

@@ -30,6 +30,18 @@ naming **RDG / Director RDNG** as approver, with the RDG acronym expanded
 inline. This shows the agent isn't guessing — an id in the DAM resolves
 with certainty (`method: id`, confidence 1.0).
 
+Also worth pointing out, since it's right there in this same answer: the
+reply doesn't stop at "who approves" — it also states that the task **must
+also be checked/verified by** the Sector Manager and Supporting Dept.
+Division Manager, and that the Concerned Sector VP, RDVP, and Task
+Manager/Project Team **must also be informed**. This is a deliberate
+domain rule (added 2026-09-03): a recorded Check/Verify step in the DAM is
+mandatory, not optional context, so the agent surfaces it on *any* narrow
+question about that task — not only when someone happens to ask "who
+checks this." Good moment to say out loud: a new employee asking a narrow
+question still gets told about the other real obligations on that task,
+instead of only the one thing they thought to ask about.
+
 ## 2. Natural language — no id needed
 
 Ask:
