@@ -66,22 +66,40 @@ class Question(BaseModel):
     # guessing off incidental word overlap. See agent/qa.py's
     # answer_question docstring and docs/decisions.md, 2026-08-06.
     previous_node_id: Optional[str] = None
+    # Explicit language picker override (2026-09-03, see docs/
+    # decisions.md) for the ANSWER's language - independent of
+    # whatever language the question text itself is in. None/"auto"/
+    # omitted (the default) keeps the original auto-detect-from-the-
+    # question behavior. Any other supported code (en/fr/es/pt/ar)
+    # always wins - e.g. asking "who approves 3.111" in English while
+    # the UI language picker is set to French still answers in French.
+    target_language: Optional[str] = None
 
 
 @app.post("/api/ask")
 def ask(payload: Question):
     """
-    Multi-language support (2026-08-06, see docs/decisions.md): the
-    deterministic retrieval pipeline (id matching, TF-IDF search,
-    intent detection, typo correction) is built entirely around the
-    DAM's own English vocabulary - there's no realistic way to
-    rebuild all of that per language. Instead, a non-English question
-    is translated to English BEFORE it reaches answer_question() (so
-    retrieval is completely unaffected, still the same tested logic),
-    and the final answer is translated back afterward. looks_non_
-    english() is a cheap, deterministic pre-filter so a plain English
-    question (the overwhelming majority of traffic) never pays for the
-    extra LLM round trips this requires.
+    Multi-language support (2026-08-06, extended 2026-09-03, see docs/
+    decisions.md): the deterministic retrieval pipeline (id matching,
+    TF-IDF search, intent detection, typo correction) is built
+    entirely around the DAM's own English vocabulary - there's no
+    realistic way to rebuild all of that per language. Instead, a
+    non-English question is translated to English BEFORE it reaches
+    answer_question() (so retrieval is completely unaffected, still
+    the same tested logic), and the final answer is translated back
+    afterward. looks_non_english() is a cheap, deterministic pre-
+    filter so a plain English question (the overwhelming majority of
+    traffic) never pays for the extra LLM round trips this requires.
+
+    Two independent language concerns, deliberately decoupled: the
+    language the QUESTION needs translating FROM (always detected from
+    the question text itself, always translated TO English for
+    retrieval) versus the language the ANSWER gets phrased IN (an
+    explicit `target_language` picker selection always wins over
+    whatever the question's own language was, falling back to the
+    detected language only when no explicit selection was made). This
+    is what lets someone type an English question with the UI language
+    picker set to French and still get a French answer.
     """
     provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
 
@@ -103,6 +121,19 @@ def ask(payload: Question):
             # failing to resolve anything at all.
             translation_error = "Translation needs an LLM mode other than Off."
 
+    if payload.target_language and payload.target_language != "auto":
+        answer_language = payload.target_language
+    else:
+        answer_language = detected_language
+
+    if answer_language != "en" and provider is None and not translation_error:
+        # Only reachable here when the question itself looked English
+        # (so the branch above never set translation_error) but the
+        # user explicitly picked a non-English answer language with no
+        # LLM available to produce one - be honest about that gap too,
+        # same principle as the query-side check above.
+        translation_error = "Translation needs an LLM mode other than Off."
+
     result = answer_question(
         query_for_pipeline,
         state["nodes"],
@@ -117,16 +148,17 @@ def ask(payload: Question):
     if payload.llm and payload.llm != "off":
         if result.get("node_id") and result.get("roles"):
             # Real DAM facts to protect - the stricter, grounding-
-            # checked path (agent/generate.py), just phrased in the
-            # detected language.
+            # checked path (agent/generate.py), phrased in
+            # answer_language (explicit picker override if one was
+            # given, else whatever the question was detected in).
             generation = humanize_answer(
-                payload.question, result, provider, target_language=detected_language
+                payload.question, result, provider, target_language=answer_language
             )
-        elif detected_language != "en":
+        elif answer_language != "en":
             # No facts to fabricate here (smalltalk/help/vague/out-of-
             # scope/invalid-id) - a static English message just needs
             # straight translation, no grounding check required.
-            translated = translate_text(result["answer"], detected_language, provider)
+            translated = translate_text(result["answer"], answer_language, provider)
             generation = {
                 "text": translated["text"],
                 "used_llm": translated["used_llm"],
@@ -147,6 +179,7 @@ def ask(payload: Question):
 
     result["deterministic_answer"] = deterministic_answer
     result["detected_language"] = detected_language
+    result["answer_language"] = answer_language
     result["translation_error"] = translation_error
     return result
 
@@ -162,7 +195,7 @@ def llm_config():
     The actual model names each mode would use right now - reads them
     from the same provider classes resolve_provider() itself uses, so
     this can never drift from reality the way a second, hand-written
-    copy of "llama3.1" / "llama-3.3-70b-versatile" in the frontend
+    copy of "llama3.1" / "openai/gpt-oss-120b" in the frontend
     could. Respects env var overrides (OLLAMA_MODEL, GROQ_MODEL) same
     as the providers do - if Adem points OLLAMA_MODEL at a different
     pulled model, the UI reflects that without a code change.

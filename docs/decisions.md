@@ -2322,3 +2322,180 @@ mocked "qui approuve 3.111" round trip returns `detected_language:
 "fr"` and a correctly-grounded French answer. 114 tests pass across
 `test_frontend_source.py` + `test_backend.py` + `test_generate.py` +
 `test_translate.py` + `test_agent.py` + `test_dashboard_data.py`.
+
+## 2026-09-03 - Live bug: Groq 404 on the deployed instance, `llama-3.3-70b-versatile` deprecated
+
+Adem hit a real error on the live Render deployment - a tooltip in the
+chat UI reading `Groq request failed (model=llama-3.3-70b-versatile):
+404 Client Error: Not Found for url: https://api.groq.com/openai/v1/
+chat/completions`. Confirmed against Groq's own current docs
+(`console.groq.com/docs/models`, fetched live, not assumed from
+training knowledge - the same discipline used for the original model
+name back on 2026-08-05) rather than guessed: Groq deprecated
+`llama-3.3-70b-versatile` for standard/developer API keys on
+2026-08-16, moving it to Enterprise-only, contact-sales pricing. A
+regular key gets a clean 404 - the model id still exists, it's just no
+longer reachable on this account's plan. This is an external-service
+change, not a bug in this project's own code, but it broke the LLM
+path on the deployed instance regardless.
+
+**Fix**: moved `DEFAULT_MODEL` in `llm/groq_provider.py` from
+`llama-3.3-70b-versatile` to `openai/gpt-oss-120b` - currently Groq's
+flagship model on the standard production tier (per the same docs
+fetch): similar speed (~500 t/s vs. the old model's 280 t/s), 131K
+context, and strong enough instruction-following for this app's two
+strict-format prompts (the grounded-answer system prompt in
+`agent/generate.py` and the two-line `LANGUAGE:`/`TRANSLATED:` format
+in `llm/translate.py`) - both depend on the model reliably following
+exact formatting, so a real quality/instruction-following floor
+mattered here, not just "cheapest available."
+
+Also updated every place the old model name was hardcoded or
+documented, so nothing in the repo could regress back to it silently:
+`.env.example`, the actual local `.env` (which still had
+`GROQ_MODEL=llama-3.3-70b-versatile` pinned, overriding the code
+default entirely - the real reason the fresh code default alone
+wouldn't have fixed the local reproduction), `docs/llm_setup.md`,
+`tests/test_backend.py`'s `test_llm_config_reports_the_real_resolved_
+model_names`, and the example model names in `webapp/backend.py`'s
+`llm_config()` docstring. `tests/test_llm.py`'s explicit test-only
+model string was also updated for consistency, though it wasn't
+actually load-bearing (mocked, never a real call).
+
+**Not independently live-verified against the real Groq API from this
+environment** - the sandbox's outbound network is proxy-restricted and
+blocks `api.groq.com` (confirmed: a real call attempt failed with a
+407/403 proxy tunnel error, not a Groq-side error), so this fix rests
+on Groq's own current docs listing `openai/gpt-oss-120b` as a live
+production model with standard pricing, not on a real round trip from
+this session. Verify with a real question against the actual
+deployment after the next deploy.
+
+**Action still needed on Render** (outside this session's reach): if
+Render's own environment variables have `GROQ_MODEL` set explicitly
+(separate from what's in this repo's `.env`/`.env.example`, which
+Render never reads), that value overrides the new code default the
+same way the local `.env` did - check Render's dashboard and update or
+remove it if present.
+
+## 2026-09-03 (later) - Explicit language picker, not just auto-detect
+
+Adem tested the live deployment and reported the multi-language
+feature from earlier this session had no visible way to use it - no
+button or control anywhere on the page, and he wanted users to be able
+to actively pick a language and have it "translate all the data to
+better understand the answers." Real gap in the original design: the
+2026-08-06 multi-language work only auto-detected the language FROM
+the question text itself - there was never a way to ask an English
+question and get a non-English answer, or vice versa, and nothing in
+the UI signaled the capability existed at all before you'd already
+typed a non-English question and gotten a translated reply back.
+
+Two design forks worth deciding deliberately rather than guessing, so
+these were put to Adem directly before building: (1) should a selected
+language be an **explicit override** (always wins, regardless of what
+language the question itself is typed in) or just a **default/
+fallback** underneath the existing per-message auto-detect - chose
+explicit override, since that's what "select and change it" actually
+implies and it's the simpler mental model; (2) should the surrounding
+UI chrome (Send button, input placeholder, meta labels) switch
+language too, or just the agent's answers - chose full UI translation.
+
+**Backend: two independent language concerns, deliberately decoupled
+(`webapp/backend.py`).** The existing auto-detect logic answers "what
+language do we need to translate the QUESTION *from*, to run it
+through the English-only retrieval pipeline" - that's unchanged and
+still runs regardless of the picker. A new, separate `target_language`
+field on the `Question` model answers a different question entirely:
+"what language should the ANSWER be phrased *in*." `answer_language`
+= `target_language` when it's set to anything other than `None`/
+`"auto"`, else falls back to whatever the question was detected as
+(the original, pre-picker behavior - fully backward compatible, the
+existing French-question auto-detect test needed no changes). This
+split is what lets someone type an English question with the picker
+set to French and get a French answer, or type a French question with
+the picker forced to English and get an English one - two real test
+cases, both passing (`test_ask_explicit_target_language_overrides_
+detected_language`, `test_ask_explicit_english_target_overrides_a_
+french_question`).
+
+Also extended the existing honesty guarantee: if a non-English
+`answer_language` is requested (explicitly or via detection) but no
+LLM provider is available (`llm=off`), `translation_error` is now set
+even when the question itself was plain English (previously that
+field only ever got set when the *question* needed translating and
+couldn't be) - same "never silently substitute a language you can't
+actually produce" principle as the rest of this feature.
+
+**Frontend chrome translation - a second, separate mechanism, on
+purpose (`webapp/frontend/src/i18n.js`).** This is NOT routed through
+the LLM translation shim in `llm/translate.py` - that path exists for
+arbitrary DAM answer text where the exact wording can't be known ahead
+of time and needs a grounding check. UI chrome is the opposite case: a
+small, fixed set of ~15 strings (subtitle, placeholder, send button,
+meta labels, empty state, error message) that are identical on every
+page load. Translating those via an LLM call would be slower, cost
+money per page view, and could phrase the same button differently
+between reloads - exactly wrong for interface text that should feel
+stable. Hand-translated once into a plain dictionary instead (`UI_
+STRINGS`, keyed by language code), the same "deterministic where the
+content is fixed, LLM only where it has to be" principle used
+throughout this project (typo correction, intent detection, glossary
+lookup are all in this same category). Scoped to the Chat page only,
+not the conversation sidebar or Dashboard - a reasonable, explicitly
+documented boundary for this pass, not an oversight.
+
+**New `LanguagePicker` component** (`webapp/frontend/src/components/
+LanguagePicker.jsx`), styled to match the existing `LlmPicker` pattern
+exactly (same dropdown structure, `languagePicker.css` mirrors
+`llmPicker.css`) so it reads as "another mode selector" rather than a
+bolted-on control. Sits next to the LLM picker in the header. Six
+options: Auto (the original detect-from-question behavior) plus the
+five supported languages, each self-labeled in its own language
+(`Français`, `Español`, `Português`, `العربية`) rather than translated
+from English - a picker option should say what it is in the language
+it represents.
+
+**Arabic is RTL** - a real layout correctness issue, not just a
+translation one. `Chat` now sets `dir="rtl"` on the page root whenever
+Arabic is selected (`RTL_LANGUAGES` set in `i18n.js`), so text
+alignment and reading order flip correctly instead of rendering
+Arabic text left-aligned in an otherwise LTR layout, which would have
+looked visibly broken in a live demo.
+
+**Badge logic tightened.** The per-message language badge on each
+answer now reads `meta.answerLanguage` together with `meta.usedLlm` -
+deliberately not `answerLanguage` alone, since that field reflects
+what was *requested*, not what was *achieved* (see the backend section
+above - a failed/unavailable LLM still reports the requested
+`answer_language`). Showing a "answered in French" badge on an answer
+that actually fell back to English would be a real, avoidable
+dishonesty bug; the existing fallback-warning badge now also covers
+this specific "language requested but not delivered" case, reusing
+`llm_error`/`translation_error` for the tooltip.
+
+**Tests.** 4 new backend tests in `test_backend.py` covering the
+explicit-override, llm-off-honesty, reverse-direction, and `"auto"`-
+still-behaves-as-before cases. 2 new source-level tests in `test_
+frontend_source.py` pinning the picker's existence, its six option
+values, and that `api.js` actually sends `target_language`. Rebuilt
+via the established `/tmp` workaround and live-verified end to end via
+`TestClient`: an English question with `target_language: "fr"` came
+back in French with `detected_language: "en"` / `answer_language:
+"fr"`; the same request with `llm: "off"` correctly fell back to the
+English deterministic answer with an honest `translation_error`. 135
+tests pass across `test_frontend_source.py` + `test_backend.py` +
+`test_generate.py` + `test_translate.py` + `test_agent.py` + `test_
+dashboard_data.py` + `test_llm.py`.
+
+**Known, honestly-documented limitation**: the five UI-chrome
+dictionaries were hand-translated by the agent, not reviewed by a
+native speaker of each language - reasonable for interface labels
+("Send", "Dashboard", a placeholder) where a slightly stiff phrasing
+is a minor cosmetic issue, not a correctness one, but worth a native
+read-through before this is shown to French/Spanish/Portuguese/Arabic
+speakers in a formal setting. The actual DAM facts in every answer are
+never at risk either way - those still go through the grounding check
+in `agent/generate.py`, unchanged by this feature.
+
+36 tests pass across `test_backend.py` + `test_llm.py`.

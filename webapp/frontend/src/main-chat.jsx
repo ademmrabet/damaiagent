@@ -4,6 +4,7 @@ import Chat from './pages/Chat.jsx';
 import './styles/theme.css';
 import './styles/shared.css';
 import './styles/llmPicker.css';
+import './styles/languagePicker.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

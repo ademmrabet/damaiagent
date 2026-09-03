@@ -68,7 +68,7 @@ class TestGroqProvider:
         post.assert_not_called()
 
     def test_chat_success(self):
-        provider = GroqProvider(api_key="fake-key", model="llama-3.3-70b-versatile")
+        provider = GroqProvider(api_key="fake-key", model="openai/gpt-oss-120b")
         with patch("llm.groq_provider.requests.post") as post:
             post.return_value = _ok_response(
                 {"choices": [{"message": {"content": "grounded reply"}}]}

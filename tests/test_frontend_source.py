@@ -83,6 +83,31 @@ def test_chat_page_surfaces_detected_language_to_the_user():
     assert "translationError" in chat_source
 
 
+def test_chat_page_has_an_explicit_language_picker():
+    # Explicit language picker (2026-09-03, see docs/decisions.md) -
+    # Adem reported not being able to find a way to choose/change the
+    # answer language on the deployed site, since the original
+    # multi-language feature was auto-detect-only with no visible
+    # control. This pins that a real, always-visible picker exists and
+    # is wired to both the outgoing request and the UI chrome.
+    chat_source = _read("pages", "Chat.jsx")
+    assert "<LanguagePicker" in chat_source
+    assert "uiLanguage" in chat_source
+    assert "answerLanguage" in chat_source
+
+    picker_source = _read("components", "LanguagePicker.jsx")
+    assert "LANGUAGE_OPTIONS" in picker_source
+
+    i18n_source = _read("i18n.js")
+    for code in ("auto", "en", "fr", "es", "pt", "ar"):
+        assert f"value: '{code}'" in i18n_source
+
+
+def test_api_sends_the_selected_target_language():
+    api_source = _read("api.js")
+    assert "target_language" in api_source
+
+
 def test_conversation_sidebar_becomes_an_off_canvas_drawer_on_mobile():
     css_source = _read("components", "conversationSidebar.css")
     assert "position: fixed" in css_source

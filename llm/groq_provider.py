@@ -4,7 +4,16 @@ import requests
 
 from llm.base import LLMProvider, LLMUnavailableError
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# llama-3.3-70b-versatile was the original default but Groq shut it
+# down for standard/developer API keys on 2026-08-16 (moved to
+# Enterprise-only, contact-sales pricing - see console.groq.com/docs/
+# models, confirmed live against a real 404 from production, not
+# assumed - see docs/decisions.md). openai/gpt-oss-120b is Groq's
+# current flagship production model on the standard plan: similar
+# speed (~500 t/s), 131K context, and - unlike the smaller 20B variant
+# - strong enough instruction-following for this app's strict grounded-
+# phrasing and two-line translation-format prompts.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 

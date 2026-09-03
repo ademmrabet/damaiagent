@@ -87,6 +87,87 @@ def test_ask_french_question_gets_translated_and_answered_in_french(client):
     assert "Origination Sector Manager" in body["deterministic_answer"]
 
 
+def test_ask_explicit_target_language_overrides_detected_language(client):
+    # Language picker feature (2026-09-03, see docs/decisions.md): an
+    # explicit target_language always wins over whatever the question
+    # itself was detected as - this pins the core case, an English
+    # question answered in French because the UI language picker was
+    # set to French. Only one Groq call happens here (unlike the
+    # French-question test above) since the question itself needed no
+    # translation - only the outgoing answer does.
+    from llm.groq_provider import GroqProvider
+
+    reply = (
+        "Pour 3.111, les personnes suivantes approuvent : Origination "
+        "Sector Manager, Supporting Dept. Division Manager."
+    )
+    with patch.object(GroqProvider, "chat", return_value=reply):
+        res = client.post(
+            "/api/ask",
+            json={"question": "who approves 3.111", "llm": "groq", "target_language": "fr"},
+        )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["node_id"] == "3.111"
+    assert body["detected_language"] == "en"
+    assert body["answer_language"] == "fr"
+    assert body["used_llm"] is True
+    assert body["answer"] == reply
+
+
+def test_ask_explicit_target_language_with_llm_off_is_honest_about_the_gap(client):
+    res = client.post(
+        "/api/ask",
+        json={"question": "who approves 3.111", "llm": "off", "target_language": "fr"},
+    )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["answer_language"] == "fr"
+    assert body["used_llm"] is False
+    assert body["answer"] == body["deterministic_answer"]
+    assert body["translation_error"]
+    assert "Off" in body["translation_error"] or "LLM" in body["translation_error"]
+
+
+def test_ask_explicit_english_target_overrides_a_french_question(client):
+    # The reverse direction: question is in French (needs translating
+    # IN for retrieval, same as always), but target_language="en"
+    # explicitly forces the answer back to English despite the
+    # question having been detected as French - the two language
+    # concerns really are independent.
+    from llm.groq_provider import GroqProvider
+
+    responses = iter([
+        "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
+        "Origination Sector Manager and Supporting Dept. Division "
+        "Manager both need to approve this.",
+    ])
+    with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
+        res = client.post(
+            "/api/ask",
+            json={"question": "qui approuve 3.111", "llm": "groq", "target_language": "en"},
+        )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["node_id"] == "3.111"
+    assert body["detected_language"] == "fr"
+    assert body["answer_language"] == "en"
+    assert body["used_llm"] is True
+
+
+def test_ask_target_language_auto_keeps_existing_detect_behavior(client):
+    # "auto" is treated the same as omitting the field entirely -
+    # explicit opt-in to the pre-existing auto-detect behavior, not a
+    # fifth language.
+    res = client.post(
+        "/api/ask",
+        json={"question": "who approves 3.111", "llm": "off", "target_language": "auto"},
+    )
+    body = res.json()
+    assert body["answer_language"] == "en"
+    assert body["translation_error"] is None
+
+
 def test_ask_plain_english_question_never_calls_translation(client):
     # The looks_non_english() pre-filter should skip the extra Groq
     # round trip entirely for ordinary English questions - confirmed
@@ -239,7 +320,7 @@ def test_llm_config_reports_the_real_resolved_model_names(client):
     assert res.status_code == 200
     body = res.json()
     assert body["ollama_model"] == "llama3.1"
-    assert body["groq_model"] == "llama-3.3-70b-versatile"
+    assert body["groq_model"] == "openai/gpt-oss-120b"
 
 
 def test_llm_config_respects_env_overrides(client, monkeypatch):

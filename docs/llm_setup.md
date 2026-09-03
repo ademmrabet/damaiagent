@@ -42,10 +42,12 @@ note.
 > `docker compose up --build` does it automatically as part of the
 > image build.
 
-Groq's free tier is generous and the model (`llama-3.3-70b-versatile`
-by default) responds in well under a second - good for a live demo.
-Never commit `.env` or paste your key into chat/screenshots; `.env` is
-already in `.gitignore`.
+Groq's free tier is generous and the model (`openai/gpt-oss-120b` by
+default, since 2026-09-03 - the previous default, `llama-3.3-70b-
+versatile`, was moved to Enterprise-only pricing and now 404s on a
+standard key, see docs/decisions.md) responds in well under a second -
+good for a live demo. Never commit `.env` or paste your key into
+chat/screenshots; `.env` is already in `.gitignore`.
 
 ## Option B - Ollama (fully local, no internet needed at demo time)
 

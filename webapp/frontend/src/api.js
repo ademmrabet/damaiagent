@@ -10,11 +10,20 @@ export async function getLlmConfig() {
   return res.json();
 }
 
-export async function askQuestion(question, llm, previousNodeId) {
+export async function askQuestion(question, llm, previousNodeId, targetLanguage) {
   const res = await fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, llm, previous_node_id: previousNodeId ?? null }),
+    body: JSON.stringify({
+      question,
+      llm,
+      previous_node_id: previousNodeId ?? null,
+      // "auto" (the default) tells the backend to keep detecting the
+      // answer language from the question itself - anything else is
+      // an explicit override from the language picker (see
+      // LanguagePicker.jsx, docs/decisions.md 2026-09-03).
+      target_language: targetLanguage ?? 'auto',
+    }),
   });
   return res.json();
 }
