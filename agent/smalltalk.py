@@ -9,7 +9,16 @@ _FAREWELL = re.compile(r"^(bye|goodbye|bye bye|see you|see ya|take care|later|fa
 _THANKS = re.compile(r"^(thanks|thank you|thx|ty|much appreciated|appreciate it|appreciated)[\s!.,]*$", re.IGNORECASE)
 _HOW_ARE_YOU = re.compile(r"^how('?s| is| are) (it going|you doing|you|things)\??[\s!.,]*$", re.IGNORECASE)
 _WHATS_UP = re.compile(r"^(what'?s up|sup|wassup)\??[\s!.,]*$", re.IGNORECASE)
-_HELP = re.compile(r"^(help|what can you do|who are you|what is this|what do you do)\??[\s!.,]*$", re.IGNORECASE)
+# Widened 2026-08-06 for a brand-new employee who doesn't know this
+# tool or the DAM at all and wouldn't necessarily type the word "help"
+# - "how does this work", "I'm new here", "I don't know where to
+# start" all land on the same guided reply as "help" itself.
+_HELP = re.compile(
+    r"^(help|what can you do|who are you|what is this|what do you do|"
+    r"how does this work|how do i use this|(i'?m|i am) new( here)?|"
+    r"i don'?t know where to start|where do i start)\??[\s!.,]*$",
+    re.IGNORECASE,
+)
 
 # A few variants per category rather than one fixed line each - purely
 # cosmetic (every variant still says the same substantive thing), but
@@ -63,6 +72,11 @@ _RESPONSES = {
         "2.126?\", \"who checks the mission program?\", or \"who must be "
         "informed for 3.111?\". Ask by task id or by describing the "
         "activity.",
+        "New here? No problem - you don't need to know any Delegation "
+        "of Authority Matrix codes to get started. Just describe what "
+        "you're trying to do, like \"who approves a mission expense "
+        "report?\" or \"who needs to sign off on a budget change?\", and "
+        "I'll find the matching task for you.",
     ],
 }
 

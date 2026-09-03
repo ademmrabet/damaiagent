@@ -1,4 +1,5 @@
 from llm.base import LLMUnavailableError
+from llm.translate import LANGUAGE_NAMES
 
 SYSTEM_PROMPT = (
     "You are the DAM Agent, a warm and confident assistant for the "
@@ -42,9 +43,28 @@ def _facts_block(structured_result):
     return "\n".join(lines)
 
 
-def build_grounding_prompt(question, structured_result):
+def build_grounding_prompt(question, structured_result, target_language="en"):
     node_id = structured_result.get("node_id")
     node_title = structured_result.get("node_title")
+
+    system = SYSTEM_PROMPT
+    if target_language != "en" and target_language in LANGUAGE_NAMES:
+        # Appended as its own numbered rule rather than folded into the
+        # rules above, so the "keep role names/footnote numbers intact"
+        # rule (4) still reads naturally for the English-only case this
+        # prompt was originally written for - added on 2026-08-06 for
+        # multi-language support (see docs/decisions.md). Role names
+        # are organizational job titles, not really "translatable" in
+        # the first place, and rule 4 above already governs them - this
+        # just makes explicit that the language switch doesn't relax it.
+        language_name = LANGUAGE_NAMES[target_language]
+        system += (
+            f"\n\n6. Write your entire answer in {language_name} - the "
+            f"user asked in {language_name}. The one exception: never "
+            "translate role names, footnote numbers, or DAM ids from "
+            "the facts list - copy those exactly as given, even inside "
+            f"an otherwise-{language_name} sentence."
+        )
 
     user = (
         f'User question: "{question}"\n\n'
@@ -53,7 +73,7 @@ def build_grounding_prompt(question, structured_result):
         f"Reference answer (already correct, restyle it - don't just "
         f"copy it verbatim): {structured_result['answer']}"
     )
-    return SYSTEM_PROMPT, user
+    return system, user
 
 
 def _mentions_expected_facts(text, structured_result):
@@ -71,7 +91,7 @@ def _mentions_expected_facts(text, structured_result):
     return all(r["role"] in text for r in roles)
 
 
-def humanize_answer(question, structured_result, provider):
+def humanize_answer(question, structured_result, provider, target_language="en"):
     """
     Returns {"text": str, "used_llm": bool, "provider": str|None,
     "error": str|None}. "text" is always safe to show the user - falls
@@ -80,6 +100,17 @@ def humanize_answer(question, structured_result, provider):
     time the LLM is unavailable, errors, or fails the grounding check.
     The deterministic path is never bypassed, only optionally
     re-phrased on top of.
+
+    `target_language`: an "en"/"fr"/"es"/"pt"/"ar" code (see
+    llm/translate.py) - the caller (webapp/backend.py) detects this
+    from the user's own question. The grounding check below
+    (_mentions_expected_facts) runs unchanged regardless of language -
+    it's still checking for the literal English role-name strings,
+    which the prompt explicitly instructs the model to preserve
+    untranslated even inside a non-English sentence (see rule 6 added
+    in build_grounding_prompt), so it stays meaningful rather than
+    becoming a no-op once the surrounding sentence is in French/
+    Spanish/Portuguese/Arabic.
     """
     deterministic = structured_result["answer"]
 
@@ -90,7 +121,7 @@ def humanize_answer(question, structured_result, provider):
     ):
         return {"text": deterministic, "used_llm": False, "provider": None, "error": None}
 
-    system, user = build_grounding_prompt(question, structured_result)
+    system, user = build_grounding_prompt(question, structured_result, target_language)
 
     try:
         llm_text = provider.chat(system, user).strip()

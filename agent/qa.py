@@ -1,8 +1,10 @@
 import re
 
+from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
 from modeling.graph import responsible_roles
 from knowledge.search import resolve_query
-from agent.authority import detect_intent
+from agent.authority import detect_intent, _INTENT_VOCAB
 from agent.smalltalk import detect_smalltalk
 from agent.glossary import (
     detect_glossary_query,
@@ -11,6 +13,72 @@ from agent.glossary import (
 )
 
 MIN_TEXT_SEARCH_SCORE = 0.15
+
+# Real gap the professor flagged: a brand-new employee who doesn't
+# know any DAM ids tends to type something short - a single word
+# ("mission"), or just the verb with no subject ("approve") - and the
+# old behavior silently picked resolve_query's top-scoring guess and
+# answered as if it were certain. Measured directly: "mission" alone
+# scores 0.48/0.45/0.41 across THREE different real tasks (2.121,
+# 2.124, 2.125) - genuinely ambiguous, not a confident match that just
+# happens to have a modest score. "approve" alone scores 0.46 against
+# a single task (2.513.3) it has no real reason to specifically mean.
+# Two independent, deterministic signals catch this - same "measure,
+# don't guess" approach as CONTEXT_OVERRIDE_MAX_SCORE above:
+#
+# 1. Too few real content words: strip English stopwords (sklearn's
+#    own list) and this app's own intent-verb vocabulary ("approve",
+#    "informed", "check", ...) - a verb alone or a question with no
+#    real subject left over is inherently under-specified, regardless
+#    of what resolve_query happens to score it.
+# 2. A close score gap to the runner-up: even a longer, well-formed
+#    query can genuinely name something with 2+ plausible targets -
+#    "mission" is the clean example (0.48 vs 0.45, a 6% gap).
+#
+# CLARIFICATION_MAX_SCORE (0.6) and CLARIFICATION_MIN_GAP (0.15) reuse
+# the same measured cluster CONTEXT_OVERRIDE_MAX_SCORE was calibrated
+# against: genuine, unambiguous matches in this corpus score 0.65-0.89
+# with real separation from their runner-up (see docs/decisions.md).
+CLARIFICATION_MAX_SCORE = 0.6
+CLARIFICATION_MIN_GAP = 0.15
+
+_EXTRA_GENERIC_WORDS = {"task", "activity", "process", "dam", "please", "tell"}
+_GENERIC_QUERY_WORDS = ENGLISH_STOP_WORDS | _INTENT_VOCAB | _EXTRA_GENERIC_WORDS
+_WORD_RE = re.compile(r"[a-z']+")
+
+
+def _content_word_count(query):
+    words = _WORD_RE.findall(query.lower())
+    return sum(1 for w in words if len(w) >= 3 and w not in _GENERIC_QUERY_WORDS)
+
+
+def _needs_clarification(query, matches):
+    """
+    True when resolve_query technically returned a top match, but
+    there isn't enough real signal to trust it silently - either the
+    query itself is too under-specified (too few real content words),
+    or multiple candidates are close enough that picking just the top
+    one would be a guess dressed up as an answer.
+    """
+    too_vague = _content_word_count(query) <= 1
+    top_score = matches[0]["score"]
+
+    if len(matches) < 2:
+        return too_vague and top_score < CLARIFICATION_MAX_SCORE
+
+    close_gap = (top_score - matches[1]["score"]) < CLARIFICATION_MIN_GAP
+    return (too_vague and top_score < CLARIFICATION_MAX_SCORE) or (
+        close_gap and top_score < 0.85
+    )
+
+
+def _format_clarification_answer(matches, nodes):
+    suggestions = ", ".join(f"{m['id']} ({nodes[m['id']].title!r})" for m in matches[:3])
+    return (
+        "That's a bit broad for me to pin down to one task. Did you mean "
+        f"one of these: {suggestions}? Or try describing the specific "
+        'activity, e.g. "who approves the quarterly mission program".'
+    )
 
 # Real bug this fixes: a chat follow-up like "who are the informed
 # parties for that activity?" names no real subject of its own, so
@@ -284,12 +352,50 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
             return _empty_result(answer, "invalid_id")
 
         if not resolution["matches"]:
+            # Zero TF-IDF overlap with anything in the DAM has two very
+            # different real causes, and they need different replies:
+            # a query that's ONLY generic/intent words with no real
+            # subject at all ("informed" alone) is still on-topic, just
+            # under-specified - same fix as _needs_clarification above,
+            # just reached via an empty match list instead of a weak
+            # one. A query with real, substantive content words that
+            # still shares nothing with the DAM's vocabulary
+            # ("what's the weather today") is a much stronger, honest
+            # signal that it's genuinely outside this app's scope -
+            # said explicitly instead of the vaguer "couldn't find a
+            # task", which reads like a search miss rather than "this
+            # isn't what I'm for". Reuses _content_word_count rather
+            # than a topic keyword list on purpose - a fixed list of
+            # "off-topic subjects" is exactly the kind of brittle,
+            # rephrasing-defeated heuristic that failed once already
+            # this session (see the context-carryover entries in
+            # docs/decisions.md).
+            if _content_word_count(query) <= 1:
+                return _empty_result(
+                    "I need a bit more to go on - can you name the "
+                    'specific activity, e.g. "who approves the '
+                    'quarterly mission program"?',
+                    "needs_clarification",
+                )
             return _empty_result(
-                "I couldn't find a task in the DAM matching that question.",
-                resolution["method"],
+                "That looks like it's outside what I can help with - I "
+                "only answer questions about the DAM (who approves, "
+                "checks, reviews, initiates, or must be informed on a "
+                "task). Try asking about a specific activity or process "
+                "instead.",
+                "out_of_scope",
             )
 
         top = resolution["matches"][0]
+
+        if resolution["method"] == "text_search" and _needs_clarification(
+            query, resolution["matches"]
+        ):
+            return _empty_result(
+                _format_clarification_answer(resolution["matches"], nodes),
+                "needs_clarification",
+                score=top["score"],
+            )
 
         if resolution["method"] == "text_search" and top["score"] < MIN_TEXT_SEARCH_SCORE:
             suggestions = ", ".join(

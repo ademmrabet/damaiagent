@@ -2042,3 +2042,283 @@ the same documented gap (a real device/browser check is still worth
 doing before the demo). 10 tests in that file pass, 24 across
 `test_backend.py` + `test_frontend_source.py` combined after the
 rebuild.
+
+## 2026-08-06 (professor feedback round) - Dashboard rework: chapter filter, 2 new KPIs, linked charts
+
+Adem's professor asked for two things after a review: the dashboard
+needed real improvement (more dynamic/interactive, filters, relevant
+KPIs), and the chatbot demo needed to be re-run with in-context
+questions rather than the out-of-scope ones tried live (which
+correctly failed - that's the honest-refusal behavior working as
+designed, not a bug).
+
+**Dashboard.** Chose a chapter filter as the primary interactive
+control because it's a real, existing dimension on every node
+(`chapter`), not something invented to look interactive. Backend
+(`webapp/dashboard_data.py`) factored the existing computation into
+`_scope_summary(nodes)`, called once for the whole DAM (kept flattened
+at the top level - fully backward compatible, nothing existing broke)
+and once per chapter into a new `by_chapter` dict, plus a top-level
+`chapters` list. `graph` (total_graph_nodes/total_edges) stays
+whole-DAM-only on purpose - role/reference edges routinely cross
+chapter boundaries, so a "chapter subgraph" would need its own
+edge-filtering semantics that aren't worth the scope here; documented
+directly in the function's docstring so the reasoning doesn't need
+rediscovering later.
+
+Two new KPIs, both real data-quality signals that were already
+computable but never surfaced: `avg_responsibilities_per_node`
+(workload density - responsibilities ÷ answerable nodes) and
+`no_direct_responsibilities_rate` (answerable nodes with nothing
+recorded directly on them - live data shows ~29.6% DAM-wide, a real,
+worth-discussing number, not a bug). "Answerable" is deliberately
+scoped to `RESPONSIBILITY_BEARING_TYPES = {process, task, child_task,
+threshold_variant}` - chapter nodes are organizational and always
+empty by design, including them would have diluted both metrics
+meaninglessly.
+
+Linked charts: the action-code distribution chart is now clickable -
+selecting a bar filters the roles chart to that action's top
+performers (e.g. "who are the top approvers" vs. "who's informed
+most often"), backed by a new `roles_by_action` breakdown computed
+once server-side (same exclude-unresolved logic as `top_roles`, kept
+in one place rather than duplicated in JS). Selecting a different
+chapter clears any selected action, since a chapter-scoped action
+selection can be meaningless (or simply absent) once the scope changes
+underneath it.
+
+Real bug caught along the way: `ChartCanvas.jsx` built its Chart.js
+instance once on mount with an empty effect dependency array - nothing
+before this rework ever changed a chart's data after first render, so
+this had never been exercised. Fixed to depend on `[type, data,
+options]` so filtering (chapter or action) actually updates the
+charts instead of silently freezing them at their first-render values
+- would have been a real, confusing bug to discover live in front of
+the professor instead of here.
+
+Non-breaking on purpose: every existing top-level field
+(`total_nodes`, `node_counts_by_type`, etc.) is unchanged, so
+`test_dashboard_summary_reflects_real_graph` in `test_backend.py`
+needed zero changes. 15 tests in `test_dashboard_data.py` (6 new,
+covering the per-chapter sum-reconciles-to-whole-DAM invariant, shape
+parity between whole-DAM and per-chapter breakdowns, and that
+`roles_by_action` never includes the "unresolved" placeholder), 3 new
+in `test_frontend_source.py`. Live-verified against the real running
+server (not just unit tests): confirmed the actual response shape,
+real per-chapter numbers, and `roles_by_action["A"]` surfacing
+sensible real approvers (Sector Manager, BOARD OF DIRECTORS, PRC).
+
+**Chatbot demo.** No code change - the out-of-context failures the
+professor saw are correct, intentional behavior (this project's core
+grounding principle: honest "I don't know" over a guessed answer).
+What was actually missing was a prepared set of in-context questions
+for the live demo instead of improvising - drafted separately as
+`docs/demo_script.md`.
+
+## 2026-08-06 (professor feedback round, chatbot majors 1-2) - Vague questions + out-of-scope detection
+
+Same professor review also asked for three chatbot majors: multi-
+language support, better handling of vague/no-id questions from a new
+employee, and graceful out-of-scope + tone-aware responses. Built in
+priority order (agreed with Adem): vague-question handling and out-of-
+scope detection first (safest, fastest, no new external dependency),
+multi-language next, tone detection last (see the entries below for
+those).
+
+**Vague/ambiguous questions.** Measured the real failure directly
+before designing anything: "mission" alone scores 0.48/0.45/0.41
+across THREE different real tasks (2.121, 2.124, 2.125) - genuinely
+ambiguous, not a confident match that just happens to have a modest
+score. "approve" alone scores 0.46 against a single task (2.513.3) it
+has no real reason to specifically mean. The old behavior silently
+picked resolve_query's top guess and answered as if certain in both
+cases.
+
+Two independent, deterministic signals added to `agent/qa.py`
+(`_needs_clarification`): too few real content words (`_content_word_
+count` strips English stopwords - sklearn's own list - plus this
+app's own intent-verb vocabulary, so a bare verb or a subject-less
+question counts as under-specified regardless of what resolve_query
+scores it), or a close score gap to the runner-up (even a longer,
+well-formed query can genuinely name 2+ plausible targets -
+"mission"'s 6% gap is the clean example). `CLARIFICATION_MAX_SCORE`
+(0.6) and `CLARIFICATION_MIN_GAP` (0.15) reuse the same measured
+cluster `CONTEXT_OVERRIDE_MAX_SCORE` was calibrated against earlier
+this session (genuine matches score 0.65-0.89 with real separation) -
+same "measure, don't guess" approach throughout. New method
+`"needs_clarification"` returned with the top 3 real candidates
+listed, same honest-suggestion pattern the invalid-id path already
+used.
+
+Also widened `agent/smalltalk.py`'s `_HELP` trigger to catch "how does
+this work", "I'm new here", "where do I start" - a brand-new employee
+wouldn't necessarily type the literal word "help" - and added a third
+help reply variant explicitly telling them they don't need to know
+any DAM codes to get started, with a real example question.
+
+**Out-of-scope detection.** The existing "zero TF-IDF matches" branch
+used one generic message for two very different real causes: a query
+that's only generic/intent words with no real subject at all
+("informed" alone - still on-topic, just under-specified) versus a
+query with real, substantive content words that share nothing with
+the DAM's vocabulary at all ("what's the weather today", "who won the
+world cup" - genuinely outside scope). Split them using the same
+`_content_word_count` signal rather than a topic keyword list -
+deliberately avoided a fixed list of "off-topic subjects" since a
+fixed-phrase heuristic is exactly what got defeated by rephrasing
+earlier this session (see the context-carryover entries above) and
+would just be a slower version of the same mistake. New method
+`"out_of_scope"` with an explicit "that's outside what I can help
+with" message instead of the vaguer "couldn't find a task", which read
+like a search miss rather than "this isn't what I'm for."
+
+**Known, honestly-documented limitation**: this classification is
+best-effort, not real topic understanding. "tell me a joke" lands in
+"needs_clarification" instead of "out_of_scope" (only "joke" survives
+word-stripping, exactly 1 content word - under the threshold either
+way). "write me a poem about spring" gets real but irrelevant
+suggestions ("Write-off decisions", "WRITE-OFFS") because the word
+"write" happens to overlap with real DAM vocabulary. Neither case ever
+fabricates a false DAM answer - the honesty guarantee holds either
+way - it just sometimes picks the less-precise of two truthful
+refusal messages. Fixing this properly would need real semantic
+topic classification (embeddings or an LLM call), a bigger investment
+than this pass's scope; not worth chasing for a handful of whimsical
+edge cases when the core new-employee cases (single DAM-domain words,
+bare intent verbs) and the core off-topic cases (weather, sports,
+general knowledge) both work exactly as intended.
+
+Existing message-text assertions in `test_agent.py`, `test_backend.py`
+updated to match the new, more specific wording (`test_generate.py`'s
+`NO_MATCH` fixture didn't need to change - it only tests
+`humanize_answer`'s handling of the `node_id: None` shape, not the
+exact wording). 4 new tests in `test_agent.py`, 1 in `test_backend.py`.
+92 tests pass across `test_agent.py` + `test_backend.py` +
+`test_generate.py` + `test_smalltalk.py`.
+
+## 2026-08-06 (professor feedback round, chatbot major 3) - Multi-language support (FR/ES/PT/AR)
+
+Third of the three chatbot majors from the same professor review.
+Chosen architecture: a translation shim wrapped around the existing
+English-only deterministic pipeline, not a rebuild of that pipeline
+per language. Every deterministic layer in this project (typo
+correction, intent detection, context-carryover, vague/out-of-scope
+detection) is built directly around the DAM's own English vocabulary
+and score-threshold tuning - rebuilding all of that four times over
+was never realistic in this pass's scope, and would have meant
+re-deriving every "measure, don't guess" threshold in this log per
+language. Instead: translate the incoming question to English before
+it reaches `answer_question()` (retrieval is completely untouched,
+still the same tested logic), then translate the final answer back
+afterward. This is a deliberate, and the first, expansion of the
+LLM's role in this project beyond pure fact-*phrasing* - it's now also
+doing the language conversion - which is why the grounding check below
+was the main thing worth getting right.
+
+**New file `llm/translate.py`.** `looks_non_english()` is a cheap,
+regex/wordlist-only pre-filter (Arabic Unicode range, accented Latin
+characters, or a whole-word hit against small French/Spanish/
+Portuguese function-word lists) - not a real language detector, just
+enough to decide whether it's worth even attempting the expensive
+path. Gates the entire rest of the flow: since the large majority of
+real traffic is plain English, this keeps the extra Groq round trip
+(one call to detect+translate the question in, a second to translate
+the answer back out) off of every English question, which is the
+whole reason this is a separate cheap check rather than always asking
+the LLM to identify the language itself.
+
+Real gap found while testing this against a realistic short question:
+"qui approuve 3.111" (natural French for "who approves 3.111") has
+only ONE real French function word ("qui") once the DAM verb
+("approuve") is excluded - the first version of `looks_non_english()`
+required 2+ hits per language and missed it outright. Fixed by (a)
+removing "o" and "as" from the Portuguese word list (both collide with
+ordinary English - "as needed", "as approved" - and neither is
+distinctive enough to trust alone) and (b) lowering the bar to a
+single whole-word hit. Verified this is safe specifically because a
+false positive here costs nothing but one extra, self-correcting round
+trip (the model reports `LANGUAGE: en` and returns the text
+unchanged) - checked against 5 real non-English examples (all
+detected) and 10 English edge cases including "who approves as
+required" and "and who needs to sign off on this" (all correctly
+left alone).
+
+`detect_and_translate_to_english()` sends the raw question to the LLM
+with an explicit instruction to copy any digit-and-period id (e.g.
+`2.126`) verbatim rather than translating it, and to respond in a
+strict two-line `LANGUAGE: xx` / `TRANSLATED: ...` format that's
+parsed with a couple of small regexes. Falls back to treating the
+original text as English, unchanged, on any failure - no provider, a
+network error, or a response that doesn't parse - so the caller always
+has something safe to run the untouched pipeline on. `translate_text()`
+is the simpler counterpart used for static English messages (smalltalk,
+help, vague/out-of-scope refusals) that carry no DAM facts worth
+grounding-checking, just a straight translation with the same safe
+fallback.
+
+**Grounding check across languages (`agent/generate.py`).**
+`build_grounding_prompt()` now takes `target_language` and appends one
+additional numbered rule to the existing system prompt when it isn't
+English: write the answer in that language, but never translate role
+names, footnote numbers, or DAM ids - copy those exactly, even inside
+an otherwise-French/Spanish/Portuguese/Arabic sentence. This matters
+because `_mentions_expected_facts()`, the existing check that a
+rephrased answer still contains every real role name verbatim, was
+NOT changed - it still checks for the literal English role-name
+strings regardless of the surrounding sentence's language. That's the
+actual safety property this feature depends on: a French answer that
+dropped or altered a role name still fails the same grounding check an
+English answer would, and falls back to the same safe deterministic
+template (in English - a known, accepted trade-off over the
+alternative of a translated-but-unverified answer, documented in
+`webapp/backend.py`'s docstring). Two new tests in `test_generate.py`
+pin this directly: a French answer that correctly preserved both role
+names passes, and one that dropped one still fails and falls back.
+
+**Backend wiring (`webapp/backend.py`).** `/api/ask` now: resolves the
+LLM provider up front (previously resolved deeper in the handler),
+runs `looks_non_english()` on the raw question, and - only when it
+looks non-English AND a provider is available - translates to English
+before calling the unchanged `answer_question()`. Two paths for
+translating the answer back: through `humanize_answer()`'s grounding-
+checked path when the resolved node has real facts to protect, or
+through the simpler `translate_text()` when it doesn't (smalltalk,
+vague, out-of-scope, invalid-id - nothing to fabricate). Two new
+response fields: `detected_language` (defaults to `"en"`) and
+`translation_error` (set, honestly, when a non-English-looking
+question couldn't be translated - most notably when `llm=off`, since
+translation has no deterministic fallback the way retrieval does).
+That honesty was itself a deliberate choice over silently running
+non-English text through an English-only search index and most likely
+returning a confusing "out of scope" refusal with no explanation why.
+
+**Frontend.** `Chat.jsx` surfaces `detected_language` as a small badge
+next to the existing confidence/LLM-provider meta line (mirrors the
+`llm-badge` pattern already there), and `translation_error` as a
+warning badge reusing the existing `llm-fallback` style - both were a
+deliberate requirement, not a nice-to-have: the translation happening
+silently with zero on-screen indication would look like the agent
+either mysteriously understanding French or mysteriously failing on
+it, with no way for Adem (or the professor, live) to tell which.
+Rebuilt via the established `/tmp` workaround (this rebuild also
+caught a copy-paste gap - only `index.html` had been copied, not the
+project's actual three multi-page entry points `landing.html`/
+`chat.html`/`dashboard.html` - fixed before the build would even
+resolve its entry modules).
+
+**Tests.** New `tests/test_translate.py` (24 tests) covering
+`looks_non_english()`'s true/false/tricky-false-positive cases and
+both translation functions' success/fallback paths. 3 new integration
+tests in `test_backend.py`, including one that mocks `GroqProvider.chat`
+directly (not `requests.post` - `chat()` raises before ever reaching
+the HTTP layer when `GROQ_API_KEY` is unset, which is the case in this
+sandbox, so an HTTP-layer mock would silently never fire) with two
+canned responses in sequence for the detect+translate-in and
+translate-out round trip. 2 new tests in `test_generate.py` for the
+cross-language grounding check. 1 new source-level test in
+`test_frontend_source.py` pinning the language badge's presence. Live-
+verified end to end via `TestClient` against the real running app: a
+mocked "qui approuve 3.111" round trip returns `detected_language:
+"fr"` and a correctly-grounded French answer. 114 tests pass across
+`test_frontend_source.py` + `test_backend.py` + `test_generate.py` +
+`test_translate.py` + `test_agent.py` + `test_dashboard_data.py`.

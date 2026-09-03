@@ -74,6 +74,12 @@ def test_invalid_code_is_honest_not_fabricated_and_never_answers_a_different_tas
 
 
 def test_unresolvable_free_text_query_is_honest_not_fabricated(setup):
+    # Updated 2026-08-06: this query has real, substantive content
+    # words ("unrelated", "banana", "spaceship") that share nothing
+    # with the DAM's vocabulary - now gets the more explicit
+    # out-of-scope message instead of the vaguer "couldn't find a
+    # task" (see agent/qa.py's docstring on the not-resolution-matches
+    # branch for why these two cases are now told apart).
     nodes, graph, vectorizer, matrix, searchable_ids = setup
 
     result = answer_question(
@@ -82,7 +88,8 @@ def test_unresolvable_free_text_query_is_honest_not_fabricated(setup):
     )
 
     assert result["node_id"] is None
-    assert "couldn't find" in result["answer"].lower()
+    assert result["method"] == "out_of_scope"
+    assert "outside what i can help with" in result["answer"].lower()
 
 
 def test_greeting_never_touches_the_dam_lookup_pipeline(setup):
@@ -312,6 +319,63 @@ def test_pronoun_followup_with_no_previous_context_falls_through_normally(setup)
     )
 
     assert result["method"] != "context_carryover"
+
+
+def test_single_ambiguous_word_asks_for_clarification_instead_of_guessing(setup):
+    # Real gap the professor flagged: a new employee with no idea about
+    # the DAM tends to type something this short. "mission" alone
+    # scores close across three genuinely different real tasks (2.121,
+    # 2.124, 2.125) - the old behavior silently picked the top one and
+    # answered as if certain, which is a guess dressed up as an answer.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "mission", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert result["node_id"] is None
+    assert result["method"] == "needs_clarification"
+    assert "2.12" in result["answer"]  # one of the real close candidates
+
+
+def test_bare_intent_verb_with_no_subject_asks_for_clarification(setup):
+    # "approve" alone names an action but no activity - even though
+    # resolve_query only finds one candidate for it, that candidate
+    # isn't something the user actually specified.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "approve", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert result["node_id"] is None
+    assert result["method"] == "needs_clarification"
+
+
+def test_well_specified_question_is_unaffected_by_the_clarification_gate(setup):
+    # A real, well-formed question with a clear, dominant winner should
+    # never get swept into "needs clarification" just because it's
+    # short in word count.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who approves the quarterly mission program",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+    )
+
+    assert result["node_id"] == "2.126"
+    assert result["method"] == "text_search"
+
+
+def test_help_recognizes_new_employee_phrasings_not_just_the_word_help(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    for phrasing in ["i'm new here", "how does this work", "where do i start"]:
+        result = answer_question(
+            phrasing, nodes, graph, vectorizer, matrix, searchable_ids
+        )
+        assert result["method"] == "smalltalk"
+        assert "Delegation of Authority Matrix" in result["answer"]
 
 
 def test_reference_entirely_out_of_document_scope_says_so_honestly(setup):

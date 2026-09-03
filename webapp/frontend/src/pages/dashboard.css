@@ -16,6 +16,51 @@ main {
   padding: 24px;
 }
 
+.dashboard-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.dashboard-filters label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.dashboard-filters select {
+  padding: 7px 10px;
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.dashboard-filters select:focus {
+  outline: none;
+  border-color: var(--green);
+}
+
+.clear-filter-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.12s ease;
+}
+
+.clear-filter-btn:hover {
+  background: var(--gray-border);
+}
+
 .cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -75,9 +120,17 @@ main {
   padding: 18px;
 }
 
+.chart-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
 .chart-box h2 {
   font-size: 14px;
-  margin: 0 0 12px;
+  margin: 0;
   color: var(--text);
 }
 
@@ -105,5 +158,13 @@ main {
 
   .chart-box {
     padding: 14px;
+  }
+
+  .dashboard-filters {
+    flex-wrap: wrap;
+  }
+
+  .chart-box-header {
+    flex-wrap: wrap;
   }
 }

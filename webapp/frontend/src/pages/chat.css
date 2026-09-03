@@ -92,6 +92,11 @@
   color: var(--red);
 }
 
+.msg .meta .lang-badge {
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
 .msg .toggle-deterministic {
   display: block;
   margin-top: 6px;

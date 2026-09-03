@@ -17,6 +17,7 @@ from agent.generate import humanize_answer
 from llm.router import resolve_provider
 from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
+from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
 from webapp.dashboard_data import build_summary
 
 load_dotenv()
@@ -69,8 +70,41 @@ class Question(BaseModel):
 
 @app.post("/api/ask")
 def ask(payload: Question):
+    """
+    Multi-language support (2026-08-06, see docs/decisions.md): the
+    deterministic retrieval pipeline (id matching, TF-IDF search,
+    intent detection, typo correction) is built entirely around the
+    DAM's own English vocabulary - there's no realistic way to
+    rebuild all of that per language. Instead, a non-English question
+    is translated to English BEFORE it reaches answer_question() (so
+    retrieval is completely unaffected, still the same tested logic),
+    and the final answer is translated back afterward. looks_non_
+    english() is a cheap, deterministic pre-filter so a plain English
+    question (the overwhelming majority of traffic) never pays for the
+    extra LLM round trips this requires.
+    """
+    provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+
+    query_for_pipeline = payload.question
+    detected_language = "en"
+    translation_error = None
+
+    if looks_non_english(payload.question):
+        if provider is not None:
+            translation = detect_and_translate_to_english(payload.question, provider)
+            detected_language = translation["language"]
+            translation_error = translation["error"]
+            if translation["used_llm"] and detected_language != "en":
+                query_for_pipeline = translation["translated_text"]
+        else:
+            # Can't detect/translate without an LLM - be honest about
+            # why instead of silently matching non-English text
+            # against an English-only search index and (most likely)
+            # failing to resolve anything at all.
+            translation_error = "Translation needs an LLM mode other than Off."
+
     result = answer_question(
-        payload.question,
+        query_for_pipeline,
         state["nodes"],
         state["graph"],
         state["vectorizer"],
@@ -81,8 +115,27 @@ def ask(payload: Question):
     deterministic_answer = result["answer"]
 
     if payload.llm and payload.llm != "off":
-        provider = resolve_provider(payload.llm)
-        generation = humanize_answer(payload.question, result, provider)
+        if result.get("node_id") and result.get("roles"):
+            # Real DAM facts to protect - the stricter, grounding-
+            # checked path (agent/generate.py), just phrased in the
+            # detected language.
+            generation = humanize_answer(
+                payload.question, result, provider, target_language=detected_language
+            )
+        elif detected_language != "en":
+            # No facts to fabricate here (smalltalk/help/vague/out-of-
+            # scope/invalid-id) - a static English message just needs
+            # straight translation, no grounding check required.
+            translated = translate_text(result["answer"], detected_language, provider)
+            generation = {
+                "text": translated["text"],
+                "used_llm": translated["used_llm"],
+                "provider": provider.name if translated["used_llm"] else None,
+                "error": translated["error"],
+            }
+        else:
+            generation = {"text": deterministic_answer, "used_llm": False, "provider": None, "error": None}
+
         result["answer"] = generation["text"]
         result["used_llm"] = generation["used_llm"]
         result["llm_provider"] = generation["provider"]
@@ -93,6 +146,8 @@ def ask(payload: Question):
         result["llm_error"] = None
 
     result["deterministic_answer"] = deterministic_answer
+    result["detected_language"] = detected_language
+    result["translation_error"] = translation_error
     return result
 
 

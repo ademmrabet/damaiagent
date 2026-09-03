@@ -1,5 +1,5 @@
 from llm.base import LLMUnavailableError
-from agent.generate import build_grounding_prompt, humanize_answer
+from agent.generate import SYSTEM_PROMPT, build_grounding_prompt, humanize_answer
 
 RESOLVED = {
     "answer": (
@@ -77,6 +77,50 @@ def test_no_match_never_calls_the_provider():
     assert provider.called is False
     assert result["text"] == NO_MATCH["answer"]
     assert result["used_llm"] is False
+
+
+def test_target_language_instruction_is_added_to_the_system_prompt():
+    system, _ = build_grounding_prompt("qui approuve 3.111", RESOLVED, target_language="fr")
+    assert "French" in system
+    # Rule 4 (keep role names/footnote numbers intact) still applies -
+    # the language rule is additive, not a replacement.
+    assert "footnote" in system.lower()
+
+
+def test_english_target_language_leaves_the_prompt_unchanged():
+    system_en, _ = build_grounding_prompt("who approves 3.111", RESOLVED, target_language="en")
+    system_default, _ = build_grounding_prompt("who approves 3.111", RESOLVED)
+    assert system_en == system_default == SYSTEM_PROMPT
+
+
+def test_grounding_check_still_works_when_the_answer_is_in_french():
+    # The grounding check (_mentions_expected_facts) looks for the
+    # literal English role-name strings regardless of the surrounding
+    # sentence's language - this pins that a French answer which
+    # correctly preserved the role names (as instructed) still passes.
+    provider = FakeProvider(
+        response=(
+            "Pour 3.111, les personnes suivantes approuvent : "
+            "Origination Sector Manager (footnote 3), "
+            "Supporting Dept. Division Manager (footnote 4)."
+        )
+    )
+    result = humanize_answer("qui approuve 3.111", RESOLVED, provider, target_language="fr")
+    assert result["used_llm"] is True
+    assert "Origination Sector Manager" in result["text"]
+
+
+def test_grounding_check_still_catches_a_dropped_role_in_french():
+    # Same guard as the English-only version of this check, just
+    # confirming it survives the language change - a French answer
+    # that drops a role name should still fail the grounding check and
+    # fall back to the safe deterministic answer.
+    provider = FakeProvider(
+        response="Pour 3.111, Origination Sector Manager approuve."
+    )
+    result = humanize_answer("qui approuve 3.111", RESOLVED, provider, target_language="fr")
+    assert result["used_llm"] is False
+    assert result["text"] == RESOLVED["answer"]
 
 
 def test_pointer_answer_with_a_resolved_node_still_never_calls_the_provider():

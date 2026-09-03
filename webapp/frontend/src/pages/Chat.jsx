@@ -7,6 +7,11 @@ import useConversations from '../hooks/useConversations.js';
 import { askQuestion } from '../api.js';
 import './chat.css';
 
+// Mirrors llm/translate.py's LANGUAGE_NAMES - kept as a small local
+// copy rather than fetched from the backend since it's fixed,
+// human-readable display text, not data that changes at runtime.
+const LANGUAGE_NAMES = { fr: 'French', es: 'Spanish', pt: 'Portuguese', ar: 'Arabic' };
+
 function isLowConfidence(data) {
   return (
     data.method !== 'smalltalk' &&
@@ -103,6 +108,16 @@ function MessageBubble({ message, index }) {
               &#9888; LLM unavailable, showed template answer
             </span>
           )}
+          {meta.detectedLanguage && meta.detectedLanguage !== 'en' && (
+            <span className="lang-badge">
+              &#127760; detected {LANGUAGE_NAMES[meta.detectedLanguage] || meta.detectedLanguage}
+            </span>
+          )}
+          {meta.translationError && (
+            <span className="llm-fallback" title={meta.translationError}>
+              &#9888; couldn&apos;t translate, answered in English
+            </span>
+          )}
         </div>
       )}
 
@@ -188,7 +203,7 @@ export default function Chat() {
         text: data.answer,
         meta: {
           nodeId: data.node_id,
-          showMeta: !!data.node_id,
+          showMeta: !!data.node_id || !!data.translation_error,
           method: data.method,
           score: data.score,
           lowConfidence: isLowConfidence(data),
@@ -197,6 +212,8 @@ export default function Chat() {
           llmError: data.llm_error,
           llmRequested: llmMode !== 'off',
           deterministicAnswer: data.deterministic_answer,
+          detectedLanguage: data.detected_language,
+          translationError: data.translation_error,
         },
       });
     } catch {
