@@ -2977,3 +2977,84 @@ A/B test, because Groq isn't reachable from this sandbox. Adem should
 watch whether the fallback rate actually drops after deploying, same
 verification gap already flagged for the LLM tone-detection and
 translation features.
+
+## 2026-09-19 - Conversation sharing (view-only, v1)
+
+Conversations previously lived only in the browser's own localStorage
+(`webapp/frontend/src/hooks/useConversations.js`) - fine for one
+person on one device, but there was never a copy anywhere a colleague
+could reach, so "share this with someone" was structurally impossible.
+Asked Adem to resolve two genuinely open scope questions before
+building anything: (1) sharing model - he chose "share with specific
+colleagues" over a public link or org-wide visibility; (2) viewer
+identity - he chose "must be a logged-in user" over an anonymous
+public link. Both directly shaped the data model: a `ConversationShare`
+join table keyed by user id, not a token/link mechanism.
+
+**Sharing is deliberately view-only for v1**: only the owner can post
+new messages; someone it's shared with can read the full history but
+not continue it. This sidesteps a real concurrency/attribution
+question a fully collaborative model would raise immediately - if two
+people can both append, whose message does a follow-up's
+`previous_node_id` context anchor to? That's solvable, but it's a
+second feature, not a checkbox on this one. Documented as a stated,
+revisitable choice in `ConversationShare`'s own docstring, not a
+silent limitation.
+
+**Data model**: `Conversation` (owner_id, title, title_is_default,
+messages as one JSON blob, timestamps) and `ConversationShare`
+(conversation_id, shared_with_user_id, shared_by_user_id, unique
+constraint on the pair so re-sharing is a no-op, not a duplicate row).
+Messages stay one JSON array per conversation rather than a normalized
+child table - every real access pattern here reads/writes "the whole
+conversation," never one message in isolation, so a second table would
+add joins and pagination for no query this app actually makes.
+`_derive_title` in `webapp/conversations.py` deliberately mirrors the
+frontend's old `deriveTitle` byte-for-byte (42-char cutoff, same
+truncate-to-40-plus-ellipsis math) so a conversation's title looks the
+same whether it was derived client-side (before this feature) or
+server-side (after).
+
+**API**: `GET/POST /api/conversations`, `GET /api/conversations/{id}`,
+`POST /api/conversations/{id}/messages`, `DELETE
+/api/conversations/{id}`, `POST .../share`, `DELETE
+.../share/{user_id}` - all in `webapp/backend.py`, delegating to
+`webapp/conversations.py` for the actual rules (same thin-route
+pattern as `webapp/auth.py`/`webapp/oauth.py`). Permission boundaries:
+owner can read/write/delete/share; a shared-with user can read but a
+POST to `/messages` 403s exactly like an unrelated stranger's would;
+sharing a nonexistent email 404s; sharing yourself 400s; re-sharing
+the same person is idempotent, not a duplicate.
+
+**Frontend**: `useConversations.js` rewritten from a localStorage-only
+hook into one backed by the new endpoints, keeping its exposed
+interface (`conversations`, `activeConversation`,
+`createConversation`, `selectConversation`, `deleteConversation`,
+`appendMessage`) as close to unchanged as possible so `Chat.jsx` needed
+minimal rewiring - plus new `sharedConversations`, `shareConversation`,
+`unshareConversation`. Every mutation still updates local state
+optimistically first (typing a message shouldn't feel like it's
+waiting on a network round trip), then reconciles with whatever the
+server actually persisted once the request resolves. If the initial
+load fails outright, this falls open into a single local-only
+conversation (id prefixed `local-` so later mutations know to skip the
+network) rather than breaking the chat page - same fail-open
+philosophy the old localStorage version used for a quota/private-
+browsing failure. `Chat.jsx` gates the composer (`canPost`) on
+`activeConversation.isOwner` so a shared, read-only conversation can't
+be typed into even if someone tries; `ConversationSidebar.jsx` gained
+a distinct "Shared with you" section.
+
+**Tests**: `tests/test_conversations.py` (new, 16 cases) covering
+creation, title derivation (including the 42-char truncation
+boundary), ownership boundaries (view and post both 403 for an
+unrelated user), the full share/unshare/re-share lifecycle, the
+view-only rule (a shared-with user still can't post), 404s for a
+nonexistent conversation or an unregistered share email, a 400 for
+sharing yourself, and auth-required on the collection endpoints.
+`tests/conftest.py`'s existing autouse table-wiping fixture (already
+in place for cross-test `users` leakage) extended to the two new
+tables, deleted child-before-parent for Postgres FK compatibility.
+Full suite: 422 passed, 1 xfailed - no regressions. Frontend rebuilt
+and verified via `vite build` (no JSX/import errors) and copied into
+`webapp/static`.

@@ -23,6 +23,18 @@ from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
 from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
+from webapp.conversations import (
+    append_message,
+    create_conversation,
+    delete_conversation,
+    get_conversation_for_viewing,
+    get_owned_conversation,
+    list_own_conversations,
+    list_shared_with_me,
+    serialize_conversation,
+    share_conversation,
+    unshare_conversation,
+)
 from webapp.dashboard_data import build_summary
 from webapp.db import get_db, init_db
 from webapp.models import Role, User
@@ -256,6 +268,85 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
 def auth_me(user: User = Depends(get_current_user)):
     role = user.role.value if hasattr(user.role, "value") else user.role
     return {"email": user.email, "name": user.name, "role": role}
+
+
+class NewMessage(BaseModel):
+    role: str
+    text: str
+    meta: Optional[dict] = None
+
+
+class ShareRequest(BaseModel):
+    email: EmailStr
+
+
+@app.get("/api/conversations")
+def list_conversations(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    return {
+        "own": [serialize_conversation(c, is_owner=True) for c in list_own_conversations(db, user)],
+        "shared_with_me": [
+            serialize_conversation(c, is_owner=False) for c in list_shared_with_me(db, user)
+        ],
+    }
+
+
+@app.post("/api/conversations")
+def new_conversation(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    conversation = create_conversation(db, user)
+    return serialize_conversation(conversation, is_owner=True)
+
+
+@app.get("/api/conversations/{conversation_id}")
+def get_conversation(
+    conversation_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    conversation = get_conversation_for_viewing(db, conversation_id, user)
+    return serialize_conversation(conversation, is_owner=conversation.owner_id == user.id)
+
+
+@app.post("/api/conversations/{conversation_id}/messages")
+def add_message(
+    conversation_id: str,
+    payload: NewMessage,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = get_owned_conversation(db, conversation_id, user)
+    updated = append_message(db, conversation, payload.dict())
+    return serialize_conversation(updated, is_owner=True)
+
+
+@app.delete("/api/conversations/{conversation_id}")
+def remove_conversation(
+    conversation_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
+    conversation = get_owned_conversation(db, conversation_id, user)
+    delete_conversation(db, conversation)
+    return {"deleted": True}
+
+
+@app.post("/api/conversations/{conversation_id}/share")
+def share(
+    conversation_id: str,
+    payload: ShareRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = get_owned_conversation(db, conversation_id, user)
+    share_conversation(db, conversation, user, payload.email)
+    return serialize_conversation(conversation, is_owner=True)
+
+
+@app.delete("/api/conversations/{conversation_id}/share/{target_user_id}")
+def unshare(
+    conversation_id: str,
+    target_user_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = get_owned_conversation(db, conversation_id, user)
+    unshare_conversation(db, conversation, target_user_id)
+    return serialize_conversation(conversation, is_owner=True)
 
 
 @app.get("/api/auth/google/login")

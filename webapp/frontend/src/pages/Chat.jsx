@@ -144,11 +144,14 @@ function MessageBubble({ message, index, t }) {
 export default function Chat() {
   const {
     conversations,
+    sharedConversations,
     activeConversation,
     createConversation,
     selectConversation,
     deleteConversation,
     appendMessage,
+    shareConversation,
+    unshareConversation,
   } = useConversations();
 
   const [input, setInput] = useState('');
@@ -161,6 +164,10 @@ export default function Chat() {
   const messages = activeConversation ? activeConversation.messages : [];
   const t = stringsFor(uiLanguage);
   const isRtl = RTL_LANGUAGES.has(uiLanguage);
+  // Sharing is view-only (see webapp/models.py's ConversationShare
+  // docstring) - a conversation someone else shared with us can be
+  // read but never posted into.
+  const canPost = !activeConversation || activeConversation.isOwner;
 
   useEffect(() => {
     if (chatRef.current) {
@@ -177,7 +184,7 @@ export default function Chat() {
   async function handleSubmit(e) {
     e.preventDefault();
     const question = input.trim();
-    if (!question || !activeConversation) return;
+    if (!question || !activeConversation || !canPost) return;
 
     const targetId = activeConversation.id;
 
@@ -250,6 +257,7 @@ export default function Chat() {
         />
         <ConversationSidebar
           conversations={conversations}
+          sharedConversations={sharedConversations}
           activeId={activeConversation?.id ?? null}
           onSelect={selectConversation}
           onCreate={createConversation}
@@ -259,6 +267,55 @@ export default function Chat() {
         />
 
         <div className="chat-main">
+          {activeConversation && (
+            <div className="conversation-status-bar">
+              {canPost ? (
+                activeConversation.sharedWith.length > 0 ? (
+                  <span className="conversation-shared-note">
+                    Shared with{' '}
+                    {activeConversation.sharedWith.map((s, i) => (
+                      <span key={s.user_id}>
+                        {i > 0 && ', '}
+                        {s.email}
+                        <button
+                          type="button"
+                          className="unshare-btn"
+                          title={`Stop sharing with ${s.email}`}
+                          onClick={() => unshareConversation(activeConversation.id, s.user_id)}
+                        >
+                          &times;
+                        </button>
+                      </span>
+                    ))}
+                  </span>
+                ) : (
+                  <span />
+                )
+              ) : (
+                <span className="conversation-viewer-note">
+                  &#128065; Viewing {activeConversation.ownerEmail}'s conversation (read-only)
+                </span>
+              )}
+              {canPost && (
+                <button
+                  type="button"
+                  className="share-btn"
+                  onClick={async () => {
+                    const email = window.prompt('Share this conversation with (email):');
+                    if (!email) return;
+                    try {
+                      await shareConversation(activeConversation.id, email.trim());
+                    } catch (err) {
+                      window.alert(err.message || 'Could not share this conversation.');
+                    }
+                  }}
+                >
+                  Share
+                </button>
+              )}
+            </div>
+          )}
+
           <div id="chat" ref={chatRef}>
             <div className="chat-inner">
               {messages.length === 0 && <div className="empty-state">{t.emptyState}</div>}
@@ -274,12 +331,13 @@ export default function Chat() {
               <input
                 id="question"
                 type="text"
-                placeholder={t.placeholder}
+                placeholder={canPost ? t.placeholder : 'Read-only - this conversation is shared with you'}
                 autoComplete="off"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                disabled={!canPost}
               />
-              <button id="send" type="submit" disabled={sending}>
+              <button id="send" type="submit" disabled={sending || !canPost}>
                 {t.send}
               </button>
             </div>

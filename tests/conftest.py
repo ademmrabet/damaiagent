@@ -30,14 +30,27 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///./tests_auth.db")
 import pytest
 
 from webapp.db import Base, engine
-from webapp.models import User  # noqa: F401 - import registers the table on Base
+from webapp.models import Conversation, ConversationShare, User
+
+_TABLES = (ConversationShare, Conversation, User)  # children before parents (FK order)
 
 
 @pytest.fixture(autouse=True)
 def _clean_users_table():
+    """
+    Same cross-test leakage problem this fixture already existed to
+    solve for `users` (see this module's docstring) - now also applies
+    to `conversations`/`conversation_shares`, added alongside sharing
+    (2026-09-19). Deleted in child-before-parent order since SQLite's
+    default (no FK-enforcement) would tolerate either order, but
+    Postgres in production enforces foreign keys and would reject
+    deleting a user while a conversation still references it.
+    """
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
-        conn.execute(User.__table__.delete())
+        for table in _TABLES:
+            conn.execute(table.__table__.delete())
     yield
     with engine.begin() as conn:
-        conn.execute(User.__table__.delete())
+        for table in _TABLES:
+            conn.execute(table.__table__.delete())

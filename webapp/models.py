@@ -20,10 +20,13 @@ import enum
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Enum, String, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, JSON, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 
 from webapp.db import Base
+
+_UUID = UUID(as_uuid=True).with_variant(String(36), "sqlite")
 
 
 class Role(str, enum.Enum):
@@ -49,3 +52,72 @@ class User(Base):
     role = Column(Enum(Role), nullable=False, default=Role.analyst)
 
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class Conversation(Base):
+    """
+    A chat thread, persisted so it can be shared (see ConversationShare
+    below) - previously this lived only in the browser's own
+    localStorage (see webapp/frontend/src/hooks/useConversations.js),
+    which works fine for one person on one device but can't be shown
+    to anyone else, since there was never a copy of it anywhere the
+    other person could reach.
+
+    `messages` is the whole message list for this conversation, stored
+    as one JSON array rather than a normalized child table - every
+    read/write here is "the whole conversation," never one message in
+    isolation, so a second table (and the joins/pagination that would
+    come with it) would just add complexity for no real query this app
+    ever needs to make. Each entry keeps the same shape the frontend
+    already builds locally (role, text, meta) - see Chat.jsx's
+    appendMessage calls - so the API layer can pass it straight through
+    without reshaping it in either direction.
+    """
+
+    __tablename__ = "conversations"
+
+    id = Column(_UUID, primary_key=True, default=lambda: str(uuid.uuid4()))
+    owner_id = Column(_UUID, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String, nullable=False, default="New chat")
+    title_is_default = Column(Boolean, nullable=False, default=True)
+    messages = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    shares = relationship("ConversationShare", cascade="all, delete-orphan", backref="conversation")
+    owner = relationship("User", foreign_keys=[owner_id])
+
+
+class ConversationShare(Base):
+    """
+    One row per (conversation, person it's been shared with) - a
+    conversation can be shared with several colleagues, and the same
+    person could in principle be re-shared without erroring (the
+    unique constraint below makes that a no-op update path rather than
+    a duplicate row) - see webapp/conversations.py's share_conversation
+    for how that's handled. Sharing is deliberately view-only for now:
+    only the owner can add new messages (see webapp/backend.py's
+    add_message endpoint) - a shared-with user reading someone else's
+    live, still-growing conversation and both of them appending to it
+    at once opens real concurrency/attribution questions (whose
+    follow-up does previous_node_id anchor to?) that a simple
+    read-access share doesn't need to solve on day one.
+    """
+
+    __tablename__ = "conversation_shares"
+    __table_args__ = (
+        UniqueConstraint("conversation_id", "shared_with_user_id", name="uq_conversation_share"),
+    )
+
+    id = Column(_UUID, primary_key=True, default=lambda: str(uuid.uuid4()))
+    conversation_id = Column(_UUID, ForeignKey("conversations.id"), nullable=False, index=True)
+    shared_with_user_id = Column(_UUID, ForeignKey("users.id"), nullable=False, index=True)
+    shared_by_user_id = Column(_UUID, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    shared_with_user = relationship("User", foreign_keys=[shared_with_user_id])
+    shared_by_user = relationship("User", foreign_keys=[shared_by_user_id])

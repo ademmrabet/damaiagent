@@ -4,6 +4,7 @@ import './conversationSidebar.css';
 
 export default function ConversationSidebar({
   conversations,
+  sharedConversations = [],
   activeId,
   onSelect,
   onCreate,
@@ -71,6 +72,27 @@ export default function ConversationSidebar({
           </div>
         ))}
       </div>
+
+      {sharedConversations.length > 0 && (
+        <>
+          <div className="conversation-section-label">Shared with you</div>
+          <div className="conversation-list shared">
+            {sharedConversations.map((c) => (
+              <div
+                key={c.id}
+                className={'conversation-item shared' + (c.id === activeId ? ' active' : '')}
+                onClick={() => {
+                  onSelect(c.id);
+                  onClose?.();
+                }}
+              >
+                <span className="conversation-title">{c.title}</span>
+                {c.ownerEmail && <span className="conversation-owner">{c.ownerEmail}</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </aside>
   );
 }

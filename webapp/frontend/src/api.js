@@ -85,6 +85,59 @@ export async function signup(email, password, name) {
   return body;
 }
 
+export async function listConversations() {
+  const res = await authFetch('/api/conversations');
+  if (!res.ok) throw new Error('conversations unavailable');
+  return res.json();
+}
+
+export async function createConversationApi() {
+  const res = await authFetch('/api/conversations', { method: 'POST' });
+  if (!res.ok) throw new Error('failed to create conversation');
+  return res.json();
+}
+
+export async function getConversationApi(id) {
+  const res = await authFetch(`/api/conversations/${id}`);
+  if (!res.ok) throw new Error('failed to load conversation');
+  return res.json();
+}
+
+export async function postConversationMessage(id, message) {
+  const res = await authFetch(`/api/conversations/${id}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(message),
+  });
+  if (!res.ok) throw new Error('failed to save message');
+  return res.json();
+}
+
+export async function deleteConversationApi(id) {
+  const res = await authFetch(`/api/conversations/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('failed to delete conversation');
+  return res.json();
+}
+
+export async function shareConversationApi(id, email) {
+  const res = await authFetch(`/api/conversations/${id}/share`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'failed to share conversation');
+  return body;
+}
+
+export async function unshareConversationApi(id, targetUserId) {
+  const res = await authFetch(`/api/conversations/${id}/share/${targetUserId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('failed to unshare conversation');
+  return res.json();
+}
+
 export async function login(email, password) {
   const res = await fetch('/api/auth/login', {
     method: 'POST',

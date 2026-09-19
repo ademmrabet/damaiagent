@@ -21,6 +21,54 @@
   flex-direction: column;
 }
 
+.conversation-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 24px;
+  background: var(--gray-bg);
+  border-bottom: 1px solid var(--gray-border);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.conversation-viewer-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.share-btn:hover {
+  background: var(--gray-border);
+}
+
+.unshare-btn {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.unshare-btn:hover {
+  color: var(--red);
+}
+
 #chat {
   flex: 1;
   overflow-y: auto;

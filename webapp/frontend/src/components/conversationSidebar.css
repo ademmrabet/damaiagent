@@ -90,6 +90,26 @@
   background: rgba(200, 8, 21, 0.08);
 }
 
+.conversation-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  padding: 4px 10px 0;
+}
+
+.conversation-item.shared {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.conversation-owner {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
 .sidebar-backdrop {
   display: none;
 }
