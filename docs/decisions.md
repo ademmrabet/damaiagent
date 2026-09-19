@@ -2839,3 +2839,54 @@ above.
 badge - so despite covering "every response type," this shipped as a
 backend-only change (`llm/tone.py` + `webapp/backend.py`), with
 `Chat.jsx` untouched and no rebuild required.
+
+## 2026-09-19 - Two more action-code bugs found live (real screenshot)
+
+Adem hit both of these in the deployed app asking about 2.111, in the
+same exchange:
+
+1. **Bare letter codes shown instead of names.** The answer read "the
+   I role is..., The A roles are..., The ( i ) roles are..." - the
+   deterministic full-answer builder (`agent/qa.py::_format_full_answer`)
+   and the LLM facts block (`agent/generate.py::_facts_block`) both
+   passed raw action codes straight through instead of expanding them,
+   and the grounding prompt's SYSTEM_PROMPT never gave the LLM a
+   code->name legend to expand them itself, so it just parroted the
+   bare letters back. Fixed by adding `action_label()` to
+   `agent/authority.py`, reusing `INTENTS`' own `matches` predicates
+   (the single source of truth for what "I"/"C1"/"A2"/etc. actually
+   mean) rather than a second, parallel code->name table that could
+   drift out of sync. Wired into both `_format_full_answer` (now shows
+   e.g. "Approve (A):") and `_facts_block` (now sends the LLM
+   "action=Approve (A2)" instead of bare "action=A2"). Does not touch
+   `_mentions_expected_facts`'s grounding check - that only verifies
+   role *names*, never the action code string, so this was a pure
+   display fix with zero grounding risk.
+
+2. **Follow-up "what I means?" re-answered the previous question
+   instead.** `agent/action_codes.py::detect_action_code_query` is
+   deliberately conservative about a single bare letter alone ("I"
+   collides with the pronoun too often to trust - see its own
+   docstring), so a lone "I" with nothing else backing it up never
+   reached the action-code path and fell through to `agent/qa.py`'s
+   context-carryover fallback instead, which just re-served the
+   already-open node's answer relabeled "carried over from previous
+   question." The 2026-09-03 fix (task #93) already covered multi-code
+   questions ("what's I, A and (i)?") and unambiguous single codes
+   ("what does C2 mean") but missed this narrower single-bare-letter
+   case. Fixed with a new `_no_other_subject()` check: strip the
+   explain-trigger words, English stopwords, and the matched code
+   letter itself out of the query - if nothing real is left over ("what
+   I means?", "what's A?"), the bare letter can only be the code, not
+   the pronoun. A query where "I" is just incidental noise ("I don't
+   understand what approve means") still has real leftover content
+   ("understand", "approve") afterward, so it correctly stays outside
+   this path. Generalizes past "I" to bare "C"/"R"/"A" too, which had
+   the exact same gap.
+
+Verified both live against the real DAM data (not just unit tests):
+asking "2.111" then "what I means ?" now answers "**I** - Initiate /
+Originate" instead of repeating the 2.111 breakdown, and the 2.111
+answer itself now reads "Initiate (I): ...", "Approve (A): ...",
+"Informed: ...". Full suite re-run after: 397 passed, 1 xfailed - same
+as before these changes, no regressions.

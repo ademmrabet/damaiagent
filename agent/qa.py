@@ -4,7 +4,7 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
 from modeling.graph import responsible_roles
 from knowledge.search import resolve_query
-from agent.authority import detect_intent, _INTENT_VOCAB
+from agent.authority import detect_intent, action_label, _INTENT_VOCAB
 from agent.smalltalk import detect_smalltalk
 from agent.glossary import (
     detect_glossary_query,
@@ -288,6 +288,10 @@ def _format_full_answer(node, roles, nodes, graph):
                 return i
         return len(action_order)
 
+    def _action_heading(action):
+        label = action_label(action)
+        return label if action == "( i )" else f"{label} ({action})"
+
     grouped = {}
     for r in roles:
         grouped.setdefault(r["action"], []).append(r)
@@ -295,7 +299,7 @@ def _format_full_answer(node, roles, nodes, graph):
     lines = [f"{node.id} ({node.title!r}):"]
     for action in sorted(grouped, key=_action_rank):
         role_list = _format_role_list(grouped[action])
-        lines.append(f"  {action}: " + ", ".join(role_list))
+        lines.append(f"  {_action_heading(action)}: " + ", ".join(role_list))
 
     return "\n".join(lines)
 

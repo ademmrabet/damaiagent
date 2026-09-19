@@ -1,3 +1,4 @@
+from agent.authority import action_label
 from llm.base import LLMUnavailableError
 from llm.translate import LANGUAGE_NAMES
 
@@ -48,7 +49,7 @@ def _facts_block(structured_result):
 
     lines = []
     for r in roles:
-        bits = [r["role"], f"action={r['action']}"]
+        bits = [r["role"], f"action={action_label(r['action'])} ({r['action']})"]
         if r.get("level") is not None:
             bits.append(f"level={r['level']}")
         if r.get("footnote_refs"):

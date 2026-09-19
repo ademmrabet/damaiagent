@@ -60,6 +60,32 @@ _INTENT_VOCAB = {
     for word in keyword.split()
 }
 
+_ACTION_DISPLAY_NAMES = {
+    "initiate": "Initiate",
+    "check": "Check/Verify",
+    "consult": "Consult",
+    "review": "Review",
+    "approve": "Approve",
+    "informed": "Informed",
+}
+
+
+def action_label(action):
+    """
+    Human-readable name for a bare action code ("I", "C1", "A2",
+    "( i )", ...). Reuses INTENTS' own `matches` predicates rather than
+    a second, parallel code->name table, so this can never drift out
+    of sync with what "who approves"/"who checks"/... actually match
+    against. Falls back to the raw code itself for anything none of
+    INTENTS recognizes - shouldn't happen given the DAM's fixed code
+    set, but silently hiding an unexpected code behind a formatting
+    helper would be worse than just showing it unlabeled.
+    """
+    for intent in INTENTS:
+        if intent["matches"](action, None):
+            return _ACTION_DISPLAY_NAMES[intent["name"]]
+    return action
+
 
 def _match_intent(lowered):
     for intent in INTENTS:
