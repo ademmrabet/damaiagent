@@ -3,7 +3,8 @@ import gsap from 'gsap';
 import Header from '../components/Header.jsx';
 import LoadingScreen from '../components/LoadingScreen.jsx';
 import ChartCanvas from '../components/ChartCanvas.jsx';
-import { getDashboardSummary } from '../api.js';
+import LogoutButton from '../components/LogoutButton.jsx';
+import { getDashboardSummary, isLoggedIn } from '../api.js';
 import './dashboard.css';
 
 const GREEN = '#228b22';
@@ -63,35 +64,33 @@ function ChartBox({ title, full, action, children }) {
 export default function Dashboard() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(false);
+  const [forbidden, setForbidden] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState('all');
   const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
+    if (!isLoggedIn()) {
+      window.location.replace('/login');
+      return;
+    }
     getDashboardSummary()
       .then(setData)
-      .catch(() => setError(true));
+      .catch((err) => {
+        if (err.message === 'forbidden') {
+          setForbidden(true);
+        } else {
+          setError(true);
+        }
+      });
   }, []);
 
-  const ready = !!data || error;
+  const ready = !!data || error || forbidden;
 
-  // The chapter filter re-scopes every card and chart on the page -
-  // "all" is the whole-DAM data already flattened at the top level of
-  // the response (see webapp/dashboard_data.py), any other value
-  // looks up that chapter's own breakdown instead. Graph structure
-  // (total_graph_nodes/total_edges) deliberately stays whole-DAM-only
-  // regardless of this filter - role/reference edges routinely cross
-  // chapter boundaries, so a "chapter subgraph" would need its own,
-  // more complex semantics that aren't worth it for what this
-  // dashboard needs (see the backend docstring for the full reasoning).
   const scope = useMemo(() => {
     if (!data) return null;
     return selectedChapter === 'all' ? data : data.by_chapter[selectedChapter];
   }, [data, selectedChapter]);
 
-  // An action selected under one chapter's breakdown may not exist at
-  // all under another (or under "all") - clearing it on every chapter
-  // change avoids pointing the roles chart at stale, chapter-specific
-  // data that no longer matches what's on screen.
   function handleChapterChange(chapter) {
     setSelectedChapter(chapter);
     setSelectedAction(null);
@@ -108,12 +107,21 @@ export default function Dashboard() {
         subtitle="Delegation of Authority Matrix · structure & coverage overview"
         navHref="/chat"
         navLabel="← Back to chat"
+        right={<LogoutButton />}
       />
 
       <LoadingScreen ready={ready} label="Loading summary…">
         {error && (
           <div className="dashboard-error">
             Could not reach the backend. Is the server running?
+          </div>
+        )}
+
+        {forbidden && (
+          <div className="dashboard-error">
+            The analytics dashboard is restricted to administrator accounts. Ask
+            whoever set up your access to grant the administrator role if you
+            need this.
           </div>
         )}
 
@@ -247,9 +255,6 @@ export default function Dashboard() {
                     onClick: (_evt, elements) => {
                       if (!elements.length) return;
                       const code = actionEntries[elements[0].index][0];
-                      // "other" is a rollup of everything past the top
-                      // 10, not a real action code - nothing in
-                      // roles_by_action to look it up against.
                       if (code === 'other') return;
                       setSelectedAction((current) => (current === code ? null : code));
                     },

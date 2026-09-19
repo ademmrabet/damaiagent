@@ -1,0 +1,77 @@
+\chapter{API Reference}
+\label{ch:api-reference}
+Complete reference for the four HTTP endpoints exposed by \texttt{webapp/\allowbreak{}backend.py}, referenced from Section 11.7.
+
+\section{\texttt{POST /\allowbreak{}api/\allowbreak{}ask}}
+The system's core endpoint. Accepts a question and returns a fully-resolved answer along with the metadata needed to render confidence, language, and LLM-usage information in the UI.
+
+\textbf{Request body:}
+
+\begin{lstlisting}[caption={example request}]
+{
+  "question": "who approves 2.126",
+  "llm": "groq",
+  "previous_node_id": null,
+  "target_language": "auto"
+}
+\end{lstlisting}
+\textbf{Response body (fields, not exhaustive of every possible key):}
+
+\begin{longtable}{|p{0.28\textwidth}|p{0.28\textwidth}|p{0.28\textwidth}|}
+\hline
+\rowcolor{thesisgreen}\textcolor{white}{\textbf{Field}} & \textcolor{white}{\textbf{Type}} & \textcolor{white}{\textbf{Meaning}} \\
+\hline\endhead
+\texttt{answer} & string & The final answer text shown to the user, after any LLM phrasing, tone prefix, and translation \\
+\hline
+\texttt{deterministic\_\allowbreak{}answer} & string & The original template-based answer, always present, never LLM-phrased \\
+\hline
+\texttt{node\_\allowbreak{}id} & string or null & The resolved DAM activity identifier, if any \\
+\hline
+\texttt{method} & string & How the question was resolved: \texttt{id}, \texttt{text\_\allowbreak{}search}, \texttt{smalltalk}, \texttt{glossary}, \texttt{action\_\allowbreak{}code\_\allowbreak{}legend}, \texttt{invalid\_\allowbreak{}id}, \texttt{needs\_\allowbreak{}clarification}, \texttt{out\_\allowbreak{}of\_\allowbreak{}scope}, or a context-carryover variant \\
+\hline
+\texttt{score} & number or null & TF-IDF confidence score when \texttt{method} is \texttt{text\_\allowbreak{}search} \\
+\hline
+\texttt{roles} & array & The structured facts (role, action, level, footnote\_refs) backing this answer \\
+\hline
+\texttt{used\_\allowbreak{}llm} & boolean & Whether the shown \texttt{answer} was produced by an LLM rephrasing that passed the grounding check \\
+\hline
+\texttt{llm\_\allowbreak{}provider} & string or null & Which provider actually produced the phrasing (\texttt{groq}, \texttt{ollama}), if any \\
+\hline
+\texttt{llm\_\allowbreak{}error} & string or null & The reason LLM phrasing was not used, if applicable \\
+\hline
+\texttt{detected\_\allowbreak{}language} & string & The detected language of the question text (\texttt{en}/\texttt{fr}/\texttt{es}/\texttt{pt}/\texttt{ar}) \\
+\hline
+\texttt{answer\_\allowbreak{}language} & string & The language the answer was actually phrased in \\
+\hline
+\texttt{translation\_\allowbreak{}error} & string or null & Set when translation was needed but no LLM provider was available \\
+\hline
+\texttt{detected\_\allowbreak{}tone} & string & \texttt{neutral}, \texttt{frustrated}, or \texttt{confused} \\
+\hline
+\end{longtable}
+\section{\texttt{GET /\allowbreak{}api/\allowbreak{}health}}
+Used for both the frontend's live status indicator and Render's platform health check.
+
+\begin{lstlisting}[caption={example response}]
+{"status": "ok", "nodes_loaded": 327}
+\end{lstlisting}
+\section{\texttt{GET /\allowbreak{}api/\allowbreak{}llm/\allowbreak{}config}}
+Reports the actual model names each LLM mode would currently use, read directly from the provider classes so the UI can never drift from what the backend actually does.
+
+\begin{lstlisting}[caption={example response}]
+{"ollama_model": "llama3.1", "groq_model": "openai/gpt-oss-120b"}
+\end{lstlisting}
+\section{\texttt{GET /\allowbreak{}api/\allowbreak{}dashboard/\allowbreak{}summary}}
+Backs the analytics dashboard. Returns node-type counts, total responsibilities, the authority-code distribution, the top roles by responsibility count, unresolved-role rate, per-chapter breakdowns, and knowledge-graph totals — the exact figures cited in Section 9.3 are read live from this endpoint's own output, not hand-copied.
+
+\begin{lstlisting}[caption={example response, abbreviated}]
+{
+  "node_counts": {"chapter": 3, "process": 35, "task": 138, "child_task": 102, "threshold_variant": 49},
+  "total_responsibilities": 1776,
+  "unresolved_count": 10,
+  "unresolved_rate": 0.0056,
+  "distinct_roles": 131,
+  "avg_responsibilities_per_node": 5.48,
+  "no_direct_responsibilities_rate": 0.2963,
+  "graph": {"total_graph_nodes": 459, "total_edges": 2108}
+}
+\end{lstlisting}

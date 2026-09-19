@@ -1,0 +1,35 @@
+\chapter*{General Introduction}
+\addcontentsline{toc}{chapter}{General Introduction}
+\markboth{General Introduction}{General Introduction}
+
+Every large institution eventually writes down who is allowed to decide what. In a development bank, that question carries real weight: an approval given by the wrong person is not a procedural detail but a governance failure, and one that auditors will find. The African Development Bank Group records these rules in a document called the Delegation of Authority Matrix, usually shortened to DAM. It states, activity by activity, which role may initiate a task, which must check or verify it, which reviews it, which approves it, and which simply has to be told that it happened.
+
+The document works. The problem is reaching it. In its complete form the DAM runs past two hundred and fifty pages, and almost all of that content sits inside wide tables whose column headers are printed sideways to fit the page. Authority is expressed through a compact code, a single letter sometimes carrying a superscript digit, and the meaning of that code changes depending on the digit attached to it. A staff member who needs to know whether they can sign off on a mission programme has to find the right row in the right table in the right chapter, read a rotated header to work out which column belongs to which role, and then decode the letter sitting at the intersection. People do this. They do it slowly, and they do not always do it correctly.
+
+The obvious modern answer is to ask a chatbot. That answer fails in a way that matters here. Language models produce fluent text, and fluent text about who holds financial approval authority is dangerous when it is wrong. A model that invents a plausible-sounding role name, or quietly drops one of the three people who must be informed, produces an answer that looks exactly as trustworthy as a correct one. For a compliance document, an invented answer is worse than no answer at all.
+
+This thesis describes a system built around that constraint rather than in spite of it. The DAM is parsed into a structured knowledge base, that knowledge base is turned into a graph of activities and responsibilities, and questions are answered by retrieving real records from the graph. A language model is present, but it is never allowed to decide what the facts are. It is given facts that have already been retrieved and asked only to phrase them naturally, and its output is checked against those facts, word for word, before a user ever sees it. If the model drops a role name or alters one, the rewritten answer is discarded and a plain template answer is shown instead.
+
+\section*{Objectives}
+
+The work set out to deliver three things. The first was a faithful machine-readable representation of the DAM's content, one that could be checked against the printed document rather than trusted on the strength of the code that produced it. The second was a question-answering agent that resolves ordinary questions, typed the way people actually type them, to the correct activity and returns its recorded responsibilities. The third was a working, hosted application rather than a notebook: something a supervisor or an examiner can open in a browser and interrogate directly.
+
+A fourth objective emerged during the work and is worth stating because it shaped everything else. The system had to be honest about its own limits. Asked about an activity that does not exist, it says so. Asked something outside the DAM's subject matter, it declines rather than guessing. This behaviour is not a fallback for failure cases; it is the property that makes the correct answers worth anything.
+
+A second phase of the project extended the platform from a question-answering tool into something closer to an institutional application: authenticated access, voice input, document attachment, a fully translated interface, exportable and shareable conversations, and an analytics layer carrying governance indicators and a forecasting capability. Chapter~5 describes that phase in detail.
+
+\section*{Scope}
+
+The complete DAM exceeds two hundred and fifty pages. Processing all of it was neither necessary nor realistic within the time available, so the work was scoped to a seventy-nine-page subset covering three chapters of the document, including the Non-Sovereign Operations chapter that was originally outside the intended scope and was added once its structure proved compatible with the parser. Everything reported in this thesis, including every count and every quality measure, refers to that subset. Nothing in the design prevents the remaining chapters from being processed by the same pipeline, and the reasons for believing this are set out in Chapter~3.
+
+\section*{Structure of the Thesis}
+
+Chapter~1 places the project in context. It introduces the host institution and the client organisation, examines how the DAM is consulted today and where that process breaks down, reviews what existing tools offer and why they fall short for this document, and closes with the requirements and the architecture chosen in response.
+
+Chapter~2 examines the source document itself. Rather than a dataset of rows and columns, the raw material here is a PDF whose structure is visual, so this chapter is an exploration of how that structure encodes meaning and of the specific ways automated extraction fails on it.
+
+Chapter~3 describes the engineering pipeline that turns the document into data: the stages, the transformations, the validation applied at each step, and the knowledge graph built on top of the result.
+
+Chapter~4 covers the agent itself, which is to say retrieval, answer construction, the language model layer, and the verification mechanism that keeps that layer honest.
+
+Chapter~5 presents the delivered platform: the application and its interface, the access control and collaboration features, the analytics and forecasting layer, the testing regime, and how the whole thing is deployed. The general conclusion then reviews what was achieved, what was not, and what a continuation of this work would address first.

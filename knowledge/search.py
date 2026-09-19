@@ -100,10 +100,6 @@ def build_search_index(nodes):
 
 
 def _single_word_vocabulary(vectorizer):
-    # vectorizer.vocabulary_ includes the fitted bigrams too (e.g.
-    # "country strategy") alongside single words - only the single
-    # words are meaningful things to typo-correct an individual query
-    # word against.
     return {term for term in vectorizer.vocabulary_ if " " not in term}
 
 

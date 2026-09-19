@@ -1,0 +1,406 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[top=2cm,bottom=2cm,left=2.2cm,right=2.2cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\definecolor{acc}{HTML}{00723F}
+\definecolor{gr}{HTML}{555555}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.3em,itemsep=1pt,topsep=2pt,parsep=0pt}
+\usepackage{titlesec}
+\titleformat{\section}{\large\bfseries\color{acc}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{14pt}{5pt}
+\titlespacing*{\subsection}{0pt}{9pt}{3pt}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{colortbl}
+\newcommand{\job}[1]{\par\vspace{2pt}\noindent\textcolor{gr}{\textit{Job: #1}}\par\vspace{2pt}}
+\newcommand{\turn}[1]{\par\vspace{3pt}\noindent\textbf{The point to land:} #1\par}
+\newcommand{\len}[1]{\hfill\textcolor{gr}{\small[#1]}}
+\newcommand{\todo}{$\square$~}
+\setlength{\parindent}{0pt}
+\pagestyle{plain}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries\color{acc} Chapter 1 --- Writing Notes}\\[3pt]
+{\small Project Framework, State of the Art, and Needs Analysis}\\[2pt]
+{\small\color{gr} Points to make and facts to use. Write the sentences yourself.}
+\end{center}
+
+\vspace{6pt}
+\hrule
+\vspace{8pt}
+
+\textbf{How to use this:} read a section's notes, close the page, write. Drafting
+with notes in front of you produces reshaped notes, not your own writing. Write
+badly first and fix afterwards --- the blank page costs more than the editing.
+One idea per paragraph. State the point, then the evidence, not the reverse.
+
+\vspace{4pt}
+Target for the whole chapter: 12--15 pages.
+
+\vspace{8pt}
+\hrule
+
+% =====================================================================
+\section*{Introduction to the chapter \len{$\sim$½ page, 2 paragraphs}}
+\job{tell the reader what this chapter does and why it matters}
+
+\textbf{Para 1}
+\begin{itemize}
+\item where the project came from, what it was asked to fix
+\item names: the host institution, the client, the document
+\item flag that most of the chapter is about how the document gets used today
+\end{itemize}
+
+\textbf{Para 2}
+\begin{itemize}
+\item the requirements at the end weren't decided up front
+\item they're what's left after watching the current process fail
+\item $\rightarrow$ that's why failures come first, requirements after
+\item closes with: existing tools, why none fit, what was proposed
+\end{itemize}
+
+\turn{this chapter isn't a survey --- it's where the specification comes from}
+
+% =====================================================================
+\section*{1.1 General Framework of the Project \len{$\sim$½ page + table}}
+\job{the administrative framing, quickly}
+
+\begin{itemize}
+\item final-year project, Master's in Data Sciences, Polytech Intl
+\item six-month internship; $\sim$4 months on the build
+\item rest: framing the subject, learning the source material, writing this
+\end{itemize}
+
+\textbf{Then 1--2 sentences: what kept you on it.} Three angles, pick one:
+\begin{itemize}
+\item[(a)] two problems pulling opposite ways --- extraction rewards rules you can
+check against a page; language models give flexibility with no guarantee of faithfulness
+\item[(b)] a page a human reads easily breaks every library you point at it ---
+finding out why meant learning to read the file the way the printer wrote it
+\item[(c)] the interesting problem wasn't building a chatbot --- it was working out
+what a chatbot must \emph{not} be allowed to do when the subject is who controls money
+\end{itemize}
+
+\textbf{\todo Table 1.1 --- Framework of the project.} Rows: project type, host
+institution, programme, academic year, duration, client organisation, academic
+supervisor, professional supervisors, source document, scope processed.
+
+% =====================================================================
+\section*{1.2 Host Organisation \len{$\sim$1½ pages}}
+
+\subsection*{1.2.1 Presentation of Polytech Intl}
+\job{establish the institution; keep it factual, not promotional}
+
+\begin{itemize}
+\item \'Ecole Polytechnique Internationale Priv\'ee de Tunis
+\item founded 2013 \quad\textcolor{gr}{\small(verify on the school's own site)}
+\item Rue du Lac d'Annecy, Les Berges du Lac 1, Tunis
+\item founded largely by institutional figures from \textbf{banking, insurance, industry}
+\item programmes: computer science (big data, business intelligence, software
+engineering, IT-finance, embedded systems), mechatronics, industrial engineering,
+financial engineering, telecommunications, architecture
+\item international mobility --- partner schools in Europe, Asia, North America
+\item member of the Agence Universitaire de la Francophonie \textcolor{gr}{\small(verify)}
+\item teaching built around projects + compulsory final internship
+\end{itemize}
+
+\textbf{Then connect to your project:}
+\begin{itemize}
+\item Data Sciences Master's spans stats/ML, data engineering, and the software
+side of making an analysis actually run
+\item final project expected to show all three
+\item $\rightarrow$ that's why this went to a deployed application, not a clean dataset
+\end{itemize}
+
+\subsection*{1.2.2 Project Context and the Client Organisation}
+\job{who the client is, and why an institution like that needs a DAM at all}
+
+\textbf{Positioning --- get this exactly right:}
+\begin{itemize}
+\item Polytech Intl \textbf{hosted and supervised}
+\item AfDB was the \textbf{client}: supplied the source document and the requirements
+\item do \emph{not} describe yourself as working at or within AfDB anywhere
+\end{itemize}
+
+\textbf{AfDB facts:}
+\begin{itemize}
+\item founded 1964, HQ Abidjan, C\^ote d'Ivoire
+\item 81 member countries --- 54 African, 27 non-regional
+\item purpose: economic development and social progress across regional member countries
+\item Group = the Bank + African Development Fund (concessional lending) + Nigeria Trust Fund
+\item RDGN: Tunisia, Algeria, Morocco, Mauritania, Libya --- hub in Tunis
+\textcolor{gr}{\small(confirm official wording with Yasser or Surya)}
+\end{itemize}
+
+\textbf{\todo One sentence only you can write:} how the subject reached you ---
+who proposed it, how they described the problem.
+
+\textbf{Optional nice line:} a school founded partly by people from banking,
+supervising a project built for a bank.
+
+\textbf{Closing paragraph --- why a real client changed the work:}
+\begin{itemize}
+\item material couldn't be tidied to suit the parser
+\item correctness = what the printed pages say, not a convenient metric
+\item every extraction claim in the report is checkable against its page
+\item $\rightarrow$ that constraint runs through Chapter 2
+\end{itemize}
+
+\textbf{\todo Table 1.2 --- The client at a glance.} Rows: institution, founded,
+HQ, membership, purpose, Group entities, regional office concerned, regional hub.
+
+\newpage
+% =====================================================================
+\section*{1.3 Study of the Existing System and Critical Analysis \len{$\sim$5 pages}}
+
+\subsection*{1.3.1.1 Definition and stakes of the DAM \len{2--3 paragraphs}}
+\begin{itemize}
+\item delegation framework answers: for a given institutional act, who may do which part
+\item expressed as a matrix
+\item rows = activities, hierarchical: chapters $\rightarrow$ processes $\rightarrow$ tasks
+$\rightarrow$ child tasks $\rightarrow$ threshold variants (keyed by money band)
+\item columns = roles: country office staff $\rightarrow$ sector managers $\rightarrow$
+directors $\rightarrow$ VPs $\rightarrow$ Board
+\item cell = code saying what that role does for that activity
+\end{itemize}
+
+\textbf{\todo Table --- authority notation.} I / C1,C2 / C3,C4 / R / A / (i)
+
+\textbf{Two traps in the notation --- both matter later:}
+\begin{itemize}
+\item ``C'' covers two unrelated ideas split only by the digit:
+C1,C2 = check and verify; C3,C4 = consult (Board / independent function)
+\item the informed marker isn't a letter at all --- it's parenthesised, and
+behaves differently at every processing stage
+\end{itemize}
+
+\subsection*{1.3.1.2 Governance and compliance requirements \len{1--2 paragraphs}}
+\begin{itemize}
+\item the DAM isn't advisory --- it's the reference internal audit checks against
+\item exists partly because public and multilateral funding brings governance expectations
+\end{itemize}
+Three consequences for any system built on it:
+\begin{itemize}
+\item[1.] a wrong answer surfaces at audit, not during the work
+\item[2.] completeness = correctness: naming the approver but omitting a mandatory
+verifier is incomplete in a way that misleads, though nothing in it is false
+\item[3.] traceability: an answer you can't verify gives you no basis for relying on it
+\end{itemize}
+\turn{consequence 2 is where your FR4 comes from --- flag it}
+
+\subsection*{1.3.1.3 Challenges in consulting it in practice \len{2--3 paragraphs}}
+\begin{itemize}
+\item tables are wide $\rightarrow$ role headers rotated 90° to fit the page
+\item reader must map a sideways label to a code centimetres below it
+\item and get the adjacent column right too --- neighbouring roles often differ on the same activity
+\item superscript footnote digits sit against the codes; telling them apart requires knowing which is which
+\item some rows hold no responsibilities at all --- just a cross-reference, so you
+restart in a different chapter
+\item new staff need the document most and are least equipped to navigate it
+\end{itemize}
+\turn{consequence: people ask a colleague instead, or copy what was done last time.
+Neither is auditable. Both propagate errors quietly.}
+
+\subsection*{1.3.2 Study of Existing Systems}
+\textit{Opening: four categories exist, none works, each fails for its own reason,
+and those reasons become the spec.}
+
+\textbf{1.3.2.1 Manual consultation and document search \len{2 paragraphs}}
+\begin{itemize}
+\item today: open PDF, Ctrl+F
+\item full-text search = character string matching
+\item works if you know the exact title or the identifier; close to useless otherwise
+\item ``approve'' $\rightarrow$ hundreds of hits, page order, no relevance ranking
+\item half-remembered name $\rightarrow$ nothing unless wording matches exactly
+\item \textbf{deeper point:} search finds \emph{places}; you wanted an \emph{answer}
+\item it says page 24; it can't say who approves, because that needs: page holds a
+table + headers rotated + letter in cell = a role's authority
+\end{itemize}
+
+\textbf{1.3.2.2 Generic document QA assistants \len{2--3 paragraphs}}
+\begin{itemize}
+\item named: ChatPDF, NotebookLM, Microsoft Copilot, file-upload chat modes
+\item mechanism (state it accurately --- you'll be asked): split into passages
+$\rightarrow$ embed as vectors $\rightarrow$ retrieve nearest to question
+$\rightarrow$ model writes from those. This is RAG; use the term.
+\item works on prose; fails here
+\item failure is \textbf{structural, not model quality} --- don't let a reader think
+a better model fixes it
+\item flatten page $\rightarrow$ spatial relationships destroyed
+\item rotated header becomes a loose string attached to nothing
+\item retrieved passage can hold the activity name AND the letter A, having lost
+whose column the A was in
+\item answer is gone before the model sees anything
+\end{itemize}
+\textbf{\todo Worth 15 minutes:} upload 2--3 DAM pages to ChatPDF or NotebookLM,
+ask ``who approves 2.126'', screenshot it. Wrong or vague $\rightarrow$ becomes a
+figure, and turns this subsection from argument into evidence.
+
+\textbf{1.3.2.3 Commercial document-extraction services \len{2 paragraphs}}
+\begin{itemize}
+\item named: Azure Document Intelligence, AWS Textract, Google Document AI, LlamaParse
+\item be fair: markedly better at tables than a general library; the serious alternative
+to hand-written rules
+\end{itemize}
+Three reasons ruled out:
+\begin{itemize}
+\item[1.] per-page cost + sending an internal governance document to a third party
+--- an institutional decision, not a student's
+\item[2.] tuned for invoices, receipts, contracts, forms --- not a bespoke authority
+matrix with rotated headers and superscript-qualified codes
+\item[3.] \textbf{no account of why a cell came out wrong.} A rule from a measured
+character offset is checkable against its page. A confidence score isn't.
+\end{itemize}
+\turn{reason 3 is your strongest and connects to the thesis's whole argument --- give it the most room}
+
+\textbf{1.3.2.4 Critical analysis \len{2--3 paragraphs + table}}
+\begin{itemize}
+\item none fail from poor engineering --- each fails on an assumption that doesn't hold
+\item search assumes $\rightarrow$ user can phrase it in the document's vocabulary
+\item assistants assume $\rightarrow$ flattening preserves meaning (false for positional tables)
+\item extraction assumes $\rightarrow$ document resembles their training forms
+\item GRC platforms (4th category) assume $\rightarrow$ institution re-enters its rules
+into their data model = change programme, not a tool
+\end{itemize}
+\textbf{The shared failure --- put weight here:}
+\begin{itemize}
+\item none has any concept of being wrong
+\item search returns results, model returns text; neither separates
+``answer I can support'' from ``answer I can't''
+\item for a compliance reference that distinction is the whole point
+\end{itemize}
+
+\textbf{\todo Comparison table.} Columns: Search $\cdot$ Assistants $\cdot$
+Extraction $\cdot$ GRC $\cdot$ This work. Rows: preserves positional meaning;
+answers vs locates; traceable to a source row; refuses when it can't answer;
+surfaces mandatory obligations; tolerates typos; document stays in-house; no
+per-page cost; deployable here.
+
+\textcolor{gr}{\small Don't mark a competitor ``No'' on something you haven't tested
+--- use Partly or N/A and you're safe if asked.}
+
+\turn{read down your own column --- that list \emph{is} the specification. Say so, then point at 1.5.}
+
+\newpage
+% =====================================================================
+\section*{1.4 Functional Needs Analysis \len{$\sim$3 pages, mostly tables}}
+
+\subsection*{1.4.1 Functional requirements}
+Short intro para: these weren't invented --- each corresponds to something a user
+currently does by hand, or a failure observed in 1.3.
+
+\textbf{\todo Table.} Core (FR1--FR10):
+\begin{itemize}
+\item FR1 direct identifier lookup --- full confidence, no ambiguity
+\item FR2 natural-language activity lookup + reports its confidence
+\item FR3 authority-role queries (approve / review / check / initiate / inform)
+\item FR4 mandatory obligation surfacing --- check/verify + informed parties, whatever was asked
+\item FR5 cross-reference resolution --- follow the pointer automatically
+\item FR6 typo and phrasing tolerance
+\item FR7 honest refusal --- unknown id, out of scope
+\item FR8 conversational continuity --- follow-ups without restating the subject
+\item FR9 structural analytics --- counts, code distribution, top roles, per-chapter
+\item FR10 multilingual questions --- FR/ES/PT/AR, without translating role names or ids
+\end{itemize}
+Second phase (FR11--FR16): authenticated access; voice input; document attachment
+with a distinct trust boundary; fully localised interface incl. RTL; conversation
+export as PDF with provenance; read-only sharing by QR code.
+
+\subsection*{1.4.2 Non-functional requirements}
+\textbf{\todo Table.}
+\begin{itemize}
+\item NFR1 factual fidelity --- no role/code/qualification not in the source.
+\textbf{Takes precedence over everything else.} Say that explicitly.
+\item NFR2 traceability --- every answer attributable to a specific record
+\item NFR3 availability without external services --- degrade to templates, don't fail
+\item NFR4 response time --- seconds on free hosting $\rightarrow$ rules out re-parsing per request
+\item NFR5 reproducibility --- same facts every run, independent of model sampling
+\item NFR6 portability --- identical on laptop and host
+\item NFR7 usable on a phone
+\item NFR8 credential protection --- no recoverable passwords, tokens expire
+\item NFR9 upload safety --- type and size limits, never executed
+\end{itemize}
+
+\subsection*{1.4.3 Project constraints}
+\textbf{\todo Table.} Constraint $\rightarrow$ consequence:
+\begin{itemize}
+\item no labelled training data $\rightarrow$ ruled out supervised model; pushed to lexical retrieval
+\item document scope: 250+ pages, 79 processed $\rightarrow$ rest as future work
+\item no infrastructure budget $\rightarrow$ free tier $\rightarrow$ forced build-time caching
+\item no ground truth $\rightarrow$ correctness established against real pages $\rightarrow$
+set the pace of the whole data understanding phase
+\end{itemize}
+
+% =====================================================================
+\section*{1.5 Proposed Solution \len{$\sim$2 pages}}
+
+\subsection*{1.5.1 General presentation}
+\begin{itemize}
+\item the core idea: separate \emph{what the facts are} from \emph{how they're said}
+\item facts $\leftarrow$ structured knowledge base, parsed once offline, rules derived
+from the document's own geometry, validated against printed pages
+\item phrasing $\leftarrow$ language model, given facts already retrieved, restricted to rewording
+\item between them: a verification step
+\item any answer that dropped or altered a role name is rejected $\rightarrow$
+deterministic template shown instead
+\item user still gets a correct answer, just less conversational
+\end{itemize}
+\turn{this is the mechanism that makes a generative component usable at all here}
+
+\subsection*{1.5.2 Global system architecture}
+Four layers:
+\begin{itemize}
+\item[1.] offline extraction --- PDF $\rightarrow$ validated node set, cached, shipped with the app
+\item[2.] knowledge --- node set as a directed graph + lookup and search over it
+\item[3.] agent --- interprets questions, resolves to activities, builds deterministic
+answers, applies the model + verification
+\item[4.] presentation --- REST interface + authenticated web client (chat, dashboard,
+attachment, export, sharing)
+\end{itemize}
+\textbf{\todo Figure: fig1\_architecture.png}
+
+\textbf{Worth a sentence:} extraction happens offline and is cached, so the running
+app never opens the PDF. It loads a prepared node set at startup. That was a
+deployment decision --- Chapter 5 covers what happened when it wasn't.
+
+\subsection*{1.5.3 Selected technologies}
+\textbf{\todo Table.} Technology $\rightarrow$ role. Python; pdfplumber (character-level
+coordinates --- required, not convenient); Pydantic (schema validation at construction);
+networkx (directed multigraph --- a role can hold several responsibilities on one
+activity); scikit-learn (TF-IDF + cosine); FastAPI; React + Vite; Groq + Ollama
+(behind one interface, so either or neither); Web Speech API; python-jose + passlib;
+ReportLab; statsmodels; Docker; Render.
+
+\textcolor{gr}{\small For each, give the reason not just the name. ``pdfplumber, because
+the superscript rule needs per-character vertical offset and font size'' beats
+``pdfplumber for PDF extraction''.}
+
+% =====================================================================
+\section*{Conclusion to the chapter \len{$\sim$½ page, 1--2 paragraphs}}
+\begin{itemize}
+\item the DAM answers an important question; the way it's published makes the answer expensive
+\item manual consultation is slow and error-prone because the meaning lives in the layout
+\item generic assistants fail for the same reason --- with the added risk that they fail \emph{fluently}
+\item the requirements above respond to both
+\item the architecture separates retrieval from phrasing so a model's flexibility
+can be used without inheriting its unreliability
+\item hand off: next chapter examines the source document and what makes extracting it hard
+\end{itemize}
+
+\vspace{10pt}
+\hrule
+\vspace{6pt}
+\textbf{Your numbers, for cross-reference:} 250+ page document, 79-page subset ---
+327 records (3 chapters, 35 processes, 138 tasks, 102 child tasks, 49 threshold
+variants) --- 1,776 responsibility entries --- 131 roles --- 0.56\% unresolved ---
+5.48 responsibilities per record --- 29.63\% with none --- 14 cross-references ---
+graph 459 nodes / 2,108 edges --- 374 tests across 23 files.
+
+\end{document}

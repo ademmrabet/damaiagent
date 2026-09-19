@@ -24,6 +24,7 @@ export default defineConfig({
         landing: resolve(__dirname, 'landing.html'),
         chat: resolve(__dirname, 'chat.html'),
         dashboard: resolve(__dirname, 'dashboard.html'),
+        login: resolve(__dirname, 'login.html'),
       },
     },
   },

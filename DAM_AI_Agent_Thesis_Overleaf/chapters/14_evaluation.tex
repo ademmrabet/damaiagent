@@ -1,0 +1,47 @@
+\chapter{Evaluation}
+\label{ch:evaluation}
+\section{Evaluation philosophy}
+The project treats "the answer is factually correct" and "the code behaves as intended" as two separate, both mandatory, evaluation questions, and pursues both continuously rather than as a single end-of-project test pass. Data-layer correctness (Sections 6–7) was evaluated primarily against the real source document itself — a specific screenshot, a specific page's raw characters, or a specific confirmed real user question — never against a synthetic or assumed example. Code-layer correctness is evaluated with a large, continuously growing automated test suite that mirrors that same discipline: a new test is written to reproduce a real confirmed bug before it is fixed, not written speculatively.
+
+\section{Automated test suite}
+As of this report, the project has \textbf{374 automated tests across 23 test files}, spanning parsing (\texttt{test\_\allowbreak{}task\_\allowbreak{}blocks.py}, \texttt{test\_\allowbreak{}row\_\allowbreak{}merge.py}, \texttt{test\_\allowbreak{}column\_\allowbreak{}roles.py}, \texttt{test\_\allowbreak{}title\_\allowbreak{}corruption.py}, \texttt{test\_\allowbreak{}metadata.py}, \texttt{test\_\allowbreak{}glossary\_\allowbreak{}parsing.py}), the built data model (\texttt{test\_\allowbreak{}build\_\allowbreak{}nodes.py}, \texttt{test\_\allowbreak{}graph.py}, \texttt{test\_\allowbreak{}nodes\_\allowbreak{}cache.py}), the natural-language layer (\texttt{test\_\allowbreak{}search.py}, \texttt{test\_\allowbreak{}typo\_\allowbreak{}correct.py}, \texttt{test\_\allowbreak{}smalltalk.py}, \texttt{test\_\allowbreak{}action\_\allowbreak{}codes.py}, \texttt{test\_\allowbreak{}glossary\_\allowbreak{}agent.py}, \texttt{test\_\allowbreak{}agent.py}), the LLM and generation layer (\texttt{test\_\allowbreak{}llm.py}, \texttt{test\_\allowbreak{}generate.py}, \texttt{test\_\allowbreak{}translate.py}, \texttt{test\_\allowbreak{}tone.py}), and the web application layer (\texttt{test\_\allowbreak{}backend.py}, \texttt{test\_\allowbreak{}dashboard\_\allowbreak{}data.py}, \texttt{test\_\allowbreak{}frontend\_\allowbreak{}source.py}). The whole codebase (excluding the retained v1 backup) is roughly 7,700 lines of Python.
+
+Every test file traces back to a real, dated entry in the project's decision log explaining exactly what real-world case it exists to pin down — several tests are named directly after the specific real question or screenshot that exposed the bug they now guard against (for example, a regression test verifying that the follow-up question "what's I, A and (i)?" is never swallowed by conversation-context carryover again).
+
+\section{Data-model evaluation metrics}
+Measured directly against the current build (\texttt{data/\allowbreak{}processed/\allowbreak{}nodes.json}, live-recomputed for this report rather than quoted from memory):
+
+\begin{longtable}{|p{0.42\textwidth}|p{0.42\textwidth}|}
+\hline
+\rowcolor{thesisgreen}\textcolor{white}{\textbf{Metric}} & \textcolor{white}{\textbf{Value}} \\
+\hline\endhead
+Total nodes & 327 (3 chapters, 35 processes, 138 tasks, 102 child tasks, 49 threshold variants) \\
+\hline
+Total extracted responsibility records & 1,776 \\
+\hline
+Unresolved-role rate & 0.56\% (10 records) \\
+\hline
+Distinct canonical roles & 131 \\
+\hline
+Average responsibilities per node & 5.48 \\
+\hline
+Nodes with no direct responsibilities & 96 (29.6\% — mostly process-level nodes, whose responsibilities live on their child tasks by design) \\
+\hline
+Knowledge graph nodes & 459 (327 DAM + 131 role + 1 unresolved placeholder) \\
+\hline
+Knowledge graph edges & 2,108 \\
+\hline
+Known residual data-quality issues & 2 empty titles, 1 residual title-corruption case, 3 duplicate responsibilities (all understood, bounded, and documented rather than hidden) \\
+\hline
+\end{longtable}
+\section{Correctness under generation: the grounding check in practice}
+The grounding check described in Section 8.4 is itself evaluated, not just trusted: dedicated tests confirm it correctly accepts an LLM rephrasing that preserves every fact, correctly rejects one that drops or alters a role name, tolerates purely cosmetic differences (extra whitespace, different capitalization) without weakening the underlying guarantee, and correctly falls back to the deterministic template on a provider exception or an empty response. A late-project investigation into why the "LLM unavailable" fallback was firing more often than expected found the true cause to be a genuine tension between two features shipped the same day — a new domain rule that increased the average number of facts an answer must state, and a sentence-count limit that had never been revisited to account for it — and fixed it by relaxing the sentence limit specifically for many-fact answers while leaving the verbatim-accuracy requirement completely untouched. A separate, unrelated candidate fix attempted during the same investigation (a parsing-layer change intended to fix one specific garbled role name) was tested, found not to fix its target case, found to introduce a real regression elsewhere, and was fully reverted — documented in the decision log as an honest record of an investigated-and-abandoned path rather than silently discarded.
+
+\section{Live verification against the real system}
+Because the development sandbox cannot run a persistent background server across separate tool calls, and cannot reach the live LLM API network endpoint at all, two complementary verification strategies were used throughout: FastAPI's in-process \texttt{TestClient} (used for all continuous, repeatable testing, including every test in \texttt{test\_\allowbreak{}backend.py}), and, for milestones that needed a genuine end-to-end confirmation, starting a real server and exercising it with real HTTP requests within a single shell invocation. Both of the project's founding example questions were confirmed to return identical, correct answers through the real HTTP API, one resolved via the id fast-path and one via TF-IDF text search — the specific proof that the two-path resolution design in Section 8.2 actually delivers on its purpose, not just that it compiles.
+
+Genuine external verification (a real Ollama server, a real Groq API key, a real Docker build, a real Render deployment) could not be performed from within the development sandbox at all in several cases — no Docker binary was ever available in the sandbox, and outbound requests to the Groq API endpoint were proxy-blocked for most of the project's second half. Every such gap is explicitly flagged in the decision log rather than silently assumed to be fine, and was instead independently confirmed later by the intern on his own machine (Docker Compose, for example, worked correctly on first attempt once actually tested outside the sandbox).
+
+\section{Recurring bug pattern: found by real testing, not by inspection}
+A consistent pattern across the whole project is that the most consequential bugs were found by testing against real data or a real screenshot, not by reading the code. Notable examples, spanning the full project timeline: the "(i)" informed-marker bug (missed by every prior version of this project, found only by scanning real raw characters); the \texttt{get\_\allowbreak{}children()} hierarchy bug (invisible to inspection, caught only by an automated whole-document consistency check); a chat follow-up question resolving to the wrong activity (defeated an initial phrase-based fix within one further message from the intern, and was only correctly solved once the actual TF-IDF confidence score — not the wording of the question — was identified as the real signal); and the Groq 404 error on the deployed instance (traced to a model deprecation the intern discovered by hitting a genuine production error, not by proactive monitoring). Each of these is documented in this report's earlier sections at the point where it occurred, and together they are the strongest evidence that the "verify against real data before trusting a fix" discipline stated at the start of this report was actually followed in practice rather than merely stated as a principle.
+

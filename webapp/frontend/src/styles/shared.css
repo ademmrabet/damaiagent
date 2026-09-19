@@ -136,3 +136,20 @@ a.nav-link:hover {
   color: var(--white);
   transform: translateY(-1px);
 }
+
+.logout-btn {
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--gray-border);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.logout-btn:hover {
+  border-color: var(--red);
+  color: var(--red);
+}

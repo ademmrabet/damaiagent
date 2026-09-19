@@ -15,31 +15,6 @@ from agent.action_codes import detect_action_code_query, format_action_code_answ
 
 MIN_TEXT_SEARCH_SCORE = 0.15
 
-# Real gap the professor flagged: a brand-new employee who doesn't
-# know any DAM ids tends to type something short - a single word
-# ("mission"), or just the verb with no subject ("approve") - and the
-# old behavior silently picked resolve_query's top-scoring guess and
-# answered as if it were certain. Measured directly: "mission" alone
-# scores 0.48/0.45/0.41 across THREE different real tasks (2.121,
-# 2.124, 2.125) - genuinely ambiguous, not a confident match that just
-# happens to have a modest score. "approve" alone scores 0.46 against
-# a single task (2.513.3) it has no real reason to specifically mean.
-# Two independent, deterministic signals catch this - same "measure,
-# don't guess" approach as CONTEXT_OVERRIDE_MAX_SCORE above:
-#
-# 1. Too few real content words: strip English stopwords (sklearn's
-#    own list) and this app's own intent-verb vocabulary ("approve",
-#    "informed", "check", ...) - a verb alone or a question with no
-#    real subject left over is inherently under-specified, regardless
-#    of what resolve_query happens to score it.
-# 2. A close score gap to the runner-up: even a longer, well-formed
-#    query can genuinely name something with 2+ plausible targets -
-#    "mission" is the clean example (0.48 vs 0.45, a 6% gap).
-#
-# CLARIFICATION_MAX_SCORE (0.6) and CLARIFICATION_MIN_GAP (0.15) reuse
-# the same measured cluster CONTEXT_OVERRIDE_MAX_SCORE was calibrated
-# against: genuine, unambiguous matches in this corpus score 0.65-0.89
-# with real separation from their runner-up (see docs/decisions.md).
 CLARIFICATION_MAX_SCORE = 0.6
 CLARIFICATION_MIN_GAP = 0.15
 
@@ -81,28 +56,6 @@ def _format_clarification_answer(matches, nodes):
         'activity, e.g. "who approves the quarterly mission program".'
     )
 
-# Real bug this fixes: a chat follow-up like "who are the informed
-# parties for that activity?" names no real subject of its own, so
-# resolve_query has zero legitimate signal about which node it means -
-# it was landing on coincidentally-overlapping, unrelated nodes instead
-# (2.118 "Communication with Co-Financiers of projects" vs the
-# entirely different 3.226 "...and third parties" - the follow-up's
-# stray word "parties" happened to overlap with 3.226's title, not
-# 2.118's, at a comfortably "confident" 0.42).
-#
-# First attempt at this fix matched a fixed list of anaphoric phrases
-# ("that activity", "it", etc.) - defeated immediately by a second,
-# differently-worded live follow-up ("and who are the informed
-# partie?") that resolved to the exact same wrong node at the exact
-# same 0.42 score, with no pronoun and no phrase from the list at all.
-# Measured directly (not guessed) instead: genuine, specific-subject
-# matches in this corpus score 0.71-0.89 ("quarterly mission program"
-# 0.888, "loan grant processing" 0.714); both real coincidental-
-# overlap failures measured here score 0.39-0.42. CONTEXT_OVERRIDE_
-# MAX_SCORE sits at the empirical gap between those two clusters -
-# same "measure the real cases, don't guess the threshold" approach as
-# knowledge/typo_correct.py's DEFAULT_MIN_RATIO. See docs/decisions.md,
-# 2026-08-06, for the measurements and the full comparison table.
 CONTEXT_OVERRIDE_MAX_SCORE = 0.5
 
 _HAS_DIGIT = re.compile(r"\d")
@@ -185,9 +138,6 @@ def _matching_roles(roles, intent):
 
 
 def _check_verify_roles(roles):
-    # C/C1/C2 (check, verify) only - deliberately excludes C3/C4
-    # (consult), same action-code split agent/authority.py's "check"
-    # vs "consult" intents already draw. See _format_mandatory_notes.
     return [r for r in roles if r["action"] in ("C", "C1", "C2")]
 
 
@@ -382,15 +332,6 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         method = "glossary" if glossary_detection["found"] else "glossary_not_found"
         return _empty_result(answer, method)
 
-    # Action-code legend questions ("what's I, A and (i)?", "what does
-    # C2 mean") have to be caught here, before resolve_query/context-
-    # carryover run - a real live bug found this the hard way: these
-    # questions have too few "real content words" (bare letters get
-    # stripped by _content_word_count) to look like anything but an
-    # under-specified follow-up, so they were silently getting
-    # swallowed by the context-carryover fallback below and re-
-    # answering whatever task was already open instead. See
-    # agent/action_codes.py, docs/decisions.md 2026-09-03.
     action_code_detection = detect_action_code_query(query)
     if action_code_detection:
         answer = format_action_code_answer(action_code_detection)
@@ -418,24 +359,6 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
             return _empty_result(answer, "invalid_id")
 
         if not resolution["matches"]:
-            # Zero TF-IDF overlap with anything in the DAM has two very
-            # different real causes, and they need different replies:
-            # a query that's ONLY generic/intent words with no real
-            # subject at all ("informed" alone) is still on-topic, just
-            # under-specified - same fix as _needs_clarification above,
-            # just reached via an empty match list instead of a weak
-            # one. A query with real, substantive content words that
-            # still shares nothing with the DAM's vocabulary
-            # ("what's the weather today") is a much stronger, honest
-            # signal that it's genuinely outside this app's scope -
-            # said explicitly instead of the vaguer "couldn't find a
-            # task", which reads like a search miss rather than "this
-            # isn't what I'm for". Reuses _content_word_count rather
-            # than a topic keyword list on purpose - a fixed list of
-            # "off-topic subjects" is exactly the kind of brittle,
-            # rephrasing-defeated heuristic that failed once already
-            # this session (see the context-carryover entries in
-            # docs/decisions.md).
             if _content_word_count(query) <= 1:
                 return _empty_result(
                     "I need a bit more to go on - can you name the "
@@ -485,13 +408,6 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
     if intent:
         matching = _matching_roles(roles, intent)
         answer = _format_intent_answer(node, intent, roles, matching, nodes, graph)
-        # facts drives both the deterministic "roles" shown to the user
-        # and what agent/generate.py's grounding check requires an LLM
-        # rephrasing to preserve verbatim - the mandatory Check/Verify
-        # and informed-party notes above are real facts stated in
-        # "answer" now, so they have to be in here too, or an LLM
-        # phrasing pass could silently drop them without the grounding
-        # check ever catching it (see docs/decisions.md, 2026-09-03).
         facts = list(matching)
         if intent["name"] != "check":
             facts.extend(_check_verify_roles(roles))

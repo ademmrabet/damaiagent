@@ -1,12 +1,16 @@
 
+import os
 from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import FileResponse, RedirectResponse
+from pydantic import BaseModel, EmailStr
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+from starlette.middleware.sessions import SessionMiddleware
 
 from modeling.build_nodes import build_nodes
 from modeling.nodes_cache import load_nodes
@@ -20,6 +24,18 @@ from llm.groq_provider import GroqProvider
 from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
 from webapp.dashboard_data import build_summary
+from webapp.db import get_db, init_db
+from webapp.models import Role, User
+from webapp.auth import (
+    JWT_SECRET_KEY,
+    check_login_rate_limit,
+    create_access_token,
+    get_current_user,
+    hash_password,
+    require_admin,
+    verify_password,
+)
+from webapp.oauth import GOOGLE_CONFIGURED, MICROSOFT_CONFIGURED, get_or_create_oauth_user, oauth
 
 load_dotenv()
 
@@ -30,25 +46,23 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 app = FastAPI(title="DAM AI Agent")
 
+app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET_KEY)
+
+BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
+
 state = {}
 
 
 @app.on_event("startup")
 def load_dam():
-    # Prefer the pre-built cache (baked into the Docker image at build
-    # time via scripts/build_nodes_cache.py - see that file and
-    # docs/decisions.md, 2026-08-06) - re-parsing the raw PDF with
-    # pdfplumber on every process boot was heavy enough to OOM-kill the
-    # container on Render's free tier. Falls back to a live parse when
-    # no cache exists yet (fresh checkout, or data/raw/ changed and the
-    # cache hasn't been regenerated), so this never hard-depends on the
-    # cache being present.
     if NODES_CACHE_PATH.exists():
         nodes = load_nodes(NODES_CACHE_PATH)
     else:
         nodes = build_nodes(str(PDF_PATH))
     graph, _ = build_graph(nodes)
     vectorizer, matrix, searchable_ids = build_search_index(nodes)
+
+    init_db()
 
     state["nodes"] = nodes
     state["graph"] = graph
@@ -60,20 +74,7 @@ def load_dam():
 class Question(BaseModel):
     question: str
     llm: Optional[str] = None
-    # The node_id this same chat thread last resolved to, if any - the
-    # frontend tracks this per conversation (see Chat.jsx) and sends it
-    # back so pronoun-style follow-ups ("who are the informed parties
-    # for THAT ACTIVITY?") have a real anchor instead of resolve_query
-    # guessing off incidental word overlap. See agent/qa.py's
-    # answer_question docstring and docs/decisions.md, 2026-08-06.
     previous_node_id: Optional[str] = None
-    # Explicit language picker override (2026-09-03, see docs/
-    # decisions.md) for the ANSWER's language - independent of
-    # whatever language the question text itself is in. None/"auto"/
-    # omitted (the default) keeps the original auto-detect-from-the-
-    # question behavior. Any other supported code (en/fr/es/pt/ar)
-    # always wins - e.g. asking "who approves 3.111" in English while
-    # the UI language picker is set to French still answers in French.
     target_language: Optional[str] = None
 
 
@@ -116,10 +117,6 @@ def ask(payload: Question):
             if translation["used_llm"] and detected_language != "en":
                 query_for_pipeline = translation["translated_text"]
         else:
-            # Can't detect/translate without an LLM - be honest about
-            # why instead of silently matching non-English text
-            # against an English-only search index and (most likely)
-            # failing to resolve anything at all.
             translation_error = "Translation needs an LLM mode other than Off."
 
     if payload.target_language and payload.target_language != "auto":
@@ -128,11 +125,6 @@ def ask(payload: Question):
         answer_language = detected_language
 
     if answer_language != "en" and provider is None and not translation_error:
-        # Only reachable here when the question itself looked English
-        # (so the branch above never set translation_error) but the
-        # user explicitly picked a non-English answer language with no
-        # LLM available to produce one - be honest about that gap too,
-        # same principle as the query-side check above.
         translation_error = "Translation needs an LLM mode other than Off."
 
     result = answer_question(
@@ -148,17 +140,10 @@ def ask(payload: Question):
 
     if payload.llm and payload.llm != "off":
         if result.get("node_id") and result.get("roles"):
-            # Real DAM facts to protect - the stricter, grounding-
-            # checked path (agent/generate.py), phrased in
-            # answer_language (explicit picker override if one was
-            # given, else whatever the question was detected in).
             generation = humanize_answer(
                 payload.question, result, provider, target_language=answer_language
             )
         elif answer_language != "en":
-            # No facts to fabricate here (smalltalk/help/vague/out-of-
-            # scope/invalid-id) - a static English message just needs
-            # straight translation, no grounding check required.
             translated = translate_text(result["answer"], answer_language, provider)
             generation = {
                 "text": translated["text"],
@@ -183,20 +168,6 @@ def ask(payload: Question):
     result["answer_language"] = answer_language
     result["translation_error"] = translation_error
 
-    # Tone detection (2026-09-03, see docs/decisions.md) - applies to
-    # EVERY response type (Adem's explicit choice), not just grounded
-    # DAM answers, which is exactly why this runs as a deterministic
-    # prefix applied here at the very end rather than folded into
-    # humanize_answer()'s prompt above: that path only runs for
-    # grounded answers, but a frustrated "why won't this work AGAIN"
-    # deserves the same warmer opening whether the answer underneath is
-    # a fact lookup, a glossary lookup, or an honest out-of-scope
-    # refusal. looks_emotional() gates the actual Groq call so ordinary
-    # neutral questions (the large majority) never pay for it - same
-    # pattern as looks_non_english() gating translation above. Detected
-    # from payload.question (what the user actually typed), never the
-    # translated/English version - tone is about how they expressed
-    # themselves, not the retrieval-pipeline text.
     detected_tone = "neutral"
     if provider is not None and looks_emotional(payload.question):
         tone_result = detect_tone(payload.question, provider)
@@ -208,8 +179,133 @@ def ask(payload: Question):
     return result
 
 
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str
+    name: Optional[str] = None
+
+
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    email: str
+    name: Optional[str] = None
+    role: str
+
+
+def _auth_response(user: User) -> AuthResponse:
+    role = user.role.value if hasattr(user.role, "value") else user.role
+    return AuthResponse(access_token=create_access_token(user), email=user.email, name=user.name, role=role)
+
+
+@app.post("/api/auth/signup", response_model=AuthResponse)
+def signup(payload: SignupRequest, db: Session = Depends(get_db)):
+    """
+    Email/password signup. The first account ever created on a fresh
+    database becomes an administrator (so there's a way in without
+    manual database surgery); every account after that defaults to
+    analyst. This is a deliberate bootstrap convenience, not a
+    long-term admin-management story - promoting a second admin
+    still needs a direct database edit for now.
+    """
+    if len(payload.password) < 8:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters")
+
+    is_first_user = db.query(User).count() == 0
+
+    user = User(
+        email=payload.email.lower(),
+        name=payload.name,
+        hashed_password=hash_password(payload.password),
+        role=Role.administrator if is_first_user else Role.analyst,
+    )
+    db.add(user)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists")
+    db.refresh(user)
+
+    return _auth_response(user)
+
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    check_login_rate_limit(request.client.host if request.client else "unknown")
+
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+
+    generic_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+
+    if user is None or user.hashed_password is None:
+        raise generic_error
+
+    if not verify_password(payload.password, user.hashed_password):
+        raise generic_error
+
+    return _auth_response(user)
+
+
+@app.get("/api/auth/me")
+def auth_me(user: User = Depends(get_current_user)):
+    role = user.role.value if hasattr(user.role, "value") else user.role
+    return {"email": user.email, "name": user.name, "role": role}
+
+
+@app.get("/api/auth/google/login")
+async def google_login(request: Request):
+    if not GOOGLE_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured yet")
+    redirect_uri = f"{BACKEND_BASE_URL}/api/auth/google/callback"
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+
+@app.get("/api/auth/google/callback")
+async def google_callback(request: Request, db: Session = Depends(get_db)):
+    if not GOOGLE_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Google sign-in is not configured yet")
+
+    token = await oauth.google.authorize_access_token(request)
+    userinfo = token.get("userinfo") or await oauth.google.userinfo(token=token)
+
+    user = get_or_create_oauth_user(
+        db, provider="google", subject=userinfo["sub"], email=userinfo["email"], name=userinfo.get("name")
+    )
+    jwt_token = create_access_token(user)
+    return RedirectResponse(f"/login?token={jwt_token}")
+
+
+@app.get("/api/auth/microsoft/login")
+async def microsoft_login(request: Request):
+    if not MICROSOFT_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Microsoft sign-in is not configured yet")
+    redirect_uri = f"{BACKEND_BASE_URL}/api/auth/microsoft/callback"
+    return await oauth.microsoft.authorize_redirect(request, redirect_uri)
+
+
+@app.get("/api/auth/microsoft/callback")
+async def microsoft_callback(request: Request, db: Session = Depends(get_db)):
+    if not MICROSOFT_CONFIGURED:
+        raise HTTPException(status_code=503, detail="Microsoft sign-in is not configured yet")
+
+    token = await oauth.microsoft.authorize_access_token(request)
+    userinfo = token.get("userinfo") or await oauth.microsoft.userinfo(token=token)
+
+    user = get_or_create_oauth_user(
+        db, provider="microsoft", subject=userinfo["sub"], email=userinfo["email"], name=userinfo.get("name")
+    )
+    jwt_token = create_access_token(user)
+    return RedirectResponse(f"/login?token={jwt_token}")
+
+
 @app.get("/api/dashboard/summary")
-def dashboard_summary():
+def dashboard_summary(user: User = Depends(require_admin)):
     return build_summary(state["nodes"], state["graph"])
 
 
@@ -250,20 +346,11 @@ def dashboard_page():
     return FileResponse(STATIC_DIR / "dashboard.html")
 
 
-# The React build (webapp/frontend/, built via `npm run build`) emits
-# its bundled JS/CSS under webapp/static/assets - Vite's default asset
-# base path is "/", so this has to be mounted at "/assets" to match
-# what the built HTML actually references. "/static" is kept too for
-# anything that ever needs the raw directory (e.g. favicon), same
-# mount point as before this rewrite.
-#
-# check_dir=False on both: webapp/static (and its assets/ subfolder)
-# is now a BUILD ARTIFACT, not something committed to git (see
-# .gitignore) - it only exists after `npm run build` has run. Without
-# this, importing this module before that build step (e.g. a test
-# suite run on a fresh checkout) would crash at import time with
-# "directory does not exist" instead of failing only the requests
-# that actually need the built files.
+@app.get("/login")
+def login_page():
+    return FileResponse(STATIC_DIR / "login.html")
+
+
 app.mount(
     "/assets",
     StaticFiles(directory=str(STATIC_DIR / "assets"), check_dir=False),

@@ -1,0 +1,38 @@
+Something this obvious ought to have been solved already. Four kinds of tool can
+be pointed at the problem, and each one misses for its own reason. Those reasons
+are what the design in Section~1.5 was built around.
+
+\subsubsection{Manual consultation and document search}
+
+Today someone opens the PDF and uses whatever search their viewer offers.
+Full-text search matches character strings. If you already know an activity's
+exact title, or its identifier, that is enough. If you do not, it is close to
+useless. Type ``approve'' and several hundred hits come back, in page order,
+ranked by nothing at all. Type half an activity name from memory and you get
+nothing, unless your half happens to match the printed words exactly.
+
+The bigger problem is what search is for. It finds places. You wanted an answer.
+It will tell you the phrase sits on page 24. It will not tell you who approves
+what is described there, because that would mean knowing the page holds a table,
+that its headers run sideways, and that one letter in one cell means approval by
+one specific role.
+
+\subsubsection{Generic document question-answering assistants}
+
+The second category is the general-purpose document assistant. Upload a PDF, ask
+a question, read the reply. ChatPDF, NotebookLM, Microsoft Copilot and the
+file-upload modes of the major chat assistants all work this way. Underneath,
+they cut the document into passages, turn each passage into a vector, pull back
+whichever ones sit closest to the question, and hand those to a language model
+to write from.
+
+For ordinary prose it works. Here it does not, and the failure has nothing to do
+with how good the model is.
+
+Flattening a DAM page into text throws away the geometry that was carrying the
+meaning. That rotated header, the one telling you which column belonged to which
+director, becomes a stray string somewhere in the output, attached to nothing. A
+retrieved passage can hold the activity name and the letter A and still have
+lost the single fact you needed, which is whose column that A was sitting in. By
+the time the model sees the text, the answer has already been thrown away. What
+comes back is a guess wearing the clothes of a reply.

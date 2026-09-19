@@ -1,0 +1,31 @@
+\chapter{Business Understanding}
+\label{ch:business-understanding}
+\section{Business context}
+The African Development Bank's Delegation of Authority Matrix assigns, for every one of the Bank's operational activities, which role or committee has the authority to Initiate (I), Check/verify or Consult (C), Review (R), or Approve (A) that activity, and which roles must simply be informed of it (marked with a parenthetical "(i)"). The matrix spans three chapters — general operations, sovereign operations, and non-sovereign operations (NSO) — printed as a sequence of dense tables with rotated column headers (one column per role) and footnoted qualifications (seniority level, monetary thresholds, exceptions).
+
+In practice, the matrix is looked up manually: a staff member has to find the right table, read across a rotated header row, and cross-reference footnotes at the bottom of the page. For anyone outside the specific team that maintains the DAM, this is slow and error-prone, and the document itself is not searchable by anything smarter than literal string matching in a PDF reader.
+
+\section{Objective}
+Build an AI agent that can answer plain-language questions about the DAM correctly, and communicate honestly when it cannot. The project's two founding example questions — used throughout development as an acceptance test, not just an illustration — are:
+
+\begin{itemize}
+\item "Who approves [task X]?"
+\item "Who are the informed parties for [task X]?" (equivalently, "who needs to be informed for [task title]?")
+\end{itemize}
+Both phrasings (by id and by title) had to resolve to the identical, correct answer before any later feature was considered safe to build on top of.
+
+\section{Success criteria}
+Three criteria were treated as non-negotiable from the outset, and every later architectural decision in this report — most importantly the "grounded generation" decision in Modeling — traces back to them:
+
+\begin{enumerate}
+\item \textbf{Never fabricate a fact.} An answer must never name a role, an authority code, or a footnote qualification that is not actually present in the source document for that activity. This is the central risk of using any LLM against a compliance-sensitive document, and it shaped the entire generation architecture (Section 8.4).
+\item \textbf{Say "I don't know" rather than guess.} A question that does not resolve to a real activity, or a code that does not exist, must be reported as such — never silently matched to something unrelated because it happens to share vocabulary.
+\item \textbf{Deployable for evaluation.} The system had to run as a live, clickable web application a professor could test directly, not a notebook or a local-only script — which is why hosting, containerization, and a real frontend (Sections 10.1–10.3) were treated as in-scope engineering work, not an afterthought.
+\end{enumerate}
+\section{Constraints}
+\begin{itemize}
+\item A fixed initial build phase for getting a working end-to-end system in place (see Section 12.1), governed by a running decision log (\texttt{docs/\allowbreak{}decisions.md}) so that every scope trade-off is traceable after the fact rather than reconstructed from memory.
+\item No labeled training data of any kind — no query/answer pairs, no annotated tables — which directly ruled out training a custom model and shaped the Modeling phase's choice of TF-IDF over embeddings (Section 8.3).
+\item A free-tier-only hosting budget (no credit card, no paid infrastructure), which shaped Deployment (Section 10.1).
+\item A development sandbox with no PDF-rendering GUI and, for most of the project's later half, a network proxy that blocks direct calls to the LLM API being used — meaning every LLM-dependent feature had to be validated by mocking the provider and, separately, by the intern's own live testing on a real machine. This constraint is disclosed wherever it applies rather than glossed over, because it is a genuine limit on what could be independently verified from within the development environment itself.
+\end{itemize}

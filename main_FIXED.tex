@@ -1,0 +1,172 @@
+% =====================================================================
+%  END-OF-STUDIES PROJECT — MAIN DOCUMENT (corrected preamble)
+%  Adem Mrabet — Polytech Intl — Data Science — 2025/2026
+%
+%  WHAT CHANGED vs your version (all verified by compiling):
+%   1. fncychap now loads BEFORE minitoc  (minitoc requires this order)
+%   2. titlesec REMOVED — minitoc declares it incompatible
+%   3. minitoc loaded ONCE, \dominitoc called ONCE
+%   4. stray \minitoc removed from the preamble (it belongs after \chapter)
+%   5. graphicx no longer uses [pdftex] — clashed with tikz
+%   6. hyperref moved to the end, where it belongs
+% =====================================================================
+
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[top=3cm, bottom=2.5cm, left=2.5cm, right=2cm]{geometry}
+
+% ---------------------------------------------------------------
+% ENCODING / LANGUAGE / FONT
+% ---------------------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{newtxtext,newtxmath}   % Times New Roman
+
+% ---------------------------------------------------------------
+% CHAPTER STYLE
+% fncychap MUST be loaded BEFORE minitoc, or minitoc warns W0086
+% and the \chapter command ends up altered underneath it.
+% ---------------------------------------------------------------
+\usepackage[Lenny]{fncychap}
+\ChTitleVar{\Huge\sffamily\bfseries}
+
+% ---------------------------------------------------------------
+% MINITOC — per-chapter mini tables of contents
+% Loaded ONCE. \dominitoc called ONCE, after all its settings.
+% DO NOT load titlesec anywhere in this file: minitoc reports it
+% as incompatible (warning W0099) and chapter handling breaks.
+% ---------------------------------------------------------------
+\usepackage{minitoc}
+\setcounter{minitocdepth}{2}
+\renewcommand{\mtctitle}{Contents}
+\mtcsetrules{minitoc}{off}
+\setlength{\mtcindent}{0pt}
+\dominitoc
+
+% ---------------------------------------------------------------
+% COLOUR / TABLES / GRAPHICS
+% ---------------------------------------------------------------
+\usepackage[table,xcdraw]{xcolor}
+\definecolor{myblue}{HTML}{00723F}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{array}
+\usepackage{float}
+\usepackage{graphicx}          % NO [pdftex] — it clashes with tikz
+\usepackage{pdflscape}
+\usepackage{adjustbox}
+\usepackage{changepage}
+\usepackage{tikz}
+\def\checkmark{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;}
+
+% ---------------------------------------------------------------
+% MATHS / SYMBOLS / SPACING
+% ---------------------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{textcomp}
+\usepackage{ragged2e}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---------------------------------------------------------------
+% BIBLIOGRAPHY / ACRONYMS / APPENDIX
+% ---------------------------------------------------------------
+\usepackage[numbers]{natbib}
+\usepackage[withpage]{acronym}
+\usepackage[toc,page]{appendix}
+
+% ---------------------------------------------------------------
+% NUMBERING DEPTH  (gives you 1.1.1.1 and lists it in the contents)
+% ---------------------------------------------------------------
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% ---------------------------------------------------------------
+% HEADERS AND FOOTERS
+% ---------------------------------------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhead[L]{\nouppercase{\leftmark}}
+\fancyhead[C]{}
+\fancyhead[R]{\nouppercase{\rightmark}}
+\fancyfoot[L]{}
+\fancyfoot[C]{}
+\fancyfoot[R]{\textbf{\thepage}}
+
+% ---------------------------------------------------------------
+% CROSS-REFERENCES AND LINKS — hyperref goes LAST
+% ---------------------------------------------------------------
+\usepackage[english]{varioref}
+\usepackage[hidelinks]{hyperref}
+
+% ---------------------------------------------------------------
+% HELPER: a genuinely blank page
+% ---------------------------------------------------------------
+\newcommand{\blankpage}{\newpage\thispagestyle{empty}\mbox{}\newpage}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\include{garde_fin}
+\newpage
+\include{Signature}
+\newpage
+
+\pagenumbering{roman}
+
+\include{Dedicaces1}
+\include{Remerciements}
+
+\tableofcontents
+
+\listoffigures
+\addcontentsline{toc}{chapter}{List of Figures}
+
+\listoftables
+\addcontentsline{toc}{chapter}{List of Tables}
+
+\cleardoublepage
+\markboth{List of Acronyms}{List of Acronyms}
+\chapter*{List of Acronyms}
+\addcontentsline{toc}{chapter}{List of Acronyms}
+
+\begin{acronym}[CRISP-DM]
+\acro{AfDB}{African Development Bank Group}
+\acro{AI}{Artificial Intelligence}
+\acro{API}{Application Programming Interface}
+\acro{CRISP-DM}{Cross-Industry Standard Process for Data Mining}
+\acro{DAM}{Delegation of Authority Matrix}
+\acro{DDG}{Deputy Director-General}
+\acro{JWT}{JSON Web Token}
+\acro{KPI}{Key Performance Indicator}
+\acro{LLM}{Large Language Model}
+\acro{NSO}{Non-Sovereign Operations}
+\acro{RAG}{Retrieval-Augmented Generation}
+\acro{TF-IDF}{Term Frequency -- Inverse Document Frequency}
+\end{acronym}
+
+\newpage
+\pagenumbering{arabic}
+
+% ---------------------------------------------------------------
+% CHAPTERS
+% Put \minitoc on the line AFTER each \chapter{...} inside the
+% chapter file — never in the preamble.
+% ---------------------------------------------------------------
+\include{Introduction}
+\include{Chapter1}
+\include{Chapter2}
+\include{Chapter3}
+\include{Chapter4}
+\include{Chapter5}
+\include{Conclusion}
+
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibliographystyle{unsrtnat}
+\bibliography{copybib}
+
+\end{document}

@@ -3,19 +3,6 @@ import re
 
 _WORD_PATTERN = re.compile(r"[A-Za-z']+")
 
-# Tuned against a real false-positive, not picked arbitrarily: 0.82
-# was loose enough to "correct" the genuinely-different, correctly-
-# spelled word "unrelated" into "related" (ratio 0.875 - they share a
-# root, textbook false positive for any edit-distance approach) purely
-# because "related" happened to be the closest word in a narrow
-# ~1400-word DAM-title vocabulary. Every real typo this feature was
-# built for - "aproves"/"approves" (0.933), "chek"/"check" (0.889),
-# "intiates"/"initiates" (0.941), "qaurterly"/"quarterly" (0.889),
-# "mision"/"mission" (0.923), "helo"/"hello" (0.889) - still clears
-# 0.88 with room to spare, so raising the floor to 0.88 closes that
-# false-positive gap without losing any of the cases that motivated
-# building this in the first place. See
-# tests/test_typo_correct.py for both sides of this pinned.
 DEFAULT_MIN_RATIO = 0.88
 DEFAULT_MIN_WORD_LENGTH = 4
 
@@ -60,9 +47,6 @@ def correct_words(text, vocabulary, min_ratio=DEFAULT_MIN_RATIO, min_word_length
         if not candidates:
             return word
         corrected = candidates[0]
-        # Preserve the original word's capitalization style so a
-        # corrected word doesn't look out of place mid-sentence (e.g.
-        # a corrected first word of a sentence stays capitalized).
         return corrected.capitalize() if word[0].isupper() else corrected
 
     return _WORD_PATTERN.sub(replace, text)

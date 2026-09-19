@@ -1,0 +1,138 @@
+\chapter{Project Framework, State of the Art, and Needs Analysis}
+\minitoc
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+This chapter covers where the project came from and what it was asked to fix. It
+introduces the institution that hosted the work and the client whose document
+the whole thing is built around, then spends most of its length on how that
+document actually gets used today.
+
+That last part is worth taking slowly. The requirements listed at the end of
+this chapter were not decided in advance. They are what remains once you have
+watched the current process fail in specific ways, which is why the failures
+come first and the requirements come after. The chapter finishes with the tools
+that already exist for this sort of problem, why none of them helps here, and
+what was proposed instead.
+
+\section{General Framework of the Project}
+
+This was a final-year project inside the Master's programme in Data Sciences at
+Polytech Intl, carried out over a six-month internship. Roughly four of those
+months went into building the system. The rest went on framing the subject,
+learning the source material well enough to be useful, and writing this report.
+
+Table~\ref{tab:framework} summarises the arrangement.
+
+\begin{table}[h]
+\centering
+\caption{Framework of the project.}
+\label{tab:framework}
+\begin{tabular}{|p{0.34\textwidth}|p{0.56\textwidth}|}
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Item}} & \textcolor{white}{\textbf{Detail}} \\
+\hline
+Project type & End-of-studies project \\ \hline
+Host institution & Polytech Intl, Tunis \\ \hline
+Programme & Professional Master's in Data Science \\ \hline
+Academic year & 2025 -- 2026 \\ \hline
+Duration & Six months \\ \hline
+Client organisation & African Development Bank Group \\ \hline
+Academic supervisor & Dr.~Marouene Chaieb \\ \hline
+Professional supervisors & Mr.~Yasser Ahmad, Mr.~Surya Joymungul \\ \hline
+Source document & Delegation of Authority Matrix, over 250 pages \\ \hline
+Scope processed & 79-page subset covering three chapters \\ \hline
+\end{tabular}
+\end{table}
+
+% ---- OPTION A for "what makes it interesting" (pick one, edit freely) ----
+The subject sits between two problems that pull in opposite directions.
+Extracting a document rewards rules you can check against a printed page: if a
+rule is wrong, you can see exactly where and why. Language models offer the
+opposite trade, flexibility with no guarantee that what comes out is faithful to
+what went in. Most of the engineering in this project came from using both
+without letting the second quietly undo the first.
+
+% ---- OPTION B ----
+ What kept me on this was how ordinary the document looks and how badly it breaks automated tools. A person reads a page of the DAM without difficulty. Every library I pointed at the same page came back with something plausible and wrong, and finding out why meant learning to read the file the way the printer wrote it rather than the way a reader sees it.
+
+% ---- OPTION C ----
+% The interesting part was not building a chatbot. It was working out what a
+% chatbot is not allowed to do when the subject is who controls money, and then
+% making that restriction hold in code rather than in a prompt.
+
+\section{Host Organisation}
+
+\subsection{Presentation of Polytech Intl}
+
+Polytech Intl, the \'Ecole Polytechnique Internationale Priv\'ee de Tunis, is a
+private higher education institution founded in 2013 and based at Rue du Lac
+d'Annecy in Les Berges du Lac~1, Tunis. It was set up largely by institutional
+figures from the professional world, principally from banking, insurance and
+industry, which is visible in how the school approaches training: the intent is
+that graduates leave employable, and ideally capable of building something of
+their own.
+
+Teaching covers engineering and related disciplines. Programmes run across
+computer science, with tracks in big data, business intelligence, software
+engineering, IT-finance and embedded systems, alongside mechatronics, industrial
+engineering, financial engineering, telecommunications and architecture.
+Students are also offered international mobility, with internships and teaching
+modules arranged in partnership with schools in Europe, Asia and North America.
+The school is a member of the Agence Universitaire de la Francophonie.
+
+% TODO-ADEM: verify the AUF membership and the founding year against the
+% school's own site before printing. Both are from public sources rather than
+% from the school directly.
+
+The Data Sciences Master's spans statistics and machine learning, data
+engineering, and the software side of turning an analysis into something that
+runs and keeps running. A final project is meant to show all three. That
+expectation is part of why this one was pushed through to a deployed application
+instead of stopping at a clean dataset.
+
+\subsection{Project Context and the Client Organisation}
+
+Polytech Intl hosted and supervised the project. The subject came from elsewhere.
+The document at the centre of it belongs to the African Development Bank Group,
+which acted as the client. There is a certain symmetry in that: a school founded
+in part by people from banking, supervising a project built for a bank.
+
+The African Development Bank Group was founded in 1964 and has its headquarters
+in Abidjan, C\^ote d'Ivoire. Eighty-one countries are members, 54 of them
+African and 27 from outside the continent, and the Bank exists to support
+economic development and social progress across its regional member countries.
+Table~\ref{tab:afdb} sets out the essentials.
+
+\begin{table}[h]
+\centering
+\caption{The client organisation at a glance.}
+\label{tab:afdb}
+\begin{tabular}{|p{0.34\textwidth}|p{0.56\textwidth}|}
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Item}} & \textcolor{white}{\textbf{Detail}} \\
+\hline
+Institution & African Development Bank Group \\ \hline
+Founded & 1964 \\ \hline
+Headquarters & Abidjan, C\^ote d'Ivoire \\ \hline
+Membership & 81 countries: 54 regional, 27 non-regional \\ \hline
+Purpose & Economic development and social progress across regional member countries \\ \hline
+Group entities & African Development Bank, African Development Fund, Nigeria Trust Fund \\ \hline
+Regional office concerned & RDGN: Tunisia, Algeria, Morocco, Mauritania, Libya \\ \hline
+Regional hub & Tunis \\ \hline
+\end{tabular}
+\end{table}
+
+% TODO-ADEM: confirm the official name and wording for RDGN with Yasser or
+% Surya before this is printed. Also worth one sentence here on how the subject
+% reached you -- who proposed it, and what problem they described. Something
+% like: "The subject was proposed by [name], who described [the problem as they
+% saw it]." One sentence is enough, but it should be the real version.
+
+Working from a real institution's document changed how the project had to be
+done. The material could not be tidied up to suit the parser. Correctness meant
+whatever the printed pages say, not a score that happened to be easy to compute.
+And every claim in this report about what the system pulls out of the document
+can be checked against the page it came from. That constraint runs through the
+whole of Chapter~2.

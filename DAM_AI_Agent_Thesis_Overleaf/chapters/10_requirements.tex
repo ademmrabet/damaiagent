@@ -1,0 +1,78 @@
+\chapter{Requirements Specification}
+\label{ch:requirements-specification}
+Formal requirements were not written as a separate up-front document in this project — the iterative, decision-log-driven working method described in Section 12.1 and Section 3.4 made a traditional requirements-freeze impractical, and arguably counterproductive, given how many real requirements only became visible after real data or real user testing exposed them (Section 9.6). This chapter reconstructs the requirements the delivered system actually satisfies, organized in the conventional functional/non-functional split, both as a record of what the system does and as a checklist a reader can verify the system against directly.
+
+\section{Functional requirements}
+\textbf{FR1 — Direct identifier lookup.} Given a question containing a valid DAM activity identifier (e.g. "2.126"), the system shall return the activity's recorded authority information with full confidence, without ambiguity.
+
+\textbf{FR2 — Natural-language activity lookup.} Given a question describing an activity by name or description rather than by identifier, the system shall resolve it to the correct activity using lexical similarity, and shall report its confidence level rather than presenting a low-confidence match as certain.
+
+\textbf{FR3 — Authority-role queries.} For a resolved activity, the system shall be able to answer who may approve it, who may review it, who must check or verify it, who may initiate it, and who must be informed of it, using the DAM's own I/C/R/A/(i) notation.
+
+\textbf{FR4 — Mandatory obligation surfacing.} Independent of which specific authority question was asked, the system shall always surface an activity's recorded mandatory Check/Verify obligation and, when present, its informed parties, since a Check/Verify entry is a mandatory institutional obligation rather than optional context (Section 8.6, Section 10.6).
+
+\textbf{FR5 — Cross-reference resolution.} Where an activity's own row is a redirect to another activity or document section, the system shall follow that redirect automatically rather than reporting no responsibilities recorded.
+
+\textbf{FR6 — Typo and phrasing tolerance.} The system shall tolerate common misspellings and minor phrasing variation in a question without requiring exact vocabulary match, using a deterministic method that does not depend on network access to a language model.
+
+\textbf{FR7 — Glossary and abbreviation lookup.} The system shall answer direct questions about what a DAM abbreviation or acronym stands for, and shall expand acronyms inline within role names in its other answers.
+
+\textbf{FR8 — Authority-code legend explanation.} The system shall answer direct questions about what the DAM's own I/C/R/A/(i) notation means, distinct from questions about who holds a specific code on a specific activity.
+
+\textbf{FR9 — Conversational context carryover.} Within a single conversation, a clearly anaphoric follow-up question (e.g. "and who is informed?" immediately after resolving an activity) shall be answered about the same activity as the previous turn, without the user needing to repeat the activity's name or identifier.
+
+\textbf{FR10 — Honest refusal.} For a question referencing an identifier or activity that does not exist in the DAM, or a question genuinely outside the DAM's subject matter, the system shall say so explicitly rather than returning a fabricated or unrelated answer.
+
+\textbf{FR11 — Conversational tone adaptation.} The system shall detect signs of user frustration or confusion and adapt its response's opening tone accordingly, without altering the underlying facts of the answer.
+
+\textbf{FR12 — Multi-language support.} The system shall accept questions and provide answers in English, French, Spanish, Portuguese, and Arabic, with an explicit user-selectable override independent of the question's own detected language.
+
+\textbf{FR13 — Grounded LLM phrasing with safe fallback.} When a language-model mode is enabled, the system shall use the model only to rephrase already-retrieved facts, shall verify that every fact survives the rephrasing, and shall fall back to a deterministic, template-based answer whenever that verification fails or no model is available.
+
+\textbf{FR14 — Analytics dashboard.} The system shall provide a live, filterable visualization of the DAM's own structure (node-type breakdown, authority-code distribution, role rankings, coverage metrics), scoped by chapter.
+
+\section{Non-functional requirements}
+\textbf{NFR1 — Factual reliability.} No answer shall state a role, authority code, or footnote qualification that is not genuinely present in the source document for that activity. This is the system's highest-priority non-functional requirement, ranked above response fluency or response time, and is the direct justification for the grounded-generation architecture in Section 8.4.
+
+\textbf{NFR2 — Deployability on free infrastructure.} The system shall run within the memory and compute limits of a free-tier hosting platform, since the project has no infrastructure budget.
+
+\textbf{NFR3 — Resilience to LLM unavailability.} Every feature that depends on a language model shall degrade gracefully to a deterministic equivalent (a template answer, an untranslated response, a neutral tone) rather than failing or blocking when the model is unreachable, over quota, or returns a malformed response.
+
+\textbf{NFR4 — Response latency suitable for live conversation.} A typical query shall resolve and return within a small number of seconds under normal operating conditions (excluding a cold-start wake from the hosting platform's inactivity sleep, which is disclosed to the user as a known, accepted limitation in Section 13.2).
+
+\textbf{NFR5 — Test coverage for every confirmed defect.} Every confirmed real bug shall be captured by at least one automated regression test before being considered resolved (Section 9.1–9.2).
+
+\textbf{NFR6 — Traceability of design decisions.} Every non-trivial design or scope decision shall be recorded, dated, and justified with the real evidence that motivated it, in a running project log (Section 3.4, reproduced in full as Annex F).
+
+\textbf{NFR7 — Mobile usability.} The chat and dashboard interfaces shall remain usable on a small mobile viewport, not only on desktop.
+
+\textbf{NFR8 — Data-source privacy.} The DAM source document itself, being an internal Bank document, shall not be exposed through any public repository or public-facing file download; only the system's derived, structured answers are exposed to end users.
+
+\section{Use cases}
+Table 1 summarizes the primary use cases the system was designed against, each directly traceable to a functional requirement above and to a real, tested question in this report (Annex C).
+
+\begin{longtable}{|p{0.21\textwidth}|p{0.21\textwidth}|p{0.21\textwidth}|p{0.21\textwidth}|}
+\hline
+\rowcolor{thesisgreen}\textcolor{white}{\textbf{Use case}} & \textcolor{white}{\textbf{Primary actor}} & \textcolor{white}{\textbf{Requirement(s)}} & \textcolor{white}{\textbf{Example}} \\
+\hline\endhead
+Look up an activity's approver by id & Any user & FR1, FR3 & "who approves 2.126" \\
+\hline
+Look up an activity's approver by description & Any user & FR2, FR3 & "who approves the quarterly mission program" \\
+\hline
+Discover an activity's full obligation set & Any user & FR3, FR4 & "who approves 2.126" (also surfaces Check/Verify and informed parties) \\
+\hline
+Follow a redirected activity & Any user & FR5 & "who initiates 1.117.2" \\
+\hline
+Ask a follow-up without repeating context & Any user & FR9 & "and who are the informed parties?" \\
+\hline
+Look up what an abbreviation means & Any user, esp. new staff & FR7 & "what does DDG stand for" \\
+\hline
+Understand the authority-code notation itself & New staff, auditors & FR8 & "what's I, A and (i)?" \\
+\hline
+Ask in a non-English language & Non-English-speaking staff & FR12 & "qui approuve 3.111" \\
+\hline
+Probe the system with an invalid or out-of-scope question & Evaluators, auditors & FR10 & "what happens with 9.999.999" \\
+\hline
+Visualize DAM structure and coverage & Managers, auditors & FR14 & Dashboard chapter filter and linked charts \\
+\hline
+\end{longtable}

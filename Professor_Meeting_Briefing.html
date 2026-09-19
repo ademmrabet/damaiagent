@@ -1,0 +1,214 @@
+<html>
+<head>
+<meta charset="utf-8">
+<title>DAM AI Agent — Professor Meeting Briefing</title>
+<style>
+body { font-family: -apple-system, Segoe UI, Arial, sans-serif; font-size: 15px; line-height: 1.6; max-width: 900px; margin: 30px auto; padding: 0 24px; color: #1a1a1a; }
+h1 { font-size: 26px; color: #00723F; border-bottom: 3px solid #00965A; padding-bottom: 8px; margin-top: 34px; }
+h2 { font-size: 20px; color: #00723F; margin-top: 30px; border-left: 4px solid #00965A; padding-left: 10px; }
+h3 { font-size: 16px; color: #00965A; margin-top: 20px; margin-bottom: 6px; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th { background: #00965A; color: #fff; padding: 8px; text-align: left; border: 1px solid #999; }
+td { border: 1px solid #bbb; padding: 8px; vertical-align: top; }
+.q { background: #F2F8F5; border-left: 4px solid #00965A; padding: 10px 14px; margin: 14px 0 6px 0; font-weight: 600; }
+.a { padding: 0 14px; margin-bottom: 16px; }
+.warn { background: #FFF6E5; border-left: 4px solid #E8A33D; padding: 10px 14px; margin: 14px 0; }
+.crit { background: #FDF0F0; border-left: 4px solid #C0392B; padding: 10px 14px; margin: 14px 0; }
+code { background: #F0F0F0; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 13px; }
+.say { font-style: italic; color: #00553A; }
+ul { margin-top: 4px; }
+li { margin-bottom: 5px; }
+</style>
+</head>
+<body>
+
+<h1>DAM AI Agent — Meeting Briefing</h1>
+<p><b>Purpose:</b> everything you need to answer confidently during the live test. Skim sections 1–3 before walking in; sections 5 and 6 are the ones that matter when he starts probing.</p>
+
+<h1>1. The pitch</h1>
+
+<h3>If he says "tell me what you built" (30 seconds)</h3>
+<p class="say">"The African Development Bank has an internal document, the Delegation of Authority Matrix, that defines who can approve, check, review, initiate, or must be informed for every activity the Bank does. It's over 250 pages of wide tables with sideways column headers and a coded notation. It's technically searchable and practically unusable. I built a system that parses it into a knowledge graph and answers plain-language questions about it — with a hard guarantee that it never invents a fact, because for a compliance document a confident wrong answer is worse than no answer."</p>
+
+<h3>If he asks for more (2 minutes)</h3>
+<p>Add these three points, in this order:</p>
+<ul>
+<li><b>The extraction was the hard part.</b> PDF is a page-description format. It says which character is drawn where, not what it means. Column headers are rotated 90°, footnote digits are fused against authority codes, and text bleeds across row boundaries. Every one of those had to be solved with geometry, not guesswork.</li>
+<li><b>The graph is the model.</b> 327 activities and 131 roles connected by 2,108 edges. "Who approves X" is a graph traversal, not a text search.</li>
+<li><b>The LLM is on a leash.</b> It never decides what the facts are. It receives facts already retrieved from the graph and only rephrases them, and the output is checked word-by-word against those facts before display. Fails the check → the answer is thrown away and a deterministic template is shown instead.</li>
+</ul>
+
+<h1>2. Numbers to know cold</h1>
+
+<table>
+<tr><th style="width:45%">Metric</th><th>Value</th></tr>
+<tr><td>Source document, full size</td><td>250+ pages</td></tr>
+<tr><td>Subset processed (MVP scope)</td><td>79 pages, 3 chapters</td></tr>
+<tr><td>Structured records extracted</td><td><b>327</b> (3 chapters, 35 processes, 138 tasks, 102 child tasks, 49 threshold variants)</td></tr>
+<tr><td>Responsibility records</td><td><b>1,776</b></td></tr>
+<tr><td>Distinct roles</td><td>131</td></tr>
+<tr><td>Unresolved role rate</td><td><b>0.56%</b> (10 entries)</td></tr>
+<tr><td>Avg responsibilities per activity</td><td>5.48</td></tr>
+<tr><td>Activities with no direct responsibilities</td><td>29.6% (containers + cross-reference rows)</td></tr>
+<tr><td>Knowledge graph</td><td><b>459 nodes, 2,108 edges</b></td></tr>
+<tr><td>Automated tests</td><td><b>374 across 23 files</b></td></tr>
+<tr><td>Cross-references captured</td><td>14</td></tr>
+<tr><td>Languages supported</td><td>5 (EN, FR, ES, PT, AR)</td></tr>
+<tr><td>Full rebuild time from PDF</td><td>~15–20 seconds (cached at build time, not at runtime)</td></tr>
+<tr><td>Codebase size</td><td>~7,700 lines of Python</td></tr>
+</table>
+
+<h1>3. How it works — the five steps</h1>
+<ol>
+<li><b>Extract.</b> <code>pdfplumber</code> gives characters and words with coordinates, fonts, and sizes. Character-level access is required, not convenient — the superscript rule depends on per-character vertical offset and font size.</li>
+<li><b>Parse.</b> Eight stages: rows → task blocks → title/reference cleaning → code geometry → role attribution → node assembly → validation. Each stage is separately inspectable, which is how every bug got localised.</li>
+<li><b>Model.</b> Build a <code>networkx</code> directed multigraph. Multigraph because one role can hold several distinct responsibilities over the same activity. Three edge types: <code>contains</code> (hierarchy), <code>responsible_for</code> (role → activity, carrying the code), <code>references</code> (cross-references).</li>
+<li><b>Retrieve.</b> ID fast path first (exact, confidence 1.0). Otherwise TF-IDF + cosine similarity over activity titles, with a deterministic typo-correction pass before matching.</li>
+<li><b>Answer.</b> Deterministic template built from graph records → optional LLM rephrasing → grounding check → display. Metadata shown alongside: resolution method, confidence, whether the LLM was used.</li>
+</ol>
+
+<h1>4. Live demo — run it in this order</h1>
+
+<div class="warn"><b>Before he arrives:</b> open the hosted app 10 minutes early so it's awake (free tier sleeps after inactivity). Set LLM mode to <b>Auto</b>. Have the dashboard open in a second tab.</div>
+
+<h3>1 — Precision</h3>
+<p><code>who approves 2.126</code></p>
+<p>Resolves by ID, confidence 1.0, to "Quarterly Mission program". Names RDG / Director RDNG as approver with the acronym expanded inline.</p>
+<p class="say">Point out: it also volunteers that the task must be checked and verified by the Sector Manager and Supporting Dept. Division Manager, and that three more parties must be informed — none of which I asked for. A recorded Check/Verify obligation is mandatory, not optional context, so a new employee asking a narrow question still gets told the other real obligations.</p>
+
+<h3>2 — Natural language, no ID</h3>
+<p><code>who needs to be informed for quarterly mission program</code></p>
+<p>Same node, resolved purely from the activity name. It understands what you're describing, not just codes you type in.</p>
+
+<h3>3 — Typo tolerance</h3>
+<p><code>who aproves the qaurterly mision program</code></p>
+<p>Two deliberate typos, still resolves to 2.126.</p>
+<p class="say">Worth stating: this correction is deterministic, a measured similarity check against the document's own vocabulary. Not an LLM guessing. It works identically with the internet unplugged.</p>
+
+<h3>4 — Domain glossary</h3>
+<p><code>what does DDG stand for</code> → "Deputy Director-General"<br>
+<code>what does RDNG stand for</code> → resolves, and says it came from a maintained alias rather than the document's own glossary.</p>
+<p class="say">That second one is the interesting case — the system is transparent about its own sourcing, not just its answers.</p>
+
+<h3>5 — Conversational memory</h3>
+<p><code>who approves of Communication with Co-Financiers of projects</code> → resolves to 2.118 (Country Manager / DDG)<br>
+then, without naming the subject again: <code>and who are the informed parties?</code></p>
+<p>Stays on 2.118 and is labelled "carried over from previous question" in the UI.</p>
+
+<h3>6 — Automatic redirect following</h3>
+<p><code>who initiates 1.117.2</code></p>
+<p>That row has no responsibilities of its own — its real text is a pointer to 2.120. The agent follows it automatically instead of dead-ending.</p>
+<p class="say">This mirrors what a human does when the document says "see elsewhere" — it flips the page for you.</p>
+
+<h3>7 — The honest refusal (do not skip this one)</h3>
+<p><code>what happens with 9.999.999</code></p>
+<p>"That doesn't exist in the DAM. Double-check the id, or describe the activity in words instead."</p>
+<p class="say">Say it plainly: this refusal is the feature, not a bug. The design principle is that every answer traces to a real row. An answer for something that isn't in the document would be worse than no answer.</p>
+
+<h3>8 — Dashboard</h3>
+<ul>
+<li>Filter by chapter, then clear it.</li>
+<li>Click a bar on the action-code chart — the roles chart above re-scopes to that code's top performers.</li>
+<li>Point at the two coverage KPIs (avg responsibilities per activity, % with none). These are real data-quality signals about the extraction itself, and I used them during development to catch regressions — a sudden jump means the parser broke.</li>
+</ul>
+
+<h1>5. Hard questions — and how to answer them</h1>
+
+<div class="q">"This is a Data Science Master's. Where's the machine learning?"</div>
+<div class="a">
+<p>Most likely question. Don't get defensive — answer structurally:</p>
+<p class="say">"The data science is in four places. The retrieval model is TF-IDF vectorisation with cosine similarity over the activity corpus. The modelling phase produced a knowledge graph, 459 nodes and 2,108 edges, which is the representation everything queries. There's a substantial data engineering pipeline, eight stages from raw PDF geometry to a validated node set. And there's an applied LLM layer with a grounded-generation architecture.</p>
+<p class="say">What there isn't is a supervised model, and that was a deliberate decision rather than an omission. There is no labelled data — no query/answer pairs, no annotated tables — so training one would have meant inventing a ground truth and then evaluating against my own invention. For a compliance document where errors are silent and plausible, a rule I can trace to a measured character offset is worth more than a classifier I can't interrogate."</p>
+</div>
+
+<div class="q">"How do you know the extraction is actually correct?"</div>
+<div class="a">
+<p class="say">"There's no ground-truth dataset, so I couldn't compute precision and recall against one — and fabricating that table would have been the dishonest option. What I did instead: every record I claim was checked by comparing it against the printed page it came from. The 374 tests aren't coverage-driven; almost every one exists because a specific bug was found on a real page, and the test pins the fix so it can't come back silently. The 0.56% unresolved-role rate measures coverage of role attribution. And I verified live through the actual HTTP endpoint before trusting any change."</p>
+</div>
+
+<div class="q">"Why TF-IDF? Why not embeddings or a fine-tuned model?"</div>
+<div class="a">
+<p class="say">"The corpus is about 330 short titles in a controlled institutional vocabulary — small, static, and using the words users actually type. Embeddings win when you have a large, varied corpus and enough domain data to tune them. Here they'd add a model download, inference cost, and an external dependency, in exchange for recall I wasn't losing. TF-IDF scores are also explainable: I can trace a match to shared terms and diagnose a bad one. Given retrieval accuracy is the foundation everything else sits on, being able to explain why a node came back was worth more than marginal recall."</p>
+<p>If he pushes: concede honestly that a hybrid lexical + semantic layer is the right next step for questions phrased in outside vocabulary, provided the grounding check stays unchanged.</p>
+</div>
+
+<div class="q">"Why not just upload the PDF to ChatGPT?"</div>
+<div class="a">
+<p class="say">"I tried reasoning through exactly that. When you flatten this document to plain text, the meaning is destroyed — a rotated header becomes a stray string disconnected from the codes underneath it, so a retrieved passage can contain the activity name and the letter A without preserving which role that A belonged to. The model then produces something plausible from text that already lost the answer. And it has no notion of being wrong: it returns fluent text either way. For who-holds-financial-approval-authority, that's the failure mode you can't accept."</p>
+</div>
+
+<div class="q">"Explain the grounding check." (He will probe this — it's the centrepiece.)</div>
+<div class="a">
+<p class="say">"The model never sees the graph and never chooses what to retrieve. It gets the question, the facts already retrieved, and a prompt telling it to state them naturally and invent nothing. But a prompt is a request, not a guarantee. So before any generated sentence reaches the user, every role name in the backing facts is checked for presence in the generated text. It's a containment test, not a similarity judgement, so a paraphrase can't satisfy it — rename a role, merge two, or drop the third of four informed parties and it fails, however fluent it reads. On failure the generated answer is discarded and the deterministic template is shown. Comparison normalises whitespace and case, which I added after it was rejecting faithful rephrasings over nothing but spacing."</p>
+<p><b>Follow-up he may ask: "Doesn't that fire constantly?"</b> — Yes, it did at first, and the cause was mine not the model's: the prompt asked for 1–3 sentences, and activities with many responsibilities can't be stated completely in three. The model obeyed brevity and dropped facts; the check correctly caught it. I relaxed brevity when the fact count crosses a threshold, and left the accuracy criterion untouched. The requirement that needed adjusting was never the accuracy one.</p>
+</div>
+
+<div class="q">"What happens if the LLM is unavailable?"</div>
+<div class="a">
+<p class="say">"Everything still works. The LLM only phrases answers. Set the mode to Off and you get the deterministic template answers with every lookup capability intact — ID resolution, text search, typo correction, redirects, glossary, refusals. There are three modes plus Auto, which falls back cloud → local → template."</p>
+<p>Offer to demo it: flip the picker to Off mid-meeting and re-ask question 1.</p>
+</div>
+
+<div class="q">"Why a graph and not a database?"</div>
+<div class="a">
+<p class="say">"The questions are relationship questions. 'Who approves this' is a traversal along one edge type, and 'what does this role approve' is the same traversal reversed — both single operations on a graph, both joins or scans on a flat structure. I used a directed multigraph specifically because one role can hold several distinct responsibilities on the same activity, so two nodes may be connected by several parallel edges each carrying its own code. And at runtime there's no database at all: the knowledge base is read-only, fits in memory, and is versioned with the code as a build artefact."</p>
+</div>
+
+<div class="q">"Tell me about a bug you found and how."</div>
+<div class="a">
+<p>Good story, use the informed-marker one:</p>
+<p class="say">"The '(i)' informed marker was never matching. The code scanned for a consecutive run of '(', 'i', ')' — but on real pages that marker renders as five separate characters, so it never matched anything. 174 of 276 records in an early version had an informed marker printed in the document with no role ever attached in my data. It was completely invisible in any output that didn't compare records against the actual page. I confirmed it against 2.126's real characters on page 24 before changing a line."</p>
+<p><b>Even better if he asks about failures:</b> mention the split-row fix you rejected. The first attempt was a general merge rule; checking it before adopting showed 1,614 candidate merges document-wide, several clearly wrong. Rejected it, replaced it with a narrow rule that only merges a band when its content is entirely authority codes.</p>
+</div>
+
+<div class="q">"How would you scale it to the full document?"</div>
+<div class="a">
+<p class="say">"Same pipeline, more pages. The remaining chapters use the same table conventions as far as I can tell, so it's mainly a test of whether the rules generalise — which is untested, and I'd treat any assumption otherwise as exactly the kind of guess this project is built to avoid. The processing side is not the constraint: the full rebuild takes 15–20 seconds and the whole document is a few megabytes, which is also why I didn't reach for Spark. The hard part was never computational, it was interpretive."</p>
+</div>
+
+<div class="q">"What would you do differently?"</div>
+<div class="a">
+<p class="say">"Two things. I'd extract the footnote text at the same time as the footnote numbers instead of deferring it — I'll come back to that. And I'd write the whole-document consistency checks earlier. The hierarchy bug where children were derived by string prefix matching was invisible for a while and was eventually caught by a consistency check, not by inspection. If that check had existed from the start it would have caught the bug the day it was written."</p>
+</div>
+
+<h1>6. Limitations — say these before he finds them</h1>
+<p>Volunteering these reads as rigour. Being caught out on them reads as the opposite.</p>
+
+<div class="crit">
+<b>The footnote gap (newest, and the most likely thing he'll trip over in a live test).</b>
+<p>Footnote <i>numbers</i> are extracted and attached to each responsibility, and answers surface them — you'll see "(footnote 3)" next to a role. But the footnote <i>text</i> at the bottom of the page was never extracted, so the system can't tell you what footnote 3 says. Ask it and you get nothing useful.</p>
+<p class="say">If he finds it: "Correct, and I know why. The schema has a Footnote model with scope, number, and text, but the parser behind it was never built, because there's an unresolved question I refused to guess at: does footnote numbering reset per process or per chapter? Get that wrong and footnote 3 in one chapter silently resolves to the wrong footnote 3 somewhere else — a plausible-looking error of exactly the kind this project exists to prevent. Answering it means checking real pages where the numbering restarts. It's the first thing on my list."</p>
+<p><b>Why this matters, and say so:</b> footnotes carry the conditions on authority — delegation ceilings, prior-approval requirements. An answer naming an approver while dropping "up to USD 5 million" is true and misleading at once.</p>
+</div>
+
+<ul>
+<li><b>Scope.</b> 79 of 250+ pages, three chapters. State it up front rather than letting him discover it.</li>
+<li><b>Two records with empty titles</b> (2.516, 2.522) the parser couldn't recover, plus one residual title corruption (2.222.1). All documented, not hidden. For 2.222.1 a candidate fix was implemented, tested, found not to fix the target case, found to cause a regression elsewhere, and reverted — leaving a documented defect beat carrying a change that made extraction worse overall.</li>
+<li><b>Retrieval is lexical.</b> A question phrased entirely in vocabulary the document doesn't use will resolve poorly.</li>
+<li><b>No version awareness.</b> The system reflects one version of one document and has no mechanism to detect that the DAM has been revised — a real operational concern, not a theoretical one.</li>
+<li><b>Free-tier hosting</b> sleeps after inactivity, so a cold first request is slow.</li>
+</ul>
+
+<h1>7. If something breaks live</h1>
+<table>
+<tr><th style="width:38%">Problem</th><th>What to do / say</th></tr>
+<tr><td>App is asleep, first request hangs</td><td>Expected on free tier. Say so, wait it out. This is why you open it 10 minutes early.</td></tr>
+<tr><td>Answers come back without LLM phrasing</td><td>The provider is unreachable and it fell back to templates. This is the designed behaviour — turn it into the point: "this is the fallback working, the facts are unchanged."</td></tr>
+<tr><td>A question resolves to the wrong activity</td><td>Show the confidence score and method label in the UI. Low confidence is surfaced deliberately, so the system told you it wasn't sure. Then re-ask using the ID.</td></tr>
+<tr><td>Hosting is down entirely</td><td>Run it locally: <code>docker compose up --build</code>, or the uvicorn command directly. Have this tested before the meeting.</td></tr>
+<tr><td>He asks something you genuinely don't know</td><td>Say you don't know, say how you'd find out. It's consistent with the entire design philosophy of the project, and he'll notice that.</td></tr>
+</table>
+
+<h1>8. One-line summaries to have ready</h1>
+<table>
+<tr><th style="width:32%">If he asks about…</th><th>Say</th></tr>
+<tr><td>The core contribution</td><td>Separating what the facts are from how they're phrased, with a mechanical check enforcing the boundary.</td></tr>
+<tr><td>Hardest technical problem</td><td>Recovering table semantics from geometry — rotated headers, fused superscripts, cross-row bleeding.</td></tr>
+<tr><td>Why it's trustworthy</td><td>Every answer traces to a real row, and the system refuses rather than guesses.</td></tr>
+<tr><td>Methodology</td><td>CRISP-DM end to end, with the data understanding phase taking the largest share of effort.</td></tr>
+<tr><td>Testing philosophy</td><td>374 tests, nearly all written in response to a real confirmed bug rather than for coverage.</td></tr>
+<tr><td>Working method</td><td>No fix trusted until checked against real data; failed fixes reverted and documented rather than kept because they looked plausible.</td></tr>
+</table>
+
+</body>
+</html>

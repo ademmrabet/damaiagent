@@ -1,0 +1,155 @@
+\chapter{Data Understanding: Analysis of the DAM Source Document}
+\minitoc
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+In most data science projects this chapter would describe a dataset: rows, columns, distributions, missing values. Here the raw material is a PDF, and the equivalent exercise is to understand how a printed page encodes information that no field in a table ever declares. The structure exists, but it is visual. A column belongs to a role because of where it sits on the page, not because anything in the file says so.
+
+This chapter therefore does two things. It describes what the document contains and how that content is organised, and it documents the specific ways automated extraction goes wrong on it. The second part matters as much as the first. Every parsing rule described in Chapter~3 exists because of a failure observed here, and each of those failures was found by comparing extracted output against a real page rather than by reasoning about what the extraction ought to produce.
+
+\section{Source Document Presentation}
+
+\subsection{Source and Context}
+
+The source is the African Development Bank Group's Delegation of Authority Matrix, an internal reference document of more than two hundred and fifty pages distributed as a PDF. It is not a published research dataset and has no accompanying schema, documentation, or machine-readable export. What exists is the document as staff receive it.
+
+Work was scoped to a seventy-nine-page subset covering three chapters. An earlier and narrower export of sixty-six pages was used at the very beginning of the project and then replaced, for two reasons. The larger file includes the glossary, the abbreviations list, and the authority-code legend, all of which the system needs as reference data rather than as content to be parsed. It also contains a full chapter on Non-Sovereign Operations that the initial scope had excluded. That chapter was brought into scope once its table structure was examined and found to be compatible with the same parsing approach, at the cost of one substantial new class of layout problem described in Section~\ref{sec:splitrows}.
+
+\subsection{Hierarchical Structure of the Document}
+
+The DAM is organised as a four-level hierarchy, and recovering that hierarchy correctly turned out to be one of the more consequential parts of the work.
+
+At the top are chapters, which group the Bank's activities into broad domains. Within a chapter are processes, identified by a rounded number such as 2.510, which group related activities. Within a process are tasks, identified by sequential numbers such as 2.513. Some tasks decompose further into child tasks, identified by a third number component such as 1.117.2. Finally, a small but important category of items are threshold variants: sub-items of a task keyed not by a sequence number but by a monetary band, expressing that the answer to ``who approves this'' changes depending on the amount involved.
+
+Identifier shape does not reliably indicate level, which is a trap worth stating explicitly. A task belongs to a process not because its identifier begins with the process identifier as a string, but because of arithmetic: tasks are grouped into a process by rounding down to the nearest ten. Task 2.513 belongs to process 2.510, and the string ``2.513'' does not begin with ``2.510''. Any implementation that derives the hierarchy by prefix matching gets two of the four levels wrong while appearing to work on the other two, which is precisely what happened in an early version and is discussed in Section~\ref{sec:nodeconstruction}.
+
+\subsection{Table Layout and the Authority Notation}
+
+Content is presented as wide tables. The leftmost columns carry the activity identifier and its title. The remaining columns, of which there may be a dozen or more, each correspond to an organisational role, and their headers are rotated ninety degrees so that long role names fit within the available width.
+
+Each cell at the intersection of an activity and a role carries an authority code, or nothing at all if that role has no part in that activity. Alongside the codes, superscript digits refer to footnotes printed at the bottom of the page, qualifying the responsibility with conditions such as delegation limits or specific circumstances.
+
+Two properties of this presentation create most of the difficulty. The codes are short, so distinguishing a code from a footnote marker cannot rely on length. And the association between a code and a role is purely positional, established by horizontal alignment between a cell and a header printed sideways somewhere above it.
+
+\section{Exploratory Analysis of the Document}
+
+\subsection{Global Overview and Node Distribution}
+
+Once parsed and validated, the seventy-nine-page subset yields 327 structured records, distributed across the four hierarchy levels as shown in Table~\ref{tab:nodedist}. These records carry 1,776 individual responsibility entries, each one an assertion that a named role holds a specific authority code over a specific activity.
+
+\begin{longtable}{|p{0.30\textwidth}|p{0.14\textwidth}|p{0.44\textwidth}|}
+\caption{Distribution of node types across the processed subset.}\label{tab:nodedist}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Node type}} & \textcolor{white}{\textbf{Count}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Node type}} & \textcolor{white}{\textbf{Count}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endhead
+Chapter & 3 & Top-level domains of Bank activity covered by the processed subset. \\ \hline
+Process & 35 & Groups of related activities within a chapter. \\ \hline
+Task & 138 & Individual activities, the level most questions are about. \\ \hline
+Child task & 102 & Sub-activities of a task. \\ \hline
+Threshold variant & 49 & Variants of a task keyed by a monetary threshold band. \\ \hline
+\textbf{Total} & \textbf{327} & \\ \hline
+\end{longtable}
+
+The proportion of threshold variants is higher than an outside reader might expect, and it reflects something real about how the Bank delegates authority. Approval rights are frequently banded by amount, so a single named activity can carry three or four different approvers depending on the sum at stake. A system that treated each activity as having one answer would be wrong for roughly fifteen percent of the document.
+
+\subsection{Authority Code Distribution}
+
+Across the 1,776 responsibility entries, the codes are not evenly distributed. Informed markers and check-and-verify obligations are considerably more common than approvals, which is unsurprising: a single approval is usually surrounded by several roles that verify the work beforehand and several more that must be notified afterwards.
+
+This distribution has a direct design consequence. If a user asks who approves an activity and the system answers with only the approver, it returns the smallest part of the picture and omits obligations that are mandatory rather than contextual. That observation is where requirement FR4 came from, and the behaviour it specifies is implemented in Chapter~4.
+
+\subsection{Role and Actor Analysis}
+
+The document names 131 distinct roles across the processed subset, ranging from country office staff through sector managers, division managers, directors, and vice-presidents up to the Board. Role names are long and heavily abbreviated, which is what forces the rotated headers in the first place, and the abbreviations are not always defined in the document's own glossary.
+
+That last point produced a small but visible feature of the finished system. Some acronyms appear throughout the role names without ever being separately defined in the abbreviations pages. Rather than leaving a user to guess, the system maintains a small set of curated aliases for these, and it states plainly when an expansion comes from that curated set instead of from the document's own glossary.
+
+Averaged across all 327 records, each activity carries 5.48 responsibility entries. Just under thirty percent of records carry no direct responsibilities at all, which at first looks like an extraction failure and mostly is not. Chapters and processes are organisational containers rather than activities, so they legitimately have none, and a further group of tasks are pure cross-references, discussed below.
+
+\subsection{Threshold Variants and Monetary Bands}
+
+Threshold variants were not part of the initial understanding of the document's structure. They were discovered during extraction, when rows appeared that had the shape of a task's sub-item but carried a monetary band where a sequence number was expected.
+
+Recognising them as a distinct level rather than forcing them into the child-task category mattered for correctness. A child task is a component of a task, and both may be performed. A threshold variant is an alternative to its siblings: exactly one applies to any given case, selected by the amount involved. Collapsing the two would have produced answers listing several approvers for a single transaction, all of them real in the document and only one of them applicable.
+
+\subsection{Cross-References and Redirects}
+
+A number of rows in the DAM record no responsibilities and instead contain a pointer to another part of the document. These take two forms. The first is an explicit list, phrased as ``See DAM 16.100, 16.200'' and similar. The second is a range, phrased as ``Refer to Activities 2.114 -- 2.117 in Section 2'', which must be expanded to every identifier it covers rather than treated as two endpoints.
+
+Across the processed subset, fourteen such references were captured. A human reader handles these by turning to the referenced page and starting again. The system was built to follow them automatically, because a user who asks about activity 1.117.2 and is told that no responsibilities are recorded has been given a technically accurate and practically useless answer, when the document itself says where to look.
+
+\subsection{Consolidated View}
+
+Taken together, the exploratory analysis establishes several things that shape everything downstream. The document is hierarchical but its hierarchy cannot be derived from identifier strings. Its meaning is positional, carried by alignment between cells and rotated headers. A significant minority of its rows are not activities at all but pointers or threshold alternatives. And its responsibility entries are dominated by obligations that a naive question-answering system would discard as secondary.
+
+\section{Extraction Quality Assessment}
+
+This section documents what goes wrong when the document is processed automatically. Each issue below was identified by comparing extracted output against the printed page it came from. That method is slower than checking whether the code runs without error, and it is the only method that finds problems of this kind, because every one of these failures produces output that looks entirely reasonable until it is compared with the source.
+
+\subsection{Text Layer Inspection}
+
+PDF is a page description format. It records which glyph is drawn at which coordinate, with what font and size, and nothing about what those glyphs collectively mean. A library such as pdfplumber recovers characters and words along with their positions, but reconstructing rows, columns, reading order, and cell boundaries is left entirely to the application.
+
+The practical consequence is that every structural property of the document has to be rediscovered from geometry. A row is not a row in the file; it is a set of words whose vertical positions are close enough to be considered aligned. How close is close enough is not stated anywhere and had to be measured.
+
+\subsection{Rotated Column Headers}
+
+Role headers are printed at ninety degrees. Standard word extraction returns them as ordinary text with ordinary coordinates, giving no indication that they are rotated, and their reported horizontal position corresponds to the narrow strip the rotated text occupies rather than to the full column beneath it.
+
+Attributing a code to a role therefore requires clustering header text by its horizontal position and matching each cell against the nearest header cluster. A complication appeared partway through the document: on some pages the header row is printed once and the table continues onto following pages without repeating it. Those continuation pages have codes and no headers at all, and attribution fails completely unless the last seen header set is carried forward.
+
+\subsection{Fused Footnote Digits and Authority Codes}
+
+Footnote markers are printed as superscript digits immediately adjacent to authority codes. After extraction, a code such as A followed by footnote 3 arrives as the string ``A3'', which is indistinguishable by shape from the legitimate level-bearing code A3.
+
+Distinguishing them requires the vertical offset and font size of the digit relative to the letter, both of which pdfplumber reports per character. A superscript sits higher and is set smaller. The rule that separates the two cases was derived by measuring real characters on real pages rather than assumed, because the margins involved are small and a threshold guessed from intuition would have misclassified a substantial number of codes.
+
+A related defect affected the informed marker. The parenthesised informed character had been matched by scanning for a consecutive run of the characters ``('', ``i'', ``)''. On real pages that marker is rendered as five separate characters, so the scan never matched anything. Before this was found, 174 of the 276 records in an early version of the extraction carried an informed marker in the printed document with no role ever attached to it in the extracted data. The failure was invisible in every output that did not compare records against the page.
+
+\subsection{Cross-Row Text Bleeding and Title Corruption}
+
+Activity titles wrap across lines, and in a dense table a wrapped title line can end up physically closer to the next activity's row than to its own. Where this happens, the title is attached to the wrong activity. Both activities then look plausible in isolation: one has a slightly short title, the other a slightly long one, and nothing flags an error.
+
+At its worst this affected roughly a quarter of the records produced by an early version of the parser. It was corrected by making title attachment conditional on the state of the parse rather than on proximity alone, using three signals: whether a task is currently open, whether the open task's text terminates with a full stop, and whether the incoming line carries authority codes when the open task already has its own. After those rules were applied, one residual case remained across the whole subset, on activity 2.222.1, and it is documented rather than silently accepted.
+
+\subsection{Split Rows in the Non-Sovereign Operations Chapter}
+\label{sec:splitrows}
+
+The Non-Sovereign Operations chapter, added to scope after the initial parser was working, introduced a layout variation that broke row reconstruction. In that chapter a single logical row is sometimes rendered as two physically separated bands, with the authority codes drawn slightly below the activity text rather than aligned to it.
+
+The first attempted fix was a general one: merge any two vertically adjacent bands whose separation falls below a tolerance. Checking it before adopting it showed 1,614 candidate merges across the document, several of which were clearly wrong and would have fused unrelated activities. The fix was rejected and replaced by a narrower rule that merges a band only when its content consists entirely of authority codes, which is a strong signal that it belongs to the row above and cannot be an activity in its own right.
+
+\subsection{Consolidated Data Issues Summary}
+
+\begin{longtable}{|p{0.24\textwidth}|p{0.30\textwidth}|p{0.34\textwidth}|}
+\caption{Consolidated summary of extraction issues found in the source document.}\label{tab:issues}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Issue}} & \textcolor{white}{\textbf{Effect if unhandled}} & \textcolor{white}{\textbf{Resolution}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Issue}} & \textcolor{white}{\textbf{Effect if unhandled}} & \textcolor{white}{\textbf{Resolution}} \\
+\hline
+\endhead
+Rotated column headers & Codes cannot be attributed to roles. & Cluster header text by horizontal position; carry the header set forward across continuation pages. \\ \hline
+Missing headers on continuation pages & Whole pages of responsibilities lost. & Reuse the last seen header set until a new one appears. \\ \hline
+Footnote digits fused with codes & Codes misread; footnote qualifications lost. & Separate by measured vertical offset and font size of the character. \\ \hline
+Informed marker not matched & Informed parties absent from the majority of records. & Match the marker as the separate characters it is actually rendered as. \\ \hline
+Title bleeding across rows & Titles attached to the wrong activity; free-text search degraded. & Conditional attachment based on parse state, terminating punctuation, and code presence. \\ \hline
+Split rows in the NSO chapter & Responsibilities detached from their activity. & Merge a band only when it consists entirely of authority codes. \\ \hline
+Hierarchy from string prefixes & Two of four hierarchy levels silently wrong. & Derive parentage from explicit parent fields and process arithmetic. \\ \hline
+Cross-reference rows & Activities reported as having no responsibilities. & Extract references, expand ranges, and follow pointers at query time. \\ \hline
+\end{longtable}
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+
+The DAM is a well-organised document for a human reader and an adversarial one for an automated parser, because every structural property it has is expressed through layout. The issues catalogued in this chapter are not edge cases; between them they affected the hierarchy, the role attribution, the titles, and the informed parties, which is to say every component of an answer the system is expected to give.
+
+What the chapter also establishes is a working method. None of these problems was found by reading code or by reasoning about what the parser should produce. Each was found by taking extracted output and comparing it against the page it claimed to represent. That discipline carries through the rest of the thesis, and Chapter~3 describes the pipeline built on top of these findings.

@@ -1,0 +1,53 @@
+\chapter{Automated Test Suite Breakdown}
+\label{ch:automated-test-suite-breakdown}
+\begin{longtable}{|p{0.28\textwidth}|p{0.28\textwidth}|p{0.28\textwidth}|}
+\hline
+\rowcolor{thesisgreen}\textcolor{white}{\textbf{Test file}} & \textcolor{white}{\textbf{Tests}} & \textcolor{white}{\textbf{Covers}} \\
+\hline\endhead
+\texttt{test\_\allowbreak{}task\_\allowbreak{}blocks.py} & 25 & Task-boundary detection, title attachment, threshold-variant hierarchy \\
+\hline
+\texttt{test\_\allowbreak{}row\_\allowbreak{}merge.py} & 5 & Split-row merge fix (NSO table row-bucketing) \\
+\hline
+\texttt{test\_\allowbreak{}column\_\allowbreak{}roles.py} & 8 & Rotated-header extraction, role/column clustering \\
+\hline
+\texttt{test\_\allowbreak{}title\_\allowbreak{}corruption.py} & 10 & Character-level title recovery for cross-row word merging \\
+\hline
+\texttt{test\_\allowbreak{}metadata.py} & 11 & Reference extraction, footnote-digit stripping rules \\
+\hline
+\texttt{test\_\allowbreak{}glossary\_\allowbreak{}parsing.py} & 7 & Abbreviations-list extraction \\
+\hline
+\texttt{test\_\allowbreak{}build\_\allowbreak{}nodes.py} & 7 & Node assembly, \texttt{get\_\allowbreak{}children()} hierarchy correctness \\
+\hline
+\texttt{test\_\allowbreak{}graph.py} & 7 & Knowledge graph construction and edge validation \\
+\hline
+\texttt{test\_\allowbreak{}nodes\_\allowbreak{}cache.py} & 2 & Lossless node-cache save/load round trip \\
+\hline
+\texttt{test\_\allowbreak{}search.py} & 8 & Id fast-path and TF-IDF resolution \\
+\hline
+\texttt{test\_\allowbreak{}typo\_\allowbreak{}correct.py} & 18 & Deterministic typo-tolerance thresholds \\
+\hline
+\texttt{test\_\allowbreak{}smalltalk.py} & 40 & Greeting/farewell/help detection \\
+\hline
+\texttt{test\_\allowbreak{}action\_\allowbreak{}codes.py} & 20 & Authority-code legend explanation, context-carryover exclusion \\
+\hline
+\texttt{test\_\allowbreak{}glossary\_\allowbreak{}agent.py} & 32 & Glossary lookup and inline acronym expansion \\
+\hline
+\texttt{test\_\allowbreak{}agent.py} & 29 & Core \texttt{answer\_\allowbreak{}question()} orchestration, mandatory notes, context carryover \\
+\hline
+\texttt{test\_\allowbreak{}llm.py} & 15 & Provider mocking, router mode resolution, failure handling \\
+\hline
+\texttt{test\_\allowbreak{}generate.py} & 19 & Grounding check correctness, sentence-cap scaling \\
+\hline
+\texttt{test\_\allowbreak{}translate.py} & 26 & Multi-language detection and translation shim \\
+\hline
+\texttt{test\_\allowbreak{}tone.py} & 25 & Tone pre-filter, classification parsing, prefix application \\
+\hline
+\texttt{test\_\allowbreak{}backend.py} & 29 & End-to-end API behavior via \texttt{TestClient} \\
+\hline
+\texttt{test\_\allowbreak{}dashboard\_\allowbreak{}data.py} & 15 & Dashboard summary metrics and chapter scoping \\
+\hline
+\texttt{test\_\allowbreak{}frontend\_\allowbreak{}source.py} & 16 & React source-level structural checks \\
+\hline
+\textbf{Total} & \textbf{374} & \textbf{across 23 files} \\
+\hline
+\end{longtable}

@@ -1,0 +1,16 @@
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{Abstract}{Abstract}
+
+The Delegation of Authority Matrix (DAM) is the African Development Bank's internal reference document defining who may approve, check, initiate, or must be informed about each of the Bank's operational activities. In its native form it is a 79-page PDF containing dozens of large, rotated-header tables, footnoted role names, and a bespoke authority-code notation (I, C, R, A, and the parenthetical informed marker) that is unreadable at speed even by trained staff, and completely opaque to any generic text-search or off-the-shelf AI tool.
+
+This thesis builds an AI agent that answers natural-language questions about the DAM (\textit{``who approves the quarterly mission program?''}, \textit{``who needs to be informed about non-sovereign loan disbursement?''}) with concrete, sourced, deterministic answers, phrased conversationally by a large language model but never allowed to invent or omit a fact. The system is delivered as a small, hosted web application: a chat interface, a live analytics dashboard over the DAM's own structure, and a REST API in between.
+
+The engineering work follows the CRISP-DM methodology end to end. Business Understanding fixed the two founding example questions the whole project is judged against. Data Understanding spent the largest share of effort: the source PDF's tables use rotated column headers, superscript footnote digits fused with authority codes, and cross-row text bleeding that \texttt{pdfplumber}'s own word extraction cannot resolve automatically -- every one of these had to be discovered from real pages, not assumed, before it could be parsed correctly. Data Preparation turned this into a validated, machine-readable node set: 327 structured nodes (3 chapters, 35 processes, 138 tasks, 102 child tasks, 49 threshold variants) carrying 1,776 extracted responsibility records, with an unresolved-role rate of 0.6\%. Modeling built a \texttt{networkx} knowledge graph (459 nodes, 2,108 edges) plus a TF-IDF lexical search layer and a hybrid local/cloud LLM phrasing layer whose output is verified, fact-by-fact, against the graph before ever being shown to a user -- a grounding check that rejects and silently falls back to a deterministic template answer if the model drops or alters a single role name. Evaluation is continuous rather than a single held-out test: 374 automated tests across 23 files, each written in response to a real, confirmed bug, plus repeated live verification against actual screenshots of the source document. Deployment ships the system as a containerized, auto-deploying web service on a free hosting tier, with a chat UI, a filterable analytics dashboard, and support for five languages.
+
+\vspace{0.6cm}
+\noindent\textbf{Keywords:} knowledge graphs, retrieval-augmented generation, large language models, grounded generation, PDF information extraction, delegation of authority, CRISP-DM.
+
+\newpage
+\thispagestyle{empty}
+\mbox{}

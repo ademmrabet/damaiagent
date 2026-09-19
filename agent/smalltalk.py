@@ -9,10 +9,6 @@ _FAREWELL = re.compile(r"^(bye|goodbye|bye bye|see you|see ya|take care|later|fa
 _THANKS = re.compile(r"^(thanks|thank you|thx|ty|much appreciated|appreciate it|appreciated)[\s!.,]*$", re.IGNORECASE)
 _HOW_ARE_YOU = re.compile(r"^how('?s| is| are) (it going|you doing|you|things)\??[\s!.,]*$", re.IGNORECASE)
 _WHATS_UP = re.compile(r"^(what'?s up|sup|wassup)\??[\s!.,]*$", re.IGNORECASE)
-# Widened 2026-08-06 for a brand-new employee who doesn't know this
-# tool or the DAM at all and wouldn't necessarily type the word "help"
-# - "how does this work", "I'm new here", "I don't know where to
-# start" all land on the same guided reply as "help" itself.
 _HELP = re.compile(
     r"^(help|what can you do|who are you|what is this|what do you do|"
     r"how does this work|how do i use this|(i'?m|i am) new( here)?|"
@@ -20,17 +16,6 @@ _HELP = re.compile(
     re.IGNORECASE,
 )
 
-# A few variants per category rather than one fixed line each - purely
-# cosmetic (every variant still says the same substantive thing), but
-# a canned reply that's identical on every single greeting is one of
-# the fastest ways a tool reads as a script instead of something
-# actually responding to you. Kept small and all still individually
-# true/accurate - not going for jokes, just not repeating word for
-# word every time. Every "greeting" variant still contains "Hello"
-# (capital H), every "farewell" variant still contains "Goodbye"
-# (capital G), and the "help" variants still contain the exact phrase
-# "Delegation of Authority Matrix" - tests pin those substrings on
-# purpose, so any new variant added later has to keep them too.
 _RESPONSES = {
     "greeting": [
         "Hello! I'm the DAM Agent - ask me who approves, reviews, checks, "
@@ -90,12 +75,6 @@ _PATTERNS = [
     (_HELP, "help"),
 ]
 
-# Every plain word the patterns above can match on, so a typo in one
-# of them ("helo", "godbye", "thnaks") still resolves - anything
-# shorter than 4 letters ("hi", "hey", "bye"...) is left to match
-# exactly, same reasoning as knowledge/typo_correct.py's own
-# min_word_length default: fuzzy-correcting a 2-3 letter word is
-# unreliable enough to not be worth the false-positive risk.
 _SMALLTALK_VOCAB = {
     "hello", "hiya", "howdy", "greetings",
     "good", "morning", "afternoon", "evening", "day",
@@ -133,11 +112,6 @@ def detect_smalltalk(query):
     if reply:
         return reply
 
-    # Looser threshold than knowledge/typo_correct.py's 0.88 default -
-    # same reasoning as agent/authority.py and agent/glossary.py's
-    # trigger-word correction: a small, curated, semantically distinct
-    # vocabulary carries much less false-positive risk than a large
-    # organic-language one, checked directly before lowering this.
     corrected = correct_words(normalized, _SMALLTALK_VOCAB, min_ratio=0.75)
     if corrected != normalized:
         return _match_smalltalk(corrected)

@@ -1,0 +1,20 @@
+\chapter{Sample Live-Demo Transcript}
+\label{ch:sample-live-demo-transcript}
+The following question sequence is drawn directly from \texttt{docs/\allowbreak{}demo\_\allowbreak{}script.md} and was run against the real, current build before being documented — not a hypothetical illustration.
+
+\textbf{1. Direct id lookup.} *"who approves 2.126"* → resolves with certainty (\texttt{method: id}, confidence 1.0) to activity 2.126 ("Quarterly Mission program"), naming RDG / Director RDNG as approver, and automatically appending the mandatory Check/Verify note (Sector Manager, Supporting Dept. Division Manager) and the informed-party note (Concerned Sector VP, RDVP, Task Manager/Project Team) — without being asked for either.
+
+\textbf{2. Natural language, no id.} *"who needs to be informed for quarterly mission program"* → resolves to the identical node 2.126 purely from the activity's name, now listing the informed parties.
+
+\textbf{3. Typo tolerance.} *"who aproves the qaurterly mision program"* (two deliberate typos) → still resolves correctly to 2.126, via deterministic similarity matching, not an LLM guess.
+
+\textbf{4. Domain glossary.} *"what does DDG stand for"* → "DDG stands for: Deputy Director-General." *"what does RDNG stand for"* → resolved via a maintained alias, with the agent transparent that this came from a curated alias rather than the DAM's own printed glossary.
+
+\textbf{5. Conversation follow-up.} *"who approves of Communication with Co-Financiers of projects"* → resolves to 2.118 (Country Manager / DDG). Then, without naming the subject again, *"and who are the informed parties?"* → correctly stays on 2.118, labeled "carried over from previous question" in the UI.
+
+\textbf{6. Automatic redirect-following.} *"who initiates 1.117.2"* → 1.117.2's own row is a pointer ("See 2.120: Organization of mission"); the agent follows it automatically and surfaces 2.120's real responsibilities instead of dead-ending.
+
+\textbf{7. Honest refusal.} *"what happens with 9.999.999"* → "'9.999.999' doesn't exist in the DAM... Double-check the id, or describe the activity in words instead." No fabricated answer — presented in the demo script explicitly as "the feature, not a bug."
+
+\textbf{8. Personality.} *"hi"*, later *"thanks"* → warm, varied replies, bypassing the DAM lookup pipeline entirely.
+

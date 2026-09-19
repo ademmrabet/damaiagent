@@ -1,0 +1,115 @@
+% =====================================================================
+%  GENERAL INTRODUCTION
+% =====================================================================
+
+\chapter*{General Introduction}
+\addcontentsline{toc}{chapter}{General Introduction}
+\markboth{General Introduction}{General Introduction}
+
+% ---------- 1. THE PROBLEM ----------
+
+Sooner or later, every large institution has to write down who is allowed to
+decide what. In a development bank that question has teeth. An approval signed
+by the wrong person is a governance failure, and auditors find those. The
+African Development Bank Group keeps its answer in a document called the
+Delegation of Authority Matrix, the DAM, which goes through the Bank's
+activities one by one and records who starts each task, who has to check it, who
+reviews it, who approves it, and who simply has to be told it happened.
+
+The document is accurate. Getting at what it says is the problem.
+
+The full DAM runs past two hundred and fifty pages. Nearly all of it sits inside
+wide tables, and because those tables carry more columns than a page can hold,
+the role names at the top are printed sideways. Authority is written in a
+shorthand of single letters, and a small digit beside a letter can change what
+it means. So a staff member who wants to know whether they can sign off on a
+mission programme has to find the right row, in the right table, in the right
+chapter, follow a rotated header down to work out which column belongs to which
+role, and then decode the character where the two meet. People do manage this.
+They manage it slowly, and not always correctly.
+
+% ---------- 2. THE CLIENT ORGANISATION ----------
+
+The African Development Bank Group was founded in 1964 and is headquartered in
+Abidjan, C\^ote d'Ivoire. It has 81 member countries, 54 of them African and 27
+from outside the continent, and its purpose is to support economic development
+and social progress across its regional member countries. The Group also
+includes the African Development Fund, which lends on concessional terms to the
+countries least able to borrow commercially, and the Nigeria Trust Fund.
+
+A bank that size cannot be casual about who decides things. It moves public and
+multilateral money across dozens of countries, and every operational act, from
+approving a mission to committing funds against a country programme, has to
+trace back to somebody entitled to perform it. The DAM is how the Bank writes
+that down, and it is where this project starts.
+
+The work was carried out within the Master's programme in Data Sciences at
+Polytech Intl. The African Development Bank Group acted as the client, supplying
+both the source document and the requirements the finished system had to meet.
+
+% ---------- 3. WHY IT MATTERS TO THE BANK ----------
+
+None of the Bank's priorities get delivered unless decisions are made correctly,
+by people entitled to make them. Take RDGN, the regional office covering
+Tunisia, Algeria, Morocco, Mauritania and Libya from a hub in Tunis. Staff there
+spend their days on exactly the activities the Matrix governs: organising
+missions, dealing with co-financiers, committing funds against country
+programmes. Each one needs an answer to the same four questions. Who starts it,
+who checks it, who approves it, who needs to know. Delegation of authority is
+not paperwork sitting alongside the real work. It is how the real work gets
+done, and anything that makes it harder to consult slows the Bank down.
+
+% ---------- 4. WHAT THE THESIS DELIVERS ----------
+
+The obvious thing to try is a chatbot. It does not work here, and the reason is
+worth being precise about. Language models write fluently whether or not they
+are right, and fluent text about who controls financial approval is dangerous
+when it is wrong. A model that invents a plausible-sounding role, or quietly
+leaves out one of the three people who should have been informed, hands you
+something that reads exactly like a correct answer. For a compliance document,
+that is worse than no answer.
+
+So the system described here is built around that problem rather than hoping to
+avoid it. The DAM is parsed into a structured knowledge base. That knowledge
+base becomes a graph of activities and the roles responsible for them, and
+questions are answered by pulling real records out of that graph. There is a
+language model involved, but it never decides what the facts are. It is handed
+facts that have already been retrieved and asked to put them into a sentence,
+and before anyone sees that sentence it is checked, word for word, against the
+facts it came from. If a role name has gone missing or changed, the sentence is
+thrown away and a plain one is shown instead.
+
+The Bank's professional supervisors saw the system and their first reactions
+were positive. It has not been through a full operational evaluation, so this
+thesis makes no claim about measured time savings. What it can say is what the
+system takes away: the hunt through two hundred and fifty pages, the rotated
+header, the decoded letter. A question now comes back in seconds, with the
+activity it came from attached. Whether that adds up to real efficiency gains
+across the regional office is a question for a deployment study, not for this
+report.
+
+% ---------- 5. ORGANISATION OF THE THESIS ----------
+
+The report runs to five chapters.
+
+\textbf{Chapter 1} sets the scene: the host institution, the client, how the
+Matrix is consulted today, where that breaks down, what existing tools offer,
+and the requirements and architecture that follow from all of it.
+
+\textbf{Chapter 2} looks hard at the source document. There is no tidy dataset
+here, only a PDF whose structure lives in its layout, so this chapter works
+through how that layout carries meaning and where automated extraction goes
+wrong on it.
+
+\textbf{Chapter 3} is the pipeline that turns the document into data, stage by
+stage, along with the checks applied at each one and the knowledge graph built
+on the output.
+
+\textbf{Chapter 4} covers the agent: how a question finds the right activity,
+how an answer is assembled, what the language model is allowed to do, and the
+check that keeps it honest.
+
+\textbf{Chapter 5} presents what was actually delivered, including the features
+added in the project's second phase, the analytics and forecasting layer, the
+tests behind it, and how it is deployed. The general conclusion then takes stock
+of what worked, what did not, and what should be tackled next.

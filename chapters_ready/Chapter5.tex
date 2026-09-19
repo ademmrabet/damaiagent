@@ -1,0 +1,269 @@
+\chapter{Implementation Results and Delivered Platform}
+\minitoc
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+This chapter presents what the project delivers: an authenticated web application built on the agent described in Chapter~4, extended with voice input, document attachment, conversation export and sharing, a fully localised interface, and an analytics layer carrying governance indicators and a forecasting capability. It closes with the REST interface, the testing regime, and the deployment arrangement.
+
+\section{The Delivered Application}
+
+\subsection{Overview and Architecture}
+
+The application is a single-page web client served as static files by the same backend that exposes the API. The backend loads the cached node set once at startup, builds the graph and the search index in memory, and answers requests from those structures. The knowledge base itself is read-only and needs no database; a small relational store is introduced only for user accounts, shared conversation snapshots, and the query log, none of which touch the knowledge base.
+
+The web layer holds no domain logic. Every decision about what an answer contains is made in the agent, and the backend wraps it. That separation was maintained deliberately, and it is what allowed the platform features described below to be added without touching the parts of the system that determine correctness.
+
+\subsection{Authentication and Access Control}
+
+Access to the application requires authentication. The mechanism is a token-based flow: credentials are posted to an authentication endpoint, the server verifies them and returns a signed JSON Web Token, and the client presents that token on every subsequent request through an \texttt{Authorization} header. Endpoints other than the health check and the login route reject requests without a valid token.
+
+Passwords are never stored in recoverable form. Each account holds a bcrypt hash produced with a per-password salt, and verification compares a hash of the submitted password against the stored value. The signing secret for tokens is supplied through the environment rather than committed, consistent with the existing handling of the language model API key.
+
+Tokens carry the account identifier, the assigned role, and an expiry timestamp, and are signed with HS256. Expiry is set to eight hours, which covers a working day without leaving indefinitely valid credentials in a browser. On the client the token is held in session storage rather than local storage, so it does not survive the tab being closed; this trades a small amount of convenience for a meaningful reduction in exposure, since a token in local storage remains readable by any script that manages to execute on the page.
+
+Two roles are defined. An \textbf{analyst} may authenticate, ask questions, attach documents, and export or share their own conversations. An \textbf{administrator} additionally reaches the analytics dashboard and the query log. The distinction matters because the analytics layer aggregates what the institution's staff have been asking, which is organisationally sensitive in a way that individual lookups are not.
+
+Two further protections apply to the login route specifically. Failed attempts are rate-limited per source address to slow credential stuffing, and the response to a failed login does not distinguish an unknown account from a wrong password, so the endpoint cannot be used to enumerate valid usernames.
+
+Authentication also enables something the system previously could not do: attribute each question to an account. Every query is recorded with its account identifier, timestamp, resolution method, confidence, and whether the generated phrasing survived the verification step. That record is the foundation of the usage indicators in Section~\ref{sec:usagekpi} and the forecasting capability in Section~\ref{sec:forecast}.
+
+\subsection{The Chat Interface}
+
+The chat page is the primary interface. A user types or dictates a question and receives an answer together with the metadata that makes the answer auditable: the resolved activity identifier, how it was resolved, the confidence where one applies, whether a language model was used for phrasing, and which language the answer is in.
+
+Controls in the header select the language model mode described in Table~\ref{tab:llm}, including switching it off entirely, and the answer language. Below any answer phrased by a model, a control reveals the underlying deterministic answer, so a user can always see the unembellished version of what the document says. Low-confidence resolutions are marked visually, conversations are kept in a sidebar, and the layout collapses to a single column on narrow screens.
+
+\subsection{Voice Input}
+
+Questions can be dictated instead of typed. The implementation uses the browser's native speech recognition interface, which means no audio is processed by the application's own backend and no additional infrastructure or inference cost is incurred.
+
+A microphone control sits in the composer. Activating it starts a recognition session configured for a single utterance with interim results enabled, so partial transcription appears in grey as the user speaks and is replaced by the final transcript when the session ends. The recognition language is bound to the interface language selector, so a user working in French dictates in French and a user working in Arabic dictates in Arabic, without a separate setting.
+
+One design decision is worth stating because it was not the obvious one. The transcript populates the input field rather than submitting automatically. Speech recognition performs poorly on institutional acronyms and identifiers, which are precisely what these questions contain, and a user who cannot see the transcription before it is sent has no opportunity to correct a misheard activity number. Populating the field also lets the deterministic typo-correction layer from Chapter~4 act on the transcript, which handles a useful share of recognition errors on activity names without any additional work.
+
+The capability is feature-detected and the control is hidden where the interface is unavailable, which currently affects some browsers. Recognition errors are surfaced explicitly rather than silently: no speech detected, microphone unavailable, and permission denied each produce a distinct message, because a user who has denied microphone permission needs different advice from one whose microphone is not working.
+
+A privacy note belongs in the design rather than in a footnote. The browser interface used here transmits audio to the vendor's own recognition service in most implementations. For an institution handling internal governance material, that is a consideration to weigh consciously, and the honest position is that voice input is a convenience feature whose data path leaves the institution's control. Where that is unacceptable, the same control can be rebound to a locally hosted recognition model at the cost of running that model.
+
+\subsection{Document Attachment}
+
+A conversation can carry an attached document, allowing questions to be asked about material that is not part of the DAM: a draft policy, a related procedure, or a newer extract of the matrix itself.
+
+Uploads are constrained. The endpoint accepts PDF, Word, and plain text files up to ten megabytes, validates the declared type against the file's actual signature rather than trusting the extension, and rejects anything else. The uploaded binary is never persisted and never rendered; text is extracted immediately, the extracted text is retained against the conversation for the life of the session, and the original bytes are discarded. PDF extraction reuses the same library already employed by the offline pipeline, and Word extraction uses a document-object library, so no new class of parsing dependency enters the system.
+
+Retrieval over an attachment reuses the machinery from Chapter~4. The extracted text is split into paragraphs, vectorised with TF-IDF, and searched by cosine similarity, exactly as activity titles are. The retrieved passage is then passed through the same grounded generation and verification path.
+
+The most important part of this feature is a boundary rather than a capability. Answers drawn from an attachment are labelled as such, presented in a visually distinct form, and excluded from the guarantee that applies to DAM answers. The system's central promise is that an answer about the DAM traces to a validated record extracted from a verified document. An uploaded file has been through no such validation; it may be a draft, it may be superseded, and its structure has not been checked against anything. Presenting both classes of answer identically would quietly destroy the property the whole system exists to provide, so the interface states plainly which source an answer came from, and the two are never merged into a single response.
+
+\subsection{Conversation Export}
+
+A conversation can be exported as a PDF document. Generation happens server-side rather than in the browser, which keeps the output identical regardless of the client and allows the export to carry information the on-screen view summarises.
+
+The exported document opens with the institution and programme attribution, the exporting account, the export timestamp, and an identification of the DAM version the answers were drawn from. Each exchange then appears in sequence with the question, the answer as shown, and the provenance attached to it: the resolved activity identifier, the resolution method, the confidence score where one applies, and whether the phrasing was produced by a language model.
+
+Where a language model phrased an answer, the export includes the deterministic template answer alongside it. That choice is what makes the export useful as evidence rather than as a transcript: a reader can see both the readable sentence and the unembellished statement of what the document records, and can check one against the other without access to the running system. For a compliance context, an export that cannot be verified independently is of limited value.
+
+\subsection{Conversation Sharing}
+
+A conversation can be shared with a colleague. Requesting a share produces a signed, expiring token, and the client renders the resulting link as a QR code so that it can be scanned from a phone without retyping anything.
+
+Sharing creates a read-only snapshot. The conversation as it stands is copied server-side and keyed by the token; subsequent messages in the original conversation do not appear in the shared view. The recipient sees the questions, the answers, and the same provenance metadata carried by the export, and can do nothing else with it.
+
+Scope is worth being explicit about, because the obvious reading of the feature is more ambitious than what is described here. This is snapshot sharing, not live collaboration. Two users do not occupy the same conversation, there is no real-time channel between them, and a shared view does not accept new questions. Live multi-party conversation is a different feature with its own state-synchronisation and concurrency problems, and it is not what this delivers.
+
+Three controls apply. Tokens expire after a configurable period, defaulting to seven days. The originating user can revoke a share before expiry. And attached documents are excluded from shared snapshots, since the person sharing a conversation has not necessarily considered that an attachment travels with it.
+
+\subsection{Interface Localisation}
+
+The system already answered questions in five languages. The interface itself did not follow: outside the conversation, the application remained in English, so a user working in Arabic received Arabic answers inside an English page.
+
+The localisation layer resolves that. All interface text is externalised into a message catalogue keyed by string identifier, with one catalogue per supported language. A language provider at the root of the component tree exposes a lookup function to every component, so changing the language re-renders the whole application rather than one page. The active choice persists across sessions, and a missing entry falls back to English rather than displaying a raw key.
+
+Coverage extends to every surface: the landing page, the login form, the chat page, the dashboard including chart axis labels and table headers, the shared conversation view, empty states, error messages, tooltips, and the controls added by the features above. Numbers and dates are formatted through the platform's internationalisation interfaces using the active locale, so a thousands separator or a date order follows the reader's convention rather than the developer's.
+
+Arabic requires more than translation. The document direction attribute is set to right-to-left for Arabic, and the stylesheet uses logical properties, so that margins, padding, and alignment mirror correctly instead of needing a parallel set of rules. The conversation sidebar moves to the opposite edge and chart axes reverse.
+
+One category of text is deliberately never translated. Role names, activity titles, authority codes, and identifiers are reproduced exactly as the source document records them, in every language. They are not interface text but content, and translating them would break both the traceability requirement and the verification mechanism described in Chapter~4, which compares generated answers against the literal role names held in the graph.
+
+\section{Analytics and Forecasting}
+
+\subsection{The Analytics Dashboard}
+
+The dashboard presents the structure of the document itself rather than answers to questions. It reports node counts by type, the total number of responsibility entries, the distribution of authority codes, the roles most frequently involved, the proportion of unresolved roles, and the graph totals. It is filterable by chapter, and its charts are linked, so selecting an authority code re-scopes the roles chart to show who most often holds that particular authority.
+
+Two of its indicators describe the extraction rather than the document. The average number of responsibilities per record and the proportion of records with no direct responsibilities are data quality signals that were invisible before the document was structured, and both were used during development to detect regressions, since a sudden change in either after a parser change is a reliable sign that something has broken.
+
+\subsection{Governance Indicators}
+\label{sec:govkpi}
+
+The dashboard's original indicators describe the data. The governance indicators described here describe what the data means for the institution, and all of them are computable from the existing knowledge graph without any additional source.
+
+\begin{longtable}{|p{0.28\textwidth}|p{0.58\textwidth}|}
+\caption{Governance indicators derived from the knowledge graph.}\label{tab:govkpi}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Definition and interpretation}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Definition and interpretation}} \\
+\hline
+\endhead
+Authority concentration & Share of activities for which exactly one role holds approval authority. A high value identifies single points of failure, where one absence blocks a process. \\ \hline
+Approval span per role & Number of activities each role approves. Ranks roles by the breadth of authority they carry and surfaces disproportionate concentration. \\ \hline
+Segregation of duties & Share of activities where the initiating role differs from the approving role. A standard internal-control measure, computed here directly from the matrix. \\ \hline
+Verification coverage & Share of activities carrying at least one recorded check-and-verify obligation. Measures how much of the Bank's activity has a mandatory second pair of eyes. \\ \hline
+Notification breadth & Mean number of informed parties per activity, with distribution. Indicates how widely decisions are communicated. \\ \hline
+Threshold banding rate & Share of activities whose approver depends on a monetary band. Quantifies how far delegation is value-sensitive rather than flat. \\ \hline
+Authority chain depth & Mean number of distinct roles involved in an activity across all authority types. A proxy for procedural weight. \\ \hline
+Documentation completeness & Share of activities with no recorded responsibility of any kind, excluding structural containers. Flags gaps in the matrix itself. \\ \hline
+Redirect dependency & Share of activities whose responsibilities are reachable only by following a cross-reference. Measures how much of the document is indirect. \\ \hline
+Role redundancy & Share of activities with two or more roles able to approve. Read together with authority concentration, it separates resilience from ambiguity. \\ \hline
+\end{longtable}
+
+Two of these deserve comment. Authority concentration and role redundancy are complements, and reading either alone is misleading: an activity with a single approver is efficient and fragile, while one with several is resilient and potentially ambiguous about who is accountable. Presenting both, per chapter, lets a reader see which pattern dominates where. Segregation of duties is the indicator most likely to interest an audit function, because it is a recognised control principle that the matrix encodes implicitly and no one currently measures.
+
+\subsection{Usage Indicators}
+\label{sec:usagekpi}
+
+The second family describes how the system is used, and becomes available once the authenticated query log described earlier begins accumulating records.
+
+\begin{longtable}{|p{0.28\textwidth}|p{0.58\textwidth}|}
+\caption{Usage indicators derived from the query log.}\label{tab:usagekpi}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Definition and interpretation}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Definition and interpretation}} \\
+\hline
+\endhead
+Resolution rate & Share of questions resolved to an activity, against those refused or returned for clarification. The headline measure of whether the system is answering its users. \\ \hline
+Method mix & Proportion resolved by identifier, by free-text search, by auxiliary handlers, or refused. Shifts in this mix indicate changes in how staff are using the tool. \\ \hline
+Mean resolution confidence & Average similarity score for free-text resolutions, with its distribution. A downward trend suggests questions are drifting away from the document's vocabulary. \\ \hline
+Grounding fallback rate & Share of generated answers rejected by the verification step. A direct, continuous measurement of model faithfulness in production rather than in testing. \\ \hline
+Response latency & Median and 95th percentile, separated by cold and warm start. Relevant given the hosting tier. \\ \hline
+Query concentration & Most frequently asked activities, processes, and roles. Identifies which parts of the document carry real demand. \\ \hline
+Unresolved question backlog & Questions that failed to resolve, retained as a work list. Directly prioritises which chapters to extract next. \\ \hline
+Language distribution & Share of questions by detected language. Evidence for whether the multilingual capability is used. \\ \hline
+Conversation depth & Mean follow-up questions per conversation. A proxy for whether context carry-over is serving users. \\ \hline
+Repeat question rate & Share of questions repeated by the same account within a short window. A proxy for answers that were returned but not understood. \\ \hline
+\end{longtable}
+
+The grounding fallback rate is the one worth highlighting, because it converts a design property into an operational metric. Chapter~4 describes the verification step as the mechanism that makes the language model safe to use. Logging how often it fires turns that claim into something measurable: a rising fallback rate is direct evidence that a model, or a change to the prompt, has become less faithful, and it can be observed without any manual review of answers.
+
+The unresolved question backlog is the most operationally useful. It converts failure into a prioritised work list, since the questions users ask and the system cannot answer are precisely the evidence needed to decide which chapter of the remaining two hundred pages to process next.
+
+\subsection{Forecasting}
+\label{sec:forecast}
+
+Forecasting requires a quantity that varies over time, and the DAM itself does not: it is static reference data. The forecastable quantity in this system is demand, not content, and the analytics layer therefore forecasts consultation activity rather than the document.
+
+\subsubsection{Rationale}
+
+Institutional activity is cyclical. Mission programmes are quarterly, project reviews are annual, and budget and procurement cycles have their own rhythm. If consultation of the authority matrix tracks the activities the matrix governs, then query volume should carry seasonal structure, and a forecast of that structure supports concrete decisions: when to pre-warm the hosted instance, when support demand will peak, and which chapters will be in demand in the coming period.
+
+\subsubsection{Method}
+
+The target series is query count aggregated weekly, both overall and per chapter, drawn from the query log. Modelling proceeds in three steps. Seasonal-trend decomposition separates the series into trend, seasonal, and residual components, which is diagnostic before it is predictive: it establishes whether seasonality is present at all. Holt-Winters exponential smoothing then provides short-horizon forecasts with additive trend and seasonal terms, and a seasonal ARIMA model is fitted as a comparison. All three are available in a single statistical library already compatible with the stack.
+
+Evaluation uses rolling-origin backtesting rather than a single split, reporting mean absolute error and mean absolute percentage error across folds. The comparison that matters is against a seasonal-naive baseline, which predicts each week from the same week in the previous cycle. A model that cannot beat that baseline does not justify its complexity and is not deployed.
+
+\subsubsection{The Data Requirement, Stated Plainly}
+
+Seasonal structure cannot be estimated from a short series. Reliable weekly seasonality needs on the order of twelve to sixteen weeks of logged activity, and annual cycles need considerably more. Until that history exists, the module reports insufficient data and displays the observed series without a projection.
+
+That behaviour is a deliberate design decision and not a placeholder. A forecasting panel that produces a confident line from three weeks of data would be exactly the failure mode this system was built to avoid: a plausible answer with nothing behind it. The same principle that makes the agent refuse an unknown identifier applies to the analytics layer refusing an unsupportable forecast.
+
+\subsubsection{Bottleneck Projection}
+
+A second analytical capability needs no accumulated history, because it is a ranking rather than a time series. Combining approval span from the graph with query concentration from the log identifies the roles that sit on the most heavily consulted approval paths, and projects which of them are likely to become bottlenecks as consultation grows.
+
+This is presented as a projection under stated assumptions rather than as a prediction, and the assumptions are shown alongside it: that consultation frequency approximates activity frequency, and that the distribution of demand remains broadly stable. Both are plausible and neither is verified, so the output is framed as a prompt for investigation rather than as a finding.
+
+\subsubsection{What Is Deliberately Not Forecast}
+
+Two attractive-sounding capabilities are excluded for the same reason, which is that the data to support them does not exist within this project.
+
+Forecasting actual approval workload, meaning how many approvals a given role will face next quarter, would require the Bank's transaction and project volumes. Those are not part of the DAM and were not available. Forecasting revisions to the matrix itself would require a machine-readable history of previous versions, and only the current version exists in that form. Both are recorded here as extensions that become possible if the corresponding data is supplied, rather than as capabilities the system claims.
+
+\section{REST Interface}
+
+\begin{longtable}{|p{0.34\textwidth}|p{0.10\textwidth}|p{0.42\textwidth}|}
+\caption{REST API endpoints exposed by the backend.}\label{tab:api}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Endpoint}} & \textcolor{white}{\textbf{Method}} & \textcolor{white}{\textbf{Purpose}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Endpoint}} & \textcolor{white}{\textbf{Method}} & \textcolor{white}{\textbf{Purpose}} \\
+\hline
+\endhead
+\texttt{/api/auth/login} & POST & Exchanges credentials for a signed access token. Rate-limited. \\ \hline
+\texttt{/api/auth/me} & GET & Returns the authenticated account and its role. \\ \hline
+\texttt{/api/ask} & POST & Core endpoint. Accepts a question, model mode, optional carried-over activity, and target language. Returns the answer, the deterministic answer, the resolved identifier, resolution method and score, the backing facts, and language and model metadata. \\ \hline
+\texttt{/api/documents} & POST & Attaches a document to a conversation. Validates type and size, extracts text, discards the binary. \\ \hline
+\texttt{/api/conversations/\{id\}/export} & GET & Returns the conversation as a PDF including provenance metadata. \\ \hline
+\texttt{/api/conversations/\{id\}/share} & POST & Creates an expiring read-only snapshot and returns its token and URL. \\ \hline
+\texttt{/api/conversations/shared/\{token\}} & GET & Returns a shared snapshot. No account required; the token is the credential. \\ \hline
+\texttt{/api/conversations/\{id\}/share} & DELETE & Revokes an existing share before expiry. \\ \hline
+\texttt{/api/health} & GET & Liveness check, used by the platform and the status indicator. Reports nodes loaded. \\ \hline
+\texttt{/api/llm/config} & GET & Reports the model names each mode would currently use. \\ \hline
+\texttt{/api/dashboard/summary} & GET & Aggregate statistics, per-chapter breakdowns, and graph totals. Administrator only. \\ \hline
+\texttt{/api/analytics/usage} & GET & Usage indicators over a requested period. Administrator only. \\ \hline
+\texttt{/api/analytics/forecast} & GET & Forecast series with intervals, or an insufficient-data response. Administrator only. \\ \hline
+\end{longtable}
+
+\section{Testing and Validation}
+
+The system carries 374 automated tests across 23 files. The number matters less than their provenance: these are not tests written to reach a coverage figure. Almost every one exists because a specific defect was found, and the test was written to pin the corrected behaviour so it could not silently return.
+
+\begin{longtable}{|p{0.32\textwidth}|p{0.10\textwidth}|p{0.44\textwidth}|}
+\caption{Breakdown of the automated test suite.}\label{tab:tests}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Test file}} & \textcolor{white}{\textbf{Tests}} & \textcolor{white}{\textbf{Area covered}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Test file}} & \textcolor{white}{\textbf{Tests}} & \textcolor{white}{\textbf{Area covered}} \\
+\hline
+\endhead
+\texttt{test\_task\_blocks.py} & 25 & Task boundary detection, title attachment, threshold-variant hierarchy \\ \hline
+\texttt{test\_row\_merge.py} & 5 & Split-row merging in the Non-Sovereign Operations chapter \\ \hline
+\texttt{test\_column\_roles.py} & 8 & Rotated header extraction and role attribution \\ \hline
+\texttt{test\_title\_corruption.py} & 10 & Character-level title recovery for cross-row bleeding \\ \hline
+\texttt{test\_metadata.py} & 11 & Reference extraction and footnote-digit stripping \\ \hline
+\texttt{test\_glossary\_parsing.py} & 7 & Abbreviations list extraction \\ \hline
+\texttt{test\_build\_nodes.py} & 7 & Node assembly and hierarchy correctness \\ \hline
+\texttt{test\_graph.py} & 7 & Graph construction and edge validation \\ \hline
+\texttt{test\_nodes\_cache.py} & 2 & Lossless cache save and load \\ \hline
+\texttt{test\_search.py} & 8 & Identifier fast path and free-text resolution \\ \hline
+\texttt{test\_typo\_correct.py} & 18 & Typo-tolerance thresholds \\ \hline
+\texttt{test\_smalltalk.py} & 40 & Greeting, farewell, and capability detection \\ \hline
+\texttt{test\_action\_codes.py} & 20 & Authority-code explanation and carry-over exclusion \\ \hline
+\texttt{test\_glossary\_agent.py} & 32 & Glossary lookup and inline acronym expansion \\ \hline
+\texttt{test\_agent.py} & 29 & Answer orchestration, mandatory notes, context carry-over \\ \hline
+\texttt{test\_llm.py} & 15 & Provider mocking, mode resolution, failure handling \\ \hline
+\texttt{test\_generate.py} & 19 & Verification-step correctness and answer-length scaling \\ \hline
+\texttt{test\_translate.py} & 26 & Language detection and translation handling \\ \hline
+\texttt{test\_tone.py} & 25 & Tone pre-filter, classification, prefix application \\ \hline
+\texttt{test\_backend.py} & 29 & End-to-end API behaviour \\ \hline
+\texttt{test\_dashboard\_data.py} & 15 & Dashboard metrics and chapter scoping \\ \hline
+\texttt{test\_frontend\_source.py} & 16 & Structural checks on the web client source \\ \hline
+\textbf{Total} & \textbf{374} & \textbf{across 23 files} \\ \hline
+\end{longtable}
+
+Automated tests were not the only verification. Extraction correctness was checked by comparing specific records against the printed pages they came from, which is the only method that catches a plausible-looking wrong answer, and the running system was exercised through its own HTTP interface with real questions before each significant change was accepted.
+
+Two defects were identified during a late verification pass and are recorded here rather than omitted. On activities 1.116.1 and 1.116.2 a column header was attributed as though it were a role, so a responsibility is reported against a role name that does not exist in the organisation. On the same two records, two adjacent footnote digits were fused into a single number, producing a footnote reference that cannot correspond to any real footnote. Both are localised to those two records, both are visible in a live answer, and both are scheduled for correction alongside the footnote extraction work described in the general conclusion.
+
+\section{Deployment}
+
+The application is containerised, with a multi-stage build that compiles the web client and then packages it alongside the Python service. A companion composition adds a local model container for offline use, and the cloud provider needs no container at all since it is reached over the network in the same way from inside or outside the container.
+
+Deployment targets a free hosting tier, with automatic redeployment on each change to the main branch. The first deployment attempt failed, and the reason is instructive. The service parsed the PDF during startup, which pushed memory use past the platform's limit and caused the process to be terminated before it could serve anything. The fix was to move parsing to build time and ship the serialised node set, so startup became a file load. Startup memory fell below the limit and startup time fell with it.
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+
+The delivered platform is a working application rather than a prototype: authenticated access with role separation, a conversational interface accepting typed and spoken questions in five languages, document attachment with an explicit trust boundary, exportable and shareable conversations carrying their own provenance, an analytics layer covering both governance and usage indicators, and a forecasting capability that declines to forecast until it has the data to do so honestly. Behind it sit 374 automated tests and an automated deployment. The deployment failure described above is included because it illustrates the same pattern as the rest of the project, where an assumption that looked reasonable held until it met the real environment and was corrected once it did.

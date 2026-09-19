@@ -1,10 +1,5 @@
 from collections import Counter
 
-# Only these node types can ever carry a responsibility directly (see
-# schema.Node) - chapter/process nodes are organizational, always
-# empty. Used for the two new "how complete is this DAM's coverage"
-# KPIs below, so the denominator is real answerable nodes, not the
-# full node count.
 RESPONSIBILITY_BEARING_TYPES = {"process", "task", "child_task", "threshold_variant"}
 
 

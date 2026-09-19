@@ -1609,3 +1609,322 @@ Was 6/327 before recovery; the character-level fallback fixes
 most but not guaranteed all (superscript footnote digits can
 still land in an unexpected row-bucket in rare cases - a known,
 documented trade-off, not silently ignored).
+
+
+
+## `agent/action_codes.py`
+
+**lines 9-22**
+Real gap found live (2026-09-03, see docs/decisions.md): asking "what's I, A and (i)?" right after a task question got silently swallowed by the context-carryover fallback in qa.py - the letters are too short to count as "real content words" (see _content_word_ count there), so the vague-question heuristic treated it as an under-specified follow-up about the same task, instead of what it actually was: a question about what the DAM's own action-code legend means. data/reference/authority_codes.json already had the DAM's own legend text extracted (carried over from v1, schema/schema.py's own AuthorityCode model was built for exactly this) but nothing in the v2 agent ever read it - this wires it in as its own detection path, same pattern as agent/glossary.py, and - critically - has to run BEFORE the context-carryover / vague-question logic in qa.py's answer_question(), not after, or it never gets a chance to fire.
+
+**lines 33-35**
+Ordered the way the DAM's own legend presents them (Initiate, Check/ Verify, Consult, Review, Approve, Informed) - reused for the "explain the whole legend" answer below, not just individual lookups.
+
+**lines 44-47**
+A generic ask about the legend/system itself, with no specific code named - "what do the action codes mean", "explain the legend". Kept separate from the per-code trigger below since this one doesn't need any code token present to fire.
+
+**lines 56-60**
+Case-sensitive on purpose - these codes are always written upper- case in the DAM and in how this app talks about them elsewhere (agent/authority.py's INTENTS, _format_role_list's "A: ..." lines). Matching lowercase too would make "i" (the pronoun) and "a"/"c" as ordinary short words far too easy to hit by accident.
+
+**lines 109-113**
+Keep only codes that are actually in the legend (the bare- token regex can in principle match a stray capital letter that isn't a real code at all - "( i )" always is, and [ICRA]\d? always is by construction, so this is mostly a safety net, not a real filter in practice).
+
+**lines 136-142**
+Generic "explain the legend" - the six top-level codes only (bare I/C/R/A/(i), plus C3 as the one distinct enough from C1/C2 to be worth naming up front: Consult, not Check). Numbered variants (A1-A3, C1-C4, R1-R2, I1-I3) exist for more specific delegation levels within each action - mentioned, not spelled out, to keep this answer readable; a follow-up naming a specific one (e.g. "what does C2 mean") gets the detailed version above.
+
+## `agent/authority.py`
+
+**lines 56-60**
+Every single word that appears in any intent's keyword list (multi- word keywords like "sign off" get split into their component words - correction operates word-by-word, then the existing substring check below still runs against the corrected text unchanged). Built once at import time since INTENTS is static.
+
+**lines 103-109**
+Looser threshold than knowledge/typo_correct.py's 0.88 default, same reasoning as agent/glossary.py's trigger-word correction: this is a small (~35-word), curated, semantically distinct vocabulary, not a large organic-language one, so the collision risk that justified 0.88 elsewhere is much lower - checked directly against a batch of unrelated real words before lowering this, zero collisions found.
+
+## `agent/generate.py`
+
+**lines 4-7**
+Kept as its own constant, not inlined into SYSTEM_PROMPT below, so build_grounding_prompt can swap it out via an exact-string replace for _LONG_ANSWER_RULE when there are many facts to state (see there) without the two ever risking drifting out of sync with each other.
+
+**lines 13-24**
+Real tension found live (2026-09-03, see docs/decisions.md): the mandatory Check/Verify + informed-party notes feature (also 2026-09-03) routinely pushes a real answer's fact count to 4-6 roles (previously usually 1-2 - just the specific action asked about). Squeezing that many role names into 1-3 sentences while ALSO keeping every one of them verbatim intact (rule 4) is a genuinely hard constraint for a model to satisfy at once - the honest ways to resolve that pressure are to drop a role, paraphrase/shorten a name, or run longer than 3 sentences, and only the third one doesn't silently fail the grounding check below. This rule is swapped in specifically when the fact count is high, removing that pressure without touching rule 4's actual accuracy requirement at all.
+
+**lines 33-36**
+The fact-count threshold above which _LONG_ANSWER_RULE replaces _SHORT_ANSWER_RULE - 4 because 1-3 facts is exactly what the 1-3 sentence cap was originally sized for (one fact per sentence, roughly - the common case before the mandatory-notes feature existed).
+
+**lines 90-97**
+Appended as its own numbered rule rather than folded into the rules above, so the "keep role names/footnote numbers intact" rule (4) still reads naturally for the English-only case this prompt was originally written for - added on 2026-08-06 for multi-language support (see docs/decisions.md). Role names are organizational job titles, not really "translatable" in the first place, and rule 4 above already governs them - this just makes explicit that the language switch doesn't relax it.
+
+**lines 118-125**
+Collapses whitespace and lowercases before comparing - makes the grounding check robust to trivial formatting noise a model might introduce (extra/missing spaces, different casing) WITHOUT weakening what it actually verifies: the exact same words, in the exact same order, still have to be present. Added 2026-09-03 (see docs/decisions.md) after finding this was rejecting some otherwise-faithful rephrasings over nothing but incidental whitespace/case differences.
+
+## `agent/glossary.py`
+
+**lines 9-14**
+Deliberately narrow trigger phrasing - only fires on "what does X mean/stand for", "define X", "meaning of X" style questions. Does NOT trigger on a bare "what is X", since that overlaps too heavily with ordinary DAM-task questions like "what is 2.120" - those need to keep reaching the normal node-resolution pipeline in qa.py, not get hijacked here.
+
+**lines 28-39**
+Bare "what's X" / "what is X" / "whats X" - deliberately handled separately from _TRIGGER_PATTERNS above, not merged into them, because this phrasing is genuinely ambiguous ("what is 2.120" must still reach the normal DAM id lookup). Only ever treated as a glossary question when: (a) it's a single bare token with no dots or spaces (a DAM id always has a dot, e.g. "2.120"; a task description is always multiple words), and (b) that token actually resolves in the glossary - if it doesn't resolve, this returns no match at all rather than an honest "not found", since an unresolved bare "what's X" might just as easily be a mistyped task question as a real glossary miss, and guessing wrong here is worse than falling through to the normal pipeline.
+
+**lines 43-48**
+The trigger phrasing's own words, not the term being asked about - typo-correcting "what dose DDG men" into "what does DDG mean" should never risk touching "DDG" itself. Safe in practice even without this vocabulary being exhaustive: correct_words() already skips ALL-CAPS and sub-4-letter words, which covers virtually every real acronym in this glossary (see MANUAL_ALIASES / abbreviations.json).
+
+**lines 55-60**
+Matches a standalone all-caps token like "DDG" or "RDVP" embedded in a longer role name (e.g. "Country Manager / DDG") - built from checking real role names extracted from the DAM: composite roles consistently spell out full words in Title Case and only use ALL-CAPS for an embedded acronym, so this stays narrow to genuine acronym mentions instead of matching ordinary words.
+
+**lines 72-83**
+Manual, hand-added exceptions - NOT extracted from pages 2-7, kept in a separate dict rather than merged into abbreviations.json so that file stays a pure, reproducible extraction of the PDF (rerun parsing/glossary.py against the source and you get exactly abbreviations.json back, no hidden manual edits). Added here because real usage surfaced a real gap: "RDNG" appears directly in DAM role names (confirmed: "RDG / Director RDNG", "Country Manager / DDG RDG / Director RDNG") but the Abbreviations list itself never defines it as its own entry - only "RDG" is defined there, with a note that RDG "also covers the Director of the Nigeria Country Office". This is that same fact, just also reachable under the exact acronym the DAM actually uses in role names.
+
+**lines 152-162**
+A looser threshold than knowledge/typo_correct.py's 0.88 default on purpose: short trigger words ("what"/"does") only reach ~0.75 against a common 1-character transposition typo ("waht", "dose") - a 4-letter word's ratio ceiling under a transposition is just lower than a longer word's. 0.88 was raised specifically to stop a large, organic-language vocabulary (DAM title words) from false-positiving on unrelated real words; that risk is much smaller here - this vocabulary is a short, curated, semantically distinct list of ~16 words, checked directly against a batch of unrelated realistic words before lowering this (only one weak collision found: "form" -> "for", low-impact even if it fires).
+
+## `agent/qa.py`
+
+**lines 18-42**
+Real gap the professor flagged: a brand-new employee who doesn't know any DAM ids tends to type something short - a single word ("mission"), or just the verb with no subject ("approve") - and the old behavior silently picked resolve_query's top-scoring guess and answered as if it were certain. Measured directly: "mission" alone scores 0.48/0.45/0.41 across THREE different real tasks (2.121, 2.124, 2.125) - genuinely ambiguous, not a confident match that just happens to have a modest score. "approve" alone scores 0.46 against a single task (2.513.3) it has no real reason to specifically mean. Two independent, deterministic signals catch this - same "measure, don't guess" approach as CONTEXT_OVERRIDE_MAX_SCORE above:
+
+1. Too few real content words: strip English stopwords (sklearn's    own list) and this app's own intent-verb vocabulary ("approve",    "informed", "check", ...) - a verb alone or a question with no    real subject left over is inherently under-specified, regardless    of what resolve_query happens to score it. 2. A close score gap to the runner-up: even a longer, well-formed    query can genuinely name something with 2+ plausible targets -    "mission" is the clean example (0.48 vs 0.45, a 6% gap).
+
+CLARIFICATION_MAX_SCORE (0.6) and CLARIFICATION_MIN_GAP (0.15) reuse the same measured cluster CONTEXT_OVERRIDE_MAX_SCORE was calibrated against: genuine, unambiguous matches in this corpus score 0.65-0.89 with real separation from their runner-up (see docs/decisions.md).
+
+**lines 84-105**
+Real bug this fixes: a chat follow-up like "who are the informed parties for that activity?" names no real subject of its own, so resolve_query has zero legitimate signal about which node it means - it was landing on coincidentally-overlapping, unrelated nodes instead (2.118 "Communication with Co-Financiers of projects" vs the entirely different 3.226 "...and third parties" - the follow-up's stray word "parties" happened to overlap with 3.226's title, not 2.118's, at a comfortably "confident" 0.42).
+
+First attempt at this fix matched a fixed list of anaphoric phrases ("that activity", "it", etc.) - defeated immediately by a second, differently-worded live follow-up ("and who are the informed partie?") that resolved to the exact same wrong node at the exact same 0.42 score, with no pronoun and no phrase from the list at all. Measured directly (not guessed) instead: genuine, specific-subject matches in this corpus score 0.71-0.89 ("quarterly mission program" 0.888, "loan grant processing" 0.714); both real coincidental- overlap failures measured here score 0.39-0.42. CONTEXT_OVERRIDE_ MAX_SCORE sits at the empirical gap between those two clusters - same "measure the real cases, don't guess the threshold" approach as knowledge/typo_correct.py's DEFAULT_MIN_RATIO. See docs/decisions.md, 2026-08-06, for the measurements and the full comparison table.
+
+**lines 188-190**
+C/C1/C2 (check, verify) only - deliberately excludes C3/C4 (consult), same action-code split agent/authority.py's "check" vs "consult" intents already draw. See _format_mandatory_notes.
+
+**lines 385-393**
+Action-code legend questions ("what's I, A and (i)?", "what does C2 mean") have to be caught here, before resolve_query/context- carryover run - a real live bug found this the hard way: these questions have too few "real content words" (bare letters get stripped by _content_word_count) to look like anything but an under-specified follow-up, so they were silently getting swallowed by the context-carryover fallback below and re- answering whatever task was already open instead. See agent/action_codes.py, docs/decisions.md 2026-09-03.
+
+**lines 421-438**
+Zero TF-IDF overlap with anything in the DAM has two very different real causes, and they need different replies: a query that's ONLY generic/intent words with no real subject at all ("informed" alone) is still on-topic, just under-specified - same fix as _needs_clarification above, just reached via an empty match list instead of a weak one. A query with real, substantive content words that still shares nothing with the DAM's vocabulary ("what's the weather today") is a much stronger, honest signal that it's genuinely outside this app's scope - said explicitly instead of the vaguer "couldn't find a task", which reads like a search miss rather than "this isn't what I'm for". Reuses _content_word_count rather than a topic keyword list on purpose - a fixed list of "off-topic subjects" is exactly the kind of brittle, rephrasing-defeated heuristic that failed once already this session (see the context-carryover entries in docs/decisions.md).
+
+**lines 488-494**
+facts drives both the deterministic "roles" shown to the user and what agent/generate.py's grounding check requires an LLM rephrasing to preserve verbatim - the mandatory Check/Verify and informed-party notes above are real facts stated in "answer" now, so they have to be in here too, or an LLM phrasing pass could silently drop them without the grounding check ever catching it (see docs/decisions.md, 2026-09-03).
+
+## `agent/smalltalk.py`
+
+**lines 12-15**
+Widened 2026-08-06 for a brand-new employee who doesn't know this tool or the DAM at all and wouldn't necessarily type the word "help" - "how does this work", "I'm new here", "I don't know where to start" all land on the same guided reply as "help" itself.
+
+**lines 23-33**
+A few variants per category rather than one fixed line each - purely cosmetic (every variant still says the same substantive thing), but a canned reply that's identical on every single greeting is one of the fastest ways a tool reads as a script instead of something actually responding to you. Kept small and all still individually true/accurate - not going for jokes, just not repeating word for word every time. Every "greeting" variant still contains "Hello" (capital H), every "farewell" variant still contains "Goodbye" (capital G), and the "help" variants still contain the exact phrase "Delegation of Authority Matrix" - tests pin those substrings on purpose, so any new variant added later has to keep them too.
+
+**lines 93-98**
+Every plain word the patterns above can match on, so a typo in one of them ("helo", "godbye", "thnaks") still resolves - anything shorter than 4 letters ("hi", "hey", "bye"...) is left to match exactly, same reasoning as knowledge/typo_correct.py's own min_word_length default: fuzzy-correcting a 2-3 letter word is unreliable enough to not be worth the false-positive risk.
+
+**lines 136-140**
+Looser threshold than knowledge/typo_correct.py's 0.88 default - same reasoning as agent/authority.py and agent/glossary.py's trigger-word correction: a small, curated, semantically distinct vocabulary carries much less false-positive risk than a large organic-language one, checked directly before lowering this.
+
+## `knowledge/search.py`
+
+**lines 103-106**
+vectorizer.vocabulary_ includes the fitted bigrams too (e.g. "country strategy") alongside single words - only the single words are meaningful things to typo-correct an individual query word against.
+
+## `knowledge/typo_correct.py`
+
+**lines 6-18**
+Tuned against a real false-positive, not picked arbitrarily: 0.82 was loose enough to "correct" the genuinely-different, correctly- spelled word "unrelated" into "related" (ratio 0.875 - they share a root, textbook false positive for any edit-distance approach) purely because "related" happened to be the closest word in a narrow ~1400-word DAM-title vocabulary. Every real typo this feature was built for - "aproves"/"approves" (0.933), "chek"/"check" (0.889), "intiates"/"initiates" (0.941), "qaurterly"/"quarterly" (0.889), "mision"/"mission" (0.923), "helo"/"hello" (0.889) - still clears 0.88 with room to spare, so raising the floor to 0.88 closes that false-positive gap without losing any of the cases that motivated building this in the first place. See tests/test_typo_correct.py for both sides of this pinned.
+
+**lines 63-65**
+Preserve the original word's capitalization style so a corrected word doesn't look out of place mid-sentence (e.g. a corrected first word of a sentence stays capitalized).
+
+## `llm/groq_provider.py`
+
+**lines 7-15**
+llama-3.3-70b-versatile was the original default but Groq shut it down for standard/developer API keys on 2026-08-16 (moved to Enterprise-only, contact-sales pricing - see console.groq.com/docs/ models, confirmed live against a real 404 from production, not assumed - see docs/decisions.md). openai/gpt-oss-120b is Groq's current flagship production model on the standard plan: similar speed (~500 t/s), 131K context, and - unlike the smaller 20B variant - strong enough instruction-following for this app's strict grounded- phrasing and two-line translation-format prompts.
+
+## `llm/tone.py`
+
+**lines 5-24**
+Chatbot major 4 of 4 (2026-09-03, see docs/decisions.md): "the chatbot should ... handle tone detection and better responses." Applies to every response type (Adem's explicit choice), not just grounded DAM answers - a frustrated "why won't this work AGAIN" and a confused "I don't get what C1 means" deserve a warmer opening whether the answer underneath is a fact lookup, a glossary lookup, or an honest refusal.
+
+Architecture, deliberately kept simple: detection (LLM-based, per Adem's explicit choice over a deterministic heuristic) is a single, separate, CHEAP call - gated by looks_emotional() below so the overwhelming majority of ordinary, neutral questions never pay for it, same cost-avoidance pattern llm/translate.py's looks_non_ english() already uses. The RESPONSE adjustment itself is then a small, deterministic prefix (EMPATHY_PREFIXES) rather than a second LLM call or a folded-in instruction - keeps this fast, free of a second round trip, trivially testable, and applicable uniformly to every response type (including the many canned/deterministic messages - smalltalk, out-of-scope, glossary - that otherwise never touch an LLM at all).
+
+**lines 28-34**
+Real signal, not a guess: short, common frustration/confusion markers checked against realistic phrasing. Multi-word phrases matched as substrings (not a word-set), single words matched whole-word (via \b) to avoid matching inside unrelated words. False positives here only cost one extra, self-correcting Groq call (detect_tone below defaults to "neutral" on any doubt) - never a wrong answer - same reasoning translate.py's looks_non_english() already documents for itself.
+
+**lines 113-119**
+One deterministic, natural-sounding opener per tone per supported language - not routed through the LLM translation shim (llm/ translate.py) for the same reason webapp/frontend/src/i18n.js's UI chrome isn't: this is a small, fixed set of strings, not dynamic content, so hand-translating once is faster, free, and more consistent than an LLM call on every use. "neutral" has no entry on purpose - apply_tone_prefix() below is a no-op for it.
+
+## `llm/translate.py`
+
+**lines 13-23**
+Cheap, deterministic, LLM-free pre-filter - same "don't pay for what you don't need" reasoning as knowledge/typo_correct.py only running when a word doesn't already match: the overwhelming majority of real traffic here is English, and every non-English query costs an EXTRA Groq round trip (translate the query in, translate the answer back out) on top of the normal one. This heuristic only decides whether it's worth even ATTEMPTING translation - it is never trusted for the real language identification itself, that's always the LLM's job once this flags true. Defaults to "assume English" on anything ambiguous or too short, rather than paying the extra round trip on every message.
+
+**lines 27-31**
+"o" and "as" deliberately left out of the Portuguese set - both are also common, short English tokens ("as needed", "as approved"), and unlike the rest of these lists neither is distinctive enough to trust on a single hit. Everything kept here is a real, whole-word match risk of essentially zero in ordinary English DAM phrasing.
+
+## `modeling/nodes_cache.py`
+
+**lines 6-9**
+has_children/actions are @computed_field on Node - always derivable from children/responsibilities, so caching them would just be dead weight on disk and Node recomputes them for free the moment load_nodes() reconstructs each one.
+
+## `extraction/pdf_loader.py`
+
+**lines 1-3**
+Opens the DAM PDF and hands back a pdfplumber document (pages, words, characters). This layer wasn't implicated in any bug found in v1 - ported essentially unchanged, just with an honest docstring.
+
+## `extraction/table_extractor.py`
+
+**lines 1-8**
+Pulls words and characters off a single pdfplumber page. Both are just pdfplumber's own primitives, positioned (x0/top/bottom per item) - that positioning is what row-clustering and geometry work downstream depend on.
+
+NOTE: v1's version of this file had a comment claiming it used "Camelot/Tabula" - it never did, it's always been plain pdfplumber. Wrong comments are worse than no comments; fixed here.
+
+## `parsing/column_roles.py`
+
+**lines 152-165**
+NOT safe to unconditionally insert a space at this merge boundary - tried that live on 2026-09-03 as a candidate fix for the "Task Manager1 & Project Team Members" glued- role-name bug (see docs/decisions.md) and it broke a DIFFERENT, previously-correct case instead: "Sector Manager (HQ-based / Region-based)" became "HQ- based" because that merge boundary falls right after a hyphen, which needs NO space. Confirmed by direct re-extraction that the Task Manager1 case isn't even a wrapped-header- merge issue in the first place (the missing space is inside a single run, between "Manager" and a shrunk "1" that looks like an unstripped mid-string footnote digit - a real, separate, narrower issue, left as a known limitation rather than chasing a risky general fix here).
+
+## `parsing/glossary.py`
+
+**lines 15-24**
+Every one of these pages ends with a lone lower-case roman numeral (the page footer's own page number, e.g. "xiv", "xv", "xvi" ... in strict page order across pages 2-7) landing close enough in `top` to the last real definition row on the page that TOP_MERGE_TOLERANCE folds it into that row's text - confirmed by checking that these trailing tokens form an unbroken page-number sequence, not real content. Stripped as a final cleanup pass rather than filtered at the row level, since it's cheaper and more precise than trying to exclude the footer at cluster time (which risks also cutting real single-word defs).
+
+**lines 126-130**
+A fresh term arriving alongside definition text is what actually starts a new entry - NOT "any row with definition-column text", which would wrongly treat a definition that simply wraps onto its own line (no new term on it) as a brand new, term-less entry.
+
+## `webapp/auth.py`
+
+**lines 30-36**
+--------------------------------------------------------------- Secret / config --------------------------------------------------------------- No safe fallback for this one - unlike DATABASE_URL, a missing JWT_SECRET_KEY should fail loudly at startup rather than quietly sign every token with a guessable default that would still work after someone reads this source file.
+
+**lines 45-47**
+--------------------------------------------------------------- Passwords ---------------------------------------------------------------
+
+**lines 56-58**
+--------------------------------------------------------------- JWTs ---------------------------------------------------------------
+
+**lines 115-122**
+--------------------------------------------------------------- Login rate limiting (per source IP, sliding window) --------------------------------------------------------------- In-memory is a deliberate, acknowledged limitation: it resets on every process restart and doesn't share state across multiple backend instances. Fine for this project's single-instance free- tier deployment; would need a shared store (Redis) to be correct behind more than one instance.
+
+## `webapp/backend.py`
+
+**lines 49-54**
+Authlib's OAuth client stores a short-lived state/nonce in the session between the redirect to Google/Microsoft and the callback coming back - this is that session, cookie-based and signed with the same secret that signs JWTs. It never holds anything beyond that OAuth handshake; login state itself lives entirely in the JWT the client stores, not in this session.
+
+**lines 64-71**
+Prefer the pre-built cache (baked into the Docker image at build time via scripts/build_nodes_cache.py - see that file and docs/decisions.md, 2026-08-06) - re-parsing the raw PDF with pdfplumber on every process boot was heavy enough to OOM-kill the container on Render's free tier. Falls back to a live parse when no cache exists yet (fresh checkout, or data/raw/ changed and the cache hasn't been regenerated), so this never hard-depends on the cache being present.
+
+**lines 79-83**
+Creates the users table if it doesn't exist yet. Safe to call on every startup - a no-op once the table is there. Separate from the nodes/graph load above: this is the one piece of state that needs to survive process restarts (see webapp/db.py's docstring on why that means Postgres, not SQLite, once deployed).
+
+**lines 96-101**
+The node_id this same chat thread last resolved to, if any - the frontend tracks this per conversation (see Chat.jsx) and sends it back so pronoun-style follow-ups ("who are the informed parties for THAT ACTIVITY?") have a real anchor instead of resolve_query guessing off incidental word overlap. See agent/qa.py's answer_question docstring and docs/decisions.md, 2026-08-06.
+
+**lines 103-109**
+Explicit language picker override (2026-09-03, see docs/ decisions.md) for the ANSWER's language - independent of whatever language the question text itself is in. None/"auto"/ omitted (the default) keeps the original auto-detect-from-the- question behavior. Any other supported code (en/fr/es/pt/ar) always wins - e.g. asking "who approves 3.111" in English while the UI language picker is set to French still answers in French.
+
+**lines 152-155**
+Can't detect/translate without an LLM - be honest about why instead of silently matching non-English text against an English-only search index and (most likely) failing to resolve anything at all.
+
+**lines 164-168**
+Only reachable here when the question itself looked English (so the branch above never set translation_error) but the user explicitly picked a non-English answer language with no LLM available to produce one - be honest about that gap too, same principle as the query-side check above.
+
+**lines 184-187**
+Real DAM facts to protect - the stricter, grounding- checked path (agent/generate.py), phrased in answer_language (explicit picker override if one was given, else whatever the question was detected in).
+
+**lines 192-194**
+No facts to fabricate here (smalltalk/help/vague/out-of- scope/invalid-id) - a static English message just needs straight translation, no grounding check required.
+
+**lines 219-232**
+Tone detection (2026-09-03, see docs/decisions.md) - applies to EVERY response type (Adem's explicit choice), not just grounded DAM answers, which is exactly why this runs as a deterministic prefix applied here at the very end rather than folded into humanize_answer()'s prompt above: that path only runs for grounded answers, but a frustrated "why won't this work AGAIN" deserves the same warmer opening whether the answer underneath is a fact lookup, a glossary lookup, or an honest out-of-scope refusal. looks_emotional() gates the actual Groq call so ordinary neutral questions (the large majority) never pay for it - same pattern as looks_non_english() gating translation above. Detected from payload.question (what the user actually typed), never the translated/English version - tone is about how they expressed themselves, not the retrieval-pipeline text.
+
+**lines 302-305**
+Rate-limited by source IP before touching the database at all - per NFR8/Chapter 5, both to slow down credential stuffing and so a flood of login attempts can't be used to load-test the password-hashing step itself.
+
+**lines 310-312**
+Same generic error whether the account doesn't exist or the password is wrong - a different message for each would let this endpoint be used to enumerate which emails have accounts.
+
+**lines 316-318**
+hashed_password is None for OAuth-only accounts - correct behaviour here is the same generic refusal, not "use Google instead", which would also leak account existence.
+
+**lines 333-351**
+--------------------------------------------------------------- OAuth (Google / Microsoft)
+
+Both follow the same shape: /login redirects the browser to the provider's consent screen, /callback is where the provider sends the browser back with an authorization code. authorize_access_token exchanges that code for tokens AND verifies them (signature, issuer, audience) - by the time userinfo is read here, Authlib has already done that verification; this code only has to trust the claims, not re-derive their validity.
+
+The callback ends by redirecting to the frontend's own /login route with the freshly issued JWT as a query parameter - the frontend (task: Login.jsx) reads it from the URL once, stores it in sessionStorage exactly as a form login would, and strips it from the address bar. The backend never sets a cookie for the actual logged-in session; the JWT is the only credential, same as the email/password path. ---------------------------------------------------------------
+
+**lines 447-460**
+The React build (webapp/frontend/, built via `npm run build`) emits its bundled JS/CSS under webapp/static/assets - Vite's default asset base path is "/", so this has to be mounted at "/assets" to match what the built HTML actually references. "/static" is kept too for anything that ever needs the raw directory (e.g. favicon), same mount point as before this rewrite.
+
+check_dir=False on both: webapp/static (and its assets/ subfolder) is now a BUILD ARTIFACT, not something committed to git (see .gitignore) - it only exists after `npm run build` has run. Without this, importing this module before that build step (e.g. a test suite run on a fresh checkout) would crash at import time with "directory does not exist" instead of failing only the requests that actually need the built files.
+
+## `webapp/dashboard_data.py`
+
+**lines 3-7**
+Only these node types can ever carry a responsibility directly (see schema.Node) - chapter/process nodes are organizational, always empty. Used for the two new "how complete is this DAM's coverage" KPIs below, so the denominator is real answerable nodes, not the full node count.
+
+## `webapp/db.py`
+
+**lines 31-32**
+SQLite needs this flag to allow use across FastAPI's threadpool; Postgres doesn't use (or accept) it, so it's added conditionally.
+
+**line 52**
+noqa: F401 - import registers models on Base
+
+## `webapp/models.py`
+
+**lines 37-38**
+A given provider account (e.g. this exact Google user) can only ever be linked to one row here.
+
+**lines 48-49**
+"google" | "microsoft" | None provider's stable subject/user id
+
+## `webapp/frontend/src/api.js`
+
+**above `const TOKEN_KEY`**
+Token lives in sessionStorage, not localStorage - a deliberate choice (see docs/decisions.md and Chapter 5): closing the tab loses the session, but a token in localStorage would survive indefinitely and be readable by any script that ever runs on the page. Kept under one key so every page (Chat, Dashboard, Login) reads/writes the same slot.
+
+**above `authFetch`**
+Wraps fetch with the Authorization header and one shared rule: a 401 means the token is missing, expired, or otherwise invalid, and there is nothing a page can usefully do with that response except send the user back to sign in again - so that redirect happens once, here, instead of being re-implemented in every page that calls a protected endpoint.
+
+**inside `authFetch`, on the 401 branch's returned promise**
+Never resolves meaningfully - the redirect above is already navigating away, so callers don't need (and won't get) a response to handle.
+
+**in `askQuestion`, on `target_language`**
+"auto" (the default) tells the backend to keep detecting the answer language from the question itself - anything else is an explicit override from the language picker (see LanguagePicker.jsx, docs/decisions.md 2026-09-03).
+
+**above `signup`/`login`**
+signup()/login() deliberately use plain fetch, not authFetch - there is no token yet to attach, and a 401 here (wrong password) is a normal, expected response the Login page needs to read and display, not a signal to redirect away from the login page itself.
+
+## `webapp/frontend/src/pages/Login.jsx`
+
+**in `useEffect`, above the token/redirect check**
+Two ways a visitor can land here already carrying a token: (1) an OAuth callback (Google/Microsoft) redirected back with `?token=...` in the URL - webapp/backend.py's google_callback/microsoft_callback do exactly this; (2) they're already logged in from an earlier visit this tab and just navigated back to /login by mistake or via a stale link. Either way, the outcome is the same: store the token (if new) and go straight to the chat page instead of showing the form.
+
+## `webapp/frontend/src/pages/Chat.jsx`
+
+**in `MessageBubble`, above `answeredInOtherLanguage`**
+The answer actually came back in a non-English language only when the LLM phrasing step both ran AND succeeded - answerLanguage alone just reflects what was *requested* (see webapp/backend.py, docs/decisions.md 2026-09-03), so a failed/unavailable LLM still correctly shows the fallback warning below instead of falsely claiming success.
+
+**above `const [uiLanguage, setUiLanguage]`**
+The language picker's own selection - 'auto' (default) keeps the existing per-question auto-detect behavior; anything else is an explicit override sent to the backend as target_language (see api.js, webapp/backend.py, docs/decisions.md 2026-09-03). Also drives which UI_STRINGS dictionary the surrounding chrome (send button, placeholder, meta labels) renders in.
+
+**in the login-guard `useEffect`**
+Fast, client-side check only - a missing token means definitely logged out, so there's no reason to wait for a failed API call before redirecting. An expired-but-present token still gets caught the normal way: the first real request 401s and api.js's authFetch() redirects from there instead.
+
+**in `handleSubmit`, on `targetId`**
+Captured up front, not read again after the await - if the user switches conversations while a request is in flight, the answer still lands in the conversation that actually asked the question, not whatever happens to be on screen when it resolves.
+
+**in `handleSubmit`, on `previousNodeId`**
+The most recent node_id this conversation resolved to, if any - sent along so a pronoun-style follow-up ("who are the informed parties for THAT ACTIVITY?") has a real anchor instead of the backend guessing off incidental word overlap (see agent/qa.py's answer_question, docs/decisions.md 2026-08-06). Read from activeConversation.messages BEFORE appendMessage below adds this new question, same reasoning as capturing targetId.
+
+Note: the `// eslint-disable-next-line react-hooks/exhaustive-deps` line above the empty-dependency `useEffect` in `MessageBubble` was kept in place rather than moved here - it's a functional lint directive, not documentation.
+
+## `webapp/frontend/src/pages/Dashboard.jsx`
+
+**in the login-guard `useEffect`**
+Same fast client-side check as Chat.jsx - a missing token is definitely logged out, no need to wait on a round trip. This page is also administrator-only server-side (require_admin in webapp/backend.py); a logged-in analyst still gets redirected, just via the 403 that getDashboardSummary() below turns into `error`, not this check.
+
+**above `const scope = useMemo(...)`**
+The chapter filter re-scopes every card and chart on the page - "all" is the whole-DAM data already flattened at the top level of the response (see webapp/dashboard_data.py), any other value looks up that chapter's own breakdown instead. Graph structure (total_graph_nodes/total_edges) deliberately stays whole-DAM-only regardless of this filter - role/reference edges routinely cross chapter boundaries, so a "chapter subgraph" would need its own, more complex semantics that aren't worth it for what this dashboard needs (see the backend docstring for the full reasoning).
+
+**above `handleChapterChange`**
+An action selected under one chapter's breakdown may not exist at all under another (or under "all") - clearing it on every chapter change avoids pointing the roles chart at stale, chapter-specific data that no longer matches what's on screen.
+
+**in the action-distribution chart's `onClick`, on the `'other'` guard**
+"other" is a rollup of everything past the top 10, not a real action code - nothing in roles_by_action to look it up against.

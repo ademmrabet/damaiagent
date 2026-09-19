@@ -7,3 +7,12 @@ fastapi
 uvicorn
 requests
 python-dotenv
+
+# Authentication (users table, password hashing, JWTs, OAuth)
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+authlib
+itsdangerous
+email-validator

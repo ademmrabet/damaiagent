@@ -1,0 +1,16 @@
+\chapter{Selected Decision-Log Excerpts}
+\label{ch:selected-decision-log-excerpts}
+Verbatim excerpts from \texttt{docs/\allowbreak{}decisions.md}, illustrating the project's evidence-before-fix discipline described in Section 12.3.
+
+\begin{quote}
+\textbf{2026-07-28.} "'(i)' informed-marker characters were never matched. \texttt{extract\_\allowbreak{}informed\_\allowbreak{}instances} scanned raw characters for a consecutive '(', 'i', ')' run, but the real PDF characters for this marker are five separate characters... Confirmed directly against 2.126's real characters (page 24) before fixing... 174/276 v1 nodes had '(i)' with no role ever attached to it — 2.126 now resolves both of its informed markers to real roles."
+\end{quote}
+\begin{quote}
+\textbf{2026-07-28.} "\texttt{get\_\allowbreak{}children()} was silently wrong for two of four hierarchy levels... This was invisible until threshold\_variant ids existed in the id set... caught by a consistency check (every node's children must be the correct node\_type, and every child's own parent pointer must point back), not by inspection."
+\end{quote}
+\begin{quote}
+\textbf{2026-09-03.} "Tried a blanket fix first... and rejected it after checking: 1614 candidates document-wide, several unsafe... Narrowed to a safe signal instead: only merge a row-bucket if it's ENTIRELY action-code content." *(on the NSO row-splitting bug — illustrating a rejected first fix, not just a successful one)*
+\end{quote}
+\begin{quote}
+\textbf{2026-09-03.} "A candidate parsing fix... was tried, verified NOT to fix its target case, found to cause a real regression elsewhere, and was fully reverted... left as a known, honestly-documented limitation (2 of 327 nodes) rather than risking another blind fix." *(on the grounding-fallback-frequency investigation, Section 9.4)*
+\end{quote}

@@ -1,0 +1,19 @@
+\chapter{Project Directory Structure}
+\label{ch:project-directory-structure}
+\begin{lstlisting}
+agent/            action_codes.py, authority.py, generate.py, glossary.py, qa.py, smalltalk.py
+knowledge/        search.py, typo_correct.py
+llm/              base.py, groq_provider.py, ollama_provider.py, router.py, tone.py, translate.py
+modeling/         build_nodes.py, graph.py, hierarchy_skeleton.py, nodes_cache.py
+parsing/          action_geometry.py, column_roles.py, glossary.py, hierarchy.py,
+                  metadata.py, rows.py, task_blocks.py, text_cleaning.py
+schema/           schema.py
+scripts/          build_nodes_cache.py
+webapp/           backend.py, dashboard_data.py, static/ (built frontend), frontend/ (React source)
+data/             raw/ (source PDF), processed/ (nodes.json cache), reference/ (authority codes, abbreviations)
+docs/             decisions.md, code_notes.md, demo_script.md, hosting.md, docker_setup.md, llm_setup.md
+tests/            23 files, 374 tests (see Annex A)
+Dockerfile, docker-compose.yml, requirements.txt, .env.example
+\end{lstlisting}
+Approximate size: 7,700 lines of Python across the current (v2) codebase, excluding the retained v1 backup kept for reference.
+

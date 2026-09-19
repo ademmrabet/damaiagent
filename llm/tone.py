@@ -2,36 +2,9 @@ import re
 
 from llm.base import LLMUnavailableError
 
-# Chatbot major 4 of 4 (2026-09-03, see docs/decisions.md): "the
-# chatbot should ... handle tone detection and better responses."
-# Applies to every response type (Adem's explicit choice), not just
-# grounded DAM answers - a frustrated "why won't this work AGAIN" and
-# a confused "I don't get what C1 means" deserve a warmer opening
-# whether the answer underneath is a fact lookup, a glossary lookup,
-# or an honest refusal.
-#
-# Architecture, deliberately kept simple: detection (LLM-based, per
-# Adem's explicit choice over a deterministic heuristic) is a single,
-# separate, CHEAP call - gated by looks_emotional() below so the
-# overwhelming majority of ordinary, neutral questions never pay for
-# it, same cost-avoidance pattern llm/translate.py's looks_non_
-# english() already uses. The RESPONSE adjustment itself is then a
-# small, deterministic prefix (EMPATHY_PREFIXES) rather than a second
-# LLM call or a folded-in instruction - keeps this fast, free of a
-# second round trip, trivially testable, and applicable uniformly to
-# every response type (including the many canned/deterministic
-# messages - smalltalk, out-of-scope, glossary - that otherwise never
-# touch an LLM at all).
 
 TONES = ("frustrated", "confused", "neutral")
 
-# Real signal, not a guess: short, common frustration/confusion markers
-# checked against realistic phrasing. Multi-word phrases matched as
-# substrings (not a word-set), single words matched whole-word (via \b)
-# to avoid matching inside unrelated words. False positives here only
-# cost one extra, self-correcting Groq call (detect_tone below defaults
-# to "neutral" on any doubt) - never a wrong answer - same reasoning
-# translate.py's looks_non_english() already documents for itself.
 _REPEATED_PUNCTUATION = re.compile(r"[!?]{2,}")
 _ALL_CAPS_WORD = re.compile(r"\b[A-Z]{4,}\b")
 
@@ -110,13 +83,6 @@ def detect_tone(text, provider):
     return {"tone": tone, "used_llm": True, "error": None}
 
 
-# One deterministic, natural-sounding opener per tone per supported
-# language - not routed through the LLM translation shim (llm/
-# translate.py) for the same reason webapp/frontend/src/i18n.js's UI
-# chrome isn't: this is a small, fixed set of strings, not dynamic
-# content, so hand-translating once is faster, free, and more
-# consistent than an LLM call on every use. "neutral" has no entry on
-# purpose - apply_tone_prefix() below is a no-op for it.
 EMPATHY_PREFIXES = {
     "en": {
         "frustrated": "I hear you, and I'm sorry this has been frustrating.",

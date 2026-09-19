@@ -1,0 +1,959 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word">
+<head>
+<meta charset="utf-8">
+<title>The DAM AI Agent</title>
+<style>
+@page { size: 21cm 29.7cm; margin: 2.5cm 2.5cm 2.5cm 3cm; }
+body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.5; text-align: justify; color: #000000; }
+h1 { font-family: Arial, sans-serif; font-size: 20pt; color: #00723F; page-break-before: always; margin-top: 24pt; margin-bottom: 14pt; }
+h2 { font-family: Arial, sans-serif; font-size: 15pt; color: #00723F; margin-top: 18pt; margin-bottom: 8pt; }
+h3 { font-family: Arial, sans-serif; font-size: 13pt; color: #00965A; margin-top: 14pt; margin-bottom: 6pt; }
+h4 { font-family: Arial, sans-serif; font-size: 12pt; color: #595959; font-style: italic; margin-top: 12pt; margin-bottom: 4pt; }
+p { margin-top: 0pt; margin-bottom: 8pt; }
+table { border-collapse: collapse; width: 100%; font-size: 10.5pt; margin-top: 8pt; margin-bottom: 12pt; }
+th { background-color: #00965A; color: #FFFFFF; font-family: Arial, sans-serif; font-size: 10.5pt; border: 1px solid #7F7F7F; padding: 5pt; text-align: left; }
+td { border: 1px solid #7F7F7F; padding: 5pt; vertical-align: top; }
+.caption { font-size: 10pt; color: #404040; text-align: center; font-style: italic; margin-top: 2pt; margin-bottom: 14pt; }
+.tcaption { font-size: 10pt; color: #404040; text-align: left; font-style: italic; margin-top: 2pt; margin-bottom: 14pt; }
+.title-page { text-align: center; page-break-after: always; }
+.nopage { page-break-before: avoid; }
+.note { background-color: #F2F8F5; border-left: 3pt solid #00965A; padding: 8pt; font-size: 11pt; }
+code { font-family: Consolas, "Courier New", monospace; font-size: 10.5pt; }
+pre { font-family: Consolas, "Courier New", monospace; font-size: 10pt; background-color: #F5F5F5; padding: 8pt; line-height: 1.2; }
+</style>
+</head>
+<body>
+
+<!-- ============ TITLE PAGE ============ -->
+<div class="title-page">
+<p style="font-family: Arial; font-size: 11pt; color: #595959;">[ INSERT POLYTECH INTL LOGO — LEFT ] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ INSERT AfDB LOGO — RIGHT ]</p>
+<p style="font-family: Arial; font-size: 11pt; color: #595959; margin-top: 18pt;">POLYTECH INTL</p>
+<p style="font-family: Arial; font-size: 11pt; color: #595959;">Master's Program in Data Sciences</p>
+<hr style="border: none; border-top: 1.5pt solid #00965A; width: 55%; margin-top: 18pt; margin-bottom: 30pt;">
+<p style="font-family: Arial; font-size: 16pt; font-weight: bold; color: #595959;">MASTER'S THESIS</p>
+<p style="font-size: 11pt; font-style: italic; color: #595959;">submitted in partial fulfillment of the requirements for the degree of<br>Master's in Data Sciences</p>
+<p style="font-family: Arial; font-size: 26pt; font-weight: bold; color: #00723F; margin-top: 40pt;">The DAM AI Agent</p>
+<p style="font-family: Arial; font-size: 15pt; color: #00965A;">A Knowledge-Graph-Based Conversational Agent over the African Development Bank's Delegation of Authority Matrix</p>
+<hr style="border: none; border-top: 1.5pt solid #00965A; width: 55%; margin-top: 30pt; margin-bottom: 30pt;">
+<table style="border: none; width: 100%; font-size: 11pt;">
+<tr>
+<td style="border: none; text-align: left; width: 50%;"><b style="font-family: Arial; color: #00723F;">Author</b><br>Adem Mrabet</td>
+<td style="border: none; text-align: right; width: 50%;"><b style="font-family: Arial; color: #00723F;">Supervisors</b><br>Mr. Marouene Chaieb <i>(Academic Supervisor)</i><br>Mr. Yasser Ahmad <i>(Professional Supervisor)</i><br>Mr. Surya Joymungul <i>(Professional Supervisor)</i></td>
+</tr>
+</table>
+<p style="font-size: 11pt; color: #595959; margin-top: 40pt;">Host Institution: Polytech Intl<br>Client Organisation: African Development Bank Group<br>Internship Duration: 6 months</p>
+<p style="font-family: Arial; font-size: 12pt; font-weight: bold; color: #595959; margin-top: 30pt;">Academic Year 2025 &ndash; 2026</p>
+</div>
+
+<!-- ============ DEDICATION ============ -->
+<h1 style="page-break-before: always;">Dedication</h1>
+<p>I dedicate this work:</p>
+<p><b>To my father,</b><br>
+who taught me what quiet determination looks like long before I understood the word. You believed in me on the days I couldn't manage it myself, and every value I brought to this work started with something you showed me first.</p>
+<p><b>To my mother,</b><br>
+for a love that never once wavered, for sacrifices whose size I only understood years later, and for being the calm I could always come back to, no matter how heavy this project got.</p>
+<p><b>To my brother,</b><br>
+who has been a steady presence my whole life, and who never had to be asked.</p>
+<p><b>To my girlfriend,</b><br>
+thank you doesn't cover it. You were patient on the nights this project took more than I had planned to give. You believed in me when I doubted myself, and you stood beside me through the hardest stretches without ever making me feel like a burden. Your support carried more of this than you know.</p>
+<p><b>To my friends,</b><br>
+Ayoub and Alaa, whom I met during this Master's and could not be more grateful to have found. To Fayrouz and Houde, for always being there. And to Brahim, my childhood friend, for a friendship that has already outlasted this degree and will outlast plenty more.</p>
+<p style="text-align: right; font-style: italic; margin-top: 30pt;">Adem</p>
+
+<!-- ============ ACKNOWLEDGMENTS ============ -->
+<h1>Acknowledgments</h1>
+<p>I would like to thank Polytech Intl for hosting this project and for the training that made it possible, along with the teaching staff whose courses over the past two years shaped the way I approached this work.</p>
+<p>My sincere thanks go to my academic supervisor, Mr. Marouene Chaieb, for his guidance throughout this internship and for the academic rigour he insisted on at every stage. His remarks consistently pushed the work toward something more defensible than what I would have produced on my own.</p>
+<p>I am equally grateful to my professional supervisors, Mr. Yasser Ahmad and Mr. Surya Joymungul, for their availability and for the candid feedback they gave throughout the project. They tested the system directly, reported exactly what broke, and pushed back whenever something looked plausible rather than correct. That did more for the final result than any polite approval could have.</p>
+<p>I also thank the African Development Bank Group for providing the real problem this work is built around, and for the access that made it possible to treat it as a genuine engineering problem rather than an academic exercise.</p>
+<p>Finally, I thank the members of the jury for the honour of evaluating this work and for the time and attention they will give it.</p>
+
+<!-- ============ TABLE OF CONTENTS PLACEHOLDER ============ -->
+<h1>Contents</h1>
+<p class="note"><b>[ Word instruction — delete this box afterwards ]</b><br>
+Place the cursor here, then go to <b>References &rarr; Table of Contents &rarr; Automatic Table 2</b>. Word will build the full contents list from the Heading 1&ndash;4 styles used throughout this document. Right-click it and choose <b>Update Field &rarr; Update entire table</b> once the document is final, so the page numbers match.</p>
+
+<!-- ============ LIST OF FIGURES ============ -->
+<h1>List of Figures</h1>
+<table>
+<tr><th style="width: 18%;">Figure</th><th>Title</th></tr>
+<tr><td>Figure 1.1</td><td>Global architecture of the proposed system</td></tr>
+<tr><td>Figure 3.1</td><td>The eight-stage data engineering pipeline, from raw PDF to a validated node set</td></tr>
+<tr><td>Figure 3.2</td><td>Excerpt of the knowledge graph around activity 3.111</td></tr>
+<tr><td>Figure 4.1</td><td>The grounded generation flow and its verification step</td></tr>
+<tr><td>Figure 5.1</td><td>The chat interface of the delivered application</td></tr>
+<tr><td>Figure 5.2</td><td>The analytics dashboard of the delivered application</td></tr>
+</table>
+<p class="note"><b>[ Note ]</b> Figures 1.1, 3.1, 3.2 and 4.1 correspond to the four diagram files already in your project folder (<code>fig1_architecture.png</code>, <code>fig2_pipeline.png</code>, <code>fig3_graph.png</code>, <code>fig4_grounding.png</code>). Insert them in Word at the marked positions in the text. Figures 5.1 and 5.2 are screenshots you take from the running application.</p>
+
+<!-- ============ LIST OF TABLES ============ -->
+<h1>List of Tables</h1>
+<table>
+<tr><th style="width: 18%;">Table</th><th>Title</th></tr>
+<tr><td>Table 1.1</td><td>Authority code notation used in the DAM</td></tr>
+<tr><td>Table 1.2</td><td>Functional requirements</td></tr>
+<tr><td>Table 1.3</td><td>Non-functional requirements</td></tr>
+<tr><td>Table 1.4</td><td>Project constraints</td></tr>
+<tr><td>Table 1.5</td><td>Selected technologies and their role in the system</td></tr>
+<tr><td>Table 2.1</td><td>Distribution of node types across the processed subset</td></tr>
+<tr><td>Table 2.2</td><td>Consolidated summary of extraction issues found in the source document</td></tr>
+<tr><td>Table 3.1</td><td>Stages of the data engineering pipeline</td></tr>
+<tr><td>Table 3.2</td><td>Data quality indicators after node construction</td></tr>
+<tr><td>Table 3.3</td><td>Edge types in the knowledge graph</td></tr>
+<tr><td>Table 4.1</td><td>Resolution methods and their confidence semantics</td></tr>
+<tr><td>Table 4.2</td><td>Language model providers and operating modes</td></tr>
+<tr><td>Table 5.1</td><td>REST API endpoints exposed by the backend</td></tr>
+<tr><td>Table 5.2</td><td>Breakdown of the automated test suite</td></tr>
+</table>
+
+<!-- ============ LIST OF ACRONYMS ============ -->
+<h1>List of Acronyms</h1>
+<table>
+<tr><th style="width: 22%;">Acronym</th><th>Meaning</th></tr>
+<tr><td>AfDB</td><td>African Development Bank Group</td></tr>
+<tr><td>API</td><td>Application Programming Interface</td></tr>
+<tr><td>CRISP-DM</td><td>Cross-Industry Standard Process for Data Mining</td></tr>
+<tr><td>CSV</td><td>Comma-Separated Values</td></tr>
+<tr><td>DAM</td><td>Delegation of Authority Matrix</td></tr>
+<tr><td>DDG</td><td>Deputy Director-General</td></tr>
+<tr><td>HTTP</td><td>Hypertext Transfer Protocol</td></tr>
+<tr><td>JSON</td><td>JavaScript Object Notation</td></tr>
+<tr><td>LLM</td><td>Large Language Model</td></tr>
+<tr><td>MVP</td><td>Minimum Viable Product</td></tr>
+<tr><td>NSO</td><td>Non-Sovereign Operations</td></tr>
+<tr><td>OOM</td><td>Out Of Memory</td></tr>
+<tr><td>PDF</td><td>Portable Document Format</td></tr>
+<tr><td>RAG</td><td>Retrieval-Augmented Generation</td></tr>
+<tr><td>RDG</td><td>Regional Director General</td></tr>
+<tr><td>RDNG</td><td>Regional Development and Business Delivery Office, Nigeria</td></tr>
+<tr><td>RDVP</td><td>Regional Development, Integration and Business Delivery Vice-Presidency</td></tr>
+<tr><td>REST</td><td>Representational State Transfer</td></tr>
+<tr><td>SO</td><td>Sovereign Operations</td></tr>
+<tr><td>TF-IDF</td><td>Term Frequency &ndash; Inverse Document Frequency</td></tr>
+<tr><td>UI</td><td>User Interface</td></tr>
+<tr><td>VP</td><td>Vice-President</td></tr>
+</table>
+
+<!-- ============ GENERAL INTRODUCTION ============ -->
+<h1>General Introduction</h1>
+
+<p>Every large institution eventually writes down who is allowed to decide what. In a development bank, that question carries real weight: an approval given by the wrong person is not a procedural detail but a governance failure, and one that auditors will find. The African Development Bank Group records these rules in a document called the Delegation of Authority Matrix, usually shortened to DAM. It states, activity by activity, which role may initiate a task, which must check or verify it, which reviews it, which approves it, and which simply has to be told that it happened.</p>
+
+<p>The document works. The problem is reaching it. In its complete form the DAM runs past two hundred and fifty pages, and almost all of that content sits inside wide tables whose column headers are printed sideways to fit the page. Authority is expressed through a compact code, a single letter sometimes carrying a superscript digit, and the meaning of that code changes depending on the digit attached to it. A staff member who needs to know whether they can sign off on a mission programme has to find the right row in the right table in the right chapter, read a rotated header to work out which column belongs to which role, and then decode the letter sitting at the intersection. People do this. They do it slowly, and they do not always do it correctly.</p>
+
+<p>The obvious modern answer is to ask a chatbot. That answer fails in a way that matters here. Language models produce fluent text, and fluent text about who holds financial approval authority is dangerous when it is wrong. A model that invents a plausible-sounding role name, or quietly drops one of the three people who must be informed, produces an answer that looks exactly as trustworthy as a correct one. For a compliance document, an invented answer is worse than no answer at all.</p>
+
+<p>This thesis describes a system built around that constraint rather than in spite of it. The DAM is parsed into a structured knowledge base, that knowledge base is turned into a graph of activities and responsibilities, and questions are answered by retrieving real records from the graph. A language model is present, but it is never allowed to decide what the facts are. It is given facts that have already been retrieved and asked only to phrase them naturally, and its output is checked against those facts, word for word, before a user ever sees it. If the model drops a role name or alters one, the rewritten answer is discarded and a plain template answer is shown instead.</p>
+
+<h2>Objectives</h2>
+
+<p>The work set out to deliver three things. The first was a faithful machine-readable representation of the DAM's content, one that could be checked against the printed document rather than trusted on the strength of the code that produced it. The second was a question-answering agent that resolves ordinary questions, typed the way people actually type them, to the correct activity and returns its recorded responsibilities. The third was a working, hosted application rather than a notebook: something a supervisor or an examiner can open in a browser and interrogate directly.</p>
+
+<p>A fourth objective emerged during the work and is worth stating because it shaped everything else. The system had to be honest about its own limits. Asked about an activity that does not exist, it says so. Asked something outside the DAM's subject matter, it declines rather than guessing. This behaviour is not a fallback for failure cases; it is the property that makes the correct answers worth anything.</p>
+
+<h2>Scope</h2>
+
+<p>The complete DAM exceeds two hundred and fifty pages. Processing all of it was neither necessary nor realistic for a single internship, so the work was scoped to a seventy-nine-page subset covering three chapters of the document, including the Non-Sovereign Operations chapter that was originally outside the intended scope and was added once its structure proved compatible with the parser. Everything reported in this thesis, including every count and every quality measure, refers to that subset. Nothing in the design prevents the remaining chapters from being processed by the same pipeline, and the reasons for believing this are set out in Chapter 3.</p>
+
+<h2>Structure of the Thesis</h2>
+
+<p>Chapter 1 places the project in context. It introduces the host institution and the client organisation, examines how the DAM is consulted today and where that process breaks down, reviews what existing tools offer and why they fall short for this document, and closes with the requirements and the architecture chosen in response.</p>
+
+<p>Chapter 2 examines the source document itself. Rather than a dataset of rows and columns, the raw material here is a PDF whose structure is visual, so this chapter is an exploration of how that structure encodes meaning and of the specific ways automated extraction fails on it.</p>
+
+<p>Chapter 3 describes the engineering pipeline that turns the document into data: the stages, the transformations, the validation applied at each step, and the knowledge graph built on top of the result.</p>
+
+<p>Chapter 4 covers the agent itself, which is to say retrieval, answer construction, the language model layer, and the verification mechanism that keeps that layer honest.</p>
+
+<p>Chapter 5 presents the delivered platform, the testing regime behind it, and how it is deployed. The general conclusion then reviews what was achieved, what was not, and what a continuation of this work would address first.</p>
+
+<!-- ============ CHAPTER 1 ============ -->
+<h1>Chapter 1: Project Framework, State of the Art, and Needs Analysis</h1>
+
+<h2>Introduction</h2>
+
+<p>This chapter establishes the setting of the project. It presents the organisation that hosted the work and the institution whose document motivated it, then looks closely at how that document is used in practice today. That examination matters more than it might appear: the weaknesses of the current process are what define the requirements, and several design decisions taken later in the thesis only make sense once those weaknesses are understood concretely. The chapter then surveys the tools that already exist for this class of problem, explains why none of them is sufficient here, and ends with the requirements, constraints, and proposed architecture that follow from all of it.</p>
+
+<h2>1.1 General Framework of the Project</h2>
+
+<p>This work was carried out as a final-year internship project within the Master's programme in Data Sciences at Polytech Intl, over a six-month internship period, of which a little more than four months went into active development of the system described here. The remaining time covered the initial framing of the subject, familiarisation with the source material, and the preparation of this report.</p>
+
+<p>The subject sits at an intersection that is becoming common in applied data science. On one side there is a document processing problem: a PDF whose meaning is carried by layout rather than by markup, requiring geometric reasoning to recover. On the other there is a question-answering problem of the kind now usually associated with large language models. The interesting part of the project is the tension between them. Document extraction rewards determinism, since a rule that works can be verified against the page it was derived from. Language models offer fluency and flexibility but no guarantee of faithfulness. Building something useful meant using both without letting the second undermine the first.</p>
+
+<h2>1.2 Host Organisation</h2>
+
+<h3>1.2.1 Presentation of Polytech Intl</h3>
+
+<p>Polytech Intl is a private higher education institution in Tunisia offering engineering and Master's level programmes in computing, data science, and related engineering disciplines. Its programmes combine academic coursework with project-based work and a mandatory final internship, on the principle that graduates should leave having built something under conditions resembling professional practice rather than only having studied how such things are built.</p>
+
+<p>The Master's programme in Data Sciences covers statistics and machine learning, data engineering and distributed processing, and the software engineering practices needed to turn analysis into a deliverable system. The final project is expected to demonstrate competence across that full range rather than in one part of it, which is one reason this project was carried through to a deployed application instead of stopping at a validated dataset.</p>
+
+<h3>1.2.2 Project Context and the Client Organisation</h3>
+
+<p>Polytech Intl acted as the host institution for this internship, providing both the academic supervision and the working framework for the project. The subject matter, however, came from outside: the document at the centre of this work belongs to the African Development Bank Group, which acted as the client organisation for the project.</p>
+
+<p>The African Development Bank Group is a multilateral development finance institution founded in 1964, headquartered in Abidjan, Côte d'Ivoire. It finances projects and programmes across its regional member countries in areas including energy, agriculture, transport infrastructure, water, education, and private sector development, and it operates through both sovereign lending to governments and non-sovereign operations with private entities. An institution of that size and mandate necessarily formalises its internal decision rights, and the Delegation of Authority Matrix is the instrument through which it does so.</p>
+
+<p>Working with a document from a real institution changed the character of the project in a useful way. The material could not be cleaned up or simplified to suit the parser, the correctness bar was set by what the printed pages actually say rather than by a metric chosen for convenience, and every claim in this report about what the system extracts can be checked against a page of the source document.</p>
+
+<h2>1.3 Study of the Existing System and Critical Analysis</h2>
+
+<h3>1.3.1 Context of Delegation of Authority in Development Banking</h3>
+
+<h4>1.3.1.1 Definition and Stakes of the DAM</h4>
+
+<p>A delegation of authority framework answers a narrow question with wide consequences: for a given institutional act, who is permitted to perform which part of it. In the Bank's case the DAM expresses this as a matrix. Rows correspond to activities, organised hierarchically from broad chapters down through processes to individual tasks and, where a monetary threshold changes the answer, to variants of a task. Columns correspond to roles, from country office staff through sector managers and directors up to vice-presidents and the Board. The cell where an activity meets a role carries a code stating what that role does for that activity.</p>
+
+<p>The codes are compact, and their compactness is part of the problem. Table 1.1 gives the notation.</p>
+
+<table>
+<tr><th style="width: 16%;">Code</th><th>Meaning</th></tr>
+<tr><td>I</td><td>Initiate. The role starts the activity.</td></tr>
+<tr><td>C1, C2</td><td>Check and verify. The role must confirm the activity before it proceeds.</td></tr>
+<tr><td>C3, C4</td><td>Consult. The role must be consulted, typically the Board, the Board of Governors, or an independent function.</td></tr>
+<tr><td>R</td><td>Review. The role reviews the activity.</td></tr>
+<tr><td>A</td><td>Approve. The role holds final approval authority.</td></tr>
+<tr><td>(i)</td><td>Informed. The role must be told about the activity but takes no action on it.</td></tr>
+</table>
+<p class="tcaption">Table 1.1 &ndash; Authority code notation used in the DAM.</p>
+
+<p>Two features of this notation deserve attention because they cause trouble later. First, the letter C covers two unrelated concepts separated only by the digit that follows it. C1 and C2 mean check and verify; C3 and C4 mean consult, in the governance sense of referring a matter to the Board or to an independent function. Treating both as a single "C" would merge two different obligations into one, and any system that maps the word "check" onto the bare letter C makes exactly that mistake. Second, the informed marker is not a letter at all but a parenthesised character, which behaves differently from the other codes at every stage of processing.</p>
+
+<h4>1.3.1.2 Governance and Compliance Requirements</h4>
+
+<p>The DAM is not advisory. It is the reference against which internal audit assesses whether a decision was taken by someone entitled to take it, and it exists partly to satisfy the governance expectations that come with public and multilateral funding. Three consequences follow for any system built on top of it.</p>
+
+<p>The first is that a wrong answer has a cost beyond inconvenience. If a staff member approves something on the strength of an incorrect lookup, the error surfaces during audit, not during the work. The second is that completeness matters as much as correctness. A recorded check-and-verify obligation is mandatory, so an answer that names the approver but omits the role that must verify the task is incomplete in a way that can mislead, even though nothing in it is false. The third is traceability: an answer is only useful if it can be traced back to the row of the document it came from, because a user who cannot verify an answer has no basis for relying on it.</p>
+
+<h4>1.3.1.3 Challenges in Consulting the DAM in Practice</h4>
+
+<p>Reading the DAM is a mechanical exercise that the document's own layout makes harder than it needs to be. The tables are wide, so role headers are rotated ninety degrees to fit within the page margins. A reader must therefore map a sideways label at the top of a column to a code appearing many centimetres below it, and must do so correctly for the column immediately adjacent as well, since neighbouring roles frequently hold different authority over the same activity.</p>
+
+<p>Superscript footnote digits sit directly against the authority codes, and distinguishing a footnote marker from part of the code requires knowing which is which. Some rows contain no responsibilities at all, holding instead a cross-reference to another activity elsewhere in the document, which means the reader must follow a pointer and start again in a different chapter. New staff, who are exactly the population most in need of the document, are also the least equipped to navigate it quickly.</p>
+
+<p>The practical result is that the DAM is consulted less often than it should be. People ask a colleague instead, or they rely on what was done the last time a similar activity came up. Neither habit is auditable, and both propagate errors quietly.</p>
+
+<h3>1.3.2 Study of Existing Systems</h3>
+
+<h4>1.3.2.1 Manual Consultation and Document Search</h4>
+
+<p>The existing process is manual consultation of the PDF, supported by whatever search the reader's PDF viewer provides. Full-text search finds character strings, which helps when the user already knows the exact title of an activity or its identifier, and helps very little otherwise. Searching for the word "approve" returns hundreds of matches across the document, none of them ranked by relevance to the activity the user has in mind. Searching for a partially remembered activity name returns nothing at all unless the remembered words match the printed ones exactly.</p>
+
+<p>More importantly, text search returns locations, not answers. It can tell a user that a term appears on page 24. It cannot tell them who approves the activity described there, because doing so would require understanding that the page contains a table, that the table has rotated headers, and that a particular letter in a particular cell means approval by a particular role.</p>
+
+<h4>1.3.2.2 Generic Document Question-Answering Tools</h4>
+
+<p>A second category of existing solution is the general-purpose document assistant: upload a PDF, ask questions in natural language, receive answers. These tools typically work by splitting the document into passages, embedding those passages as vectors, retrieving the passages most similar to the question, and passing them to a language model that writes an answer.</p>
+
+<p>This approach performs well on prose. It performs poorly on this document for a reason that is structural rather than incidental. When a page of the DAM is converted to plain text, the spatial relationships that carry its meaning are destroyed. The rotated header that identified a column becomes a stray string somewhere in the extracted text, disconnected from the codes beneath it. A retrieved passage may therefore contain the activity name and the letter A without preserving the information that the A belonged to the column headed by a specific director. The model receives text that has already lost the answer and produces something plausible from what remains.</p>
+
+<h4>1.3.2.3 Critical Analysis: Limitations of Current Approaches</h4>
+
+<p>Neither existing approach fails for want of engineering polish. They fail because of assumptions that do not hold for this document.</p>
+
+<p>Text search assumes the user can express their need in the document's own vocabulary. In practice a user asks about "the quarterly mission programme" while the document may phrase it differently, and the search returns nothing useful.</p>
+
+<p>Generic retrieval-augmented assistants assume that flattening a document into passages preserves its meaning. For a table whose semantics are positional, flattening discards precisely the information the question depends on.</p>
+
+<p>Both approaches, finally, share a deeper problem: they have no notion of being wrong. A search returns results and a language model returns text, and in neither case does the system distinguish between an answer it can support and one it cannot. For a compliance reference, that distinction is the whole point. Table 1.2 onward sets out what a system would have to do instead.</p>
+
+<h2>1.4 Functional Needs Analysis</h2>
+
+<h3>1.4.1 Functional Requirements</h3>
+
+<p>The functional requirements were derived from the way the document is actually consulted, and each one corresponds to a task a user currently performs by hand.</p>
+
+<table>
+<tr><th style="width: 12%;">Ref.</th><th style="width: 30%;">Requirement</th><th>Description</th></tr>
+<tr><td>FR1</td><td>Direct identifier lookup</td><td>Given a valid activity identifier, the system returns that activity's recorded authority information with full confidence and no ambiguity.</td></tr>
+<tr><td>FR2</td><td>Natural-language activity lookup</td><td>Given a question describing an activity by name rather than by identifier, the system resolves it to the correct activity and reports how confident that resolution is.</td></tr>
+<tr><td>FR3</td><td>Authority-role queries</td><td>For a resolved activity, the system answers who approves, reviews, checks, initiates, or must be informed, using the document's own notation.</td></tr>
+<tr><td>FR4</td><td>Mandatory obligation surfacing</td><td>Whatever the question asked, the system always surfaces a recorded check-and-verify obligation and, where present, the informed parties, because both are mandatory rather than optional context.</td></tr>
+<tr><td>FR5</td><td>Cross-reference resolution</td><td>Where an activity's row is a pointer to another activity, the system follows the pointer automatically rather than reporting that no responsibilities exist.</td></tr>
+<tr><td>FR6</td><td>Typing and phrasing tolerance</td><td>The system tolerates common misspellings and phrasing variation without requiring the document's exact vocabulary.</td></tr>
+<tr><td>FR7</td><td>Honest refusal</td><td>For an identifier that does not exist, or a question outside the document's subject matter, the system says so explicitly instead of returning a best guess.</td></tr>
+<tr><td>FR8</td><td>Conversational continuity</td><td>A follow-up question that does not restate its subject is answered against the activity discussed immediately before.</td></tr>
+<tr><td>FR9</td><td>Structural analytics</td><td>The system exposes an overview of the document's own structure: node counts, authority-code distribution, the most frequently involved roles, and per-chapter breakdowns.</td></tr>
+<tr><td>FR10</td><td>Multilingual questions</td><td>Questions asked in French, Spanish, Portuguese, or Arabic are answered in the language they were asked in, without translating role names or identifiers.</td></tr>
+</table>
+<p class="tcaption">Table 1.2 &ndash; Functional requirements.</p>
+
+<h3>1.4.2 Non-Functional Requirements</h3>
+
+<table>
+<tr><th style="width: 12%;">Ref.</th><th style="width: 30%;">Requirement</th><th>Description</th></tr>
+<tr><td>NFR1</td><td>Factual fidelity</td><td>No answer may contain a role, code, or qualification that is not recorded in the source document for that activity. This requirement takes precedence over fluency, speed, and every other consideration.</td></tr>
+<tr><td>NFR2</td><td>Traceability</td><td>Every answer must be attributable to a specific activity record, so that a user can verify it against the printed document.</td></tr>
+<tr><td>NFR3</td><td>Availability without external services</td><td>Core lookup must work when no language model provider is reachable, degrading to template answers rather than failing.</td></tr>
+<tr><td>NFR4</td><td>Response time</td><td>Answers should return within a few seconds on the free hosting tier used for deployment, which rules out re-parsing the document per request.</td></tr>
+<tr><td>NFR5</td><td>Reproducibility</td><td>The same question must produce the same underlying facts on every run, independent of any model's sampling behaviour.</td></tr>
+<tr><td>NFR6</td><td>Portability</td><td>The system must run identically on a developer machine and on the hosting platform, without environment-specific configuration.</td></tr>
+<tr><td>NFR7</td><td>Usability on any device</td><td>The interface must remain usable on a phone, since consultation often happens away from a desk.</td></tr>
+</table>
+<p class="tcaption">Table 1.3 &ndash; Non-functional requirements.</p>
+
+<h3>1.4.3 Project Constraints</h3>
+
+<table>
+<tr><th style="width: 30%;">Constraint</th><th>Consequence for the project</th></tr>
+<tr><td>No labelled training data</td><td>No query-and-answer pairs and no annotated tables existed, which ruled out training a supervised model and pushed retrieval toward lexical methods that need no training corpus.</td></tr>
+<tr><td>Document scope</td><td>The full DAM exceeds 250 pages. Work was scoped to a 79-page subset covering three chapters, with the remainder left as future work.</td></tr>
+<tr><td>No infrastructure budget</td><td>Deployment had to fit within free hosting tiers, which constrained memory use and forced the parsed knowledge base to be cached at build time rather than rebuilt on startup.</td></tr>
+<tr><td>Verification against the source</td><td>Because no ground-truth dataset existed, correctness had to be established by comparison against real pages of the document, which set the pace of the data understanding phase.</td></tr>
+</table>
+<p class="tcaption">Table 1.4 &ndash; Project constraints.</p>
+
+<h2>1.5 Proposed Solution</h2>
+
+<h3>1.5.1 General Presentation of the Solution</h3>
+
+<p>The proposed system separates two things that generic assistants combine: deciding what the facts are, and deciding how to say them. Facts come from a structured knowledge base built by parsing the document once, offline, with rules derived from the document's own geometry and validated against printed pages. Phrasing comes from a language model, which receives facts that have already been retrieved and is restricted to rewording them.</p>
+
+<p>Between those two layers sits a verification step. Before any generated sentence reaches a user, it is compared against the retrieved facts, and any answer that has dropped or altered a role name is rejected in favour of a deterministic template. The user still gets an answer, and the answer is still correct; it is simply less conversational. This is the mechanism that makes the language model safe to use at all in this setting, and it is described in detail in Chapter 4.</p>
+
+<h3>1.5.2 Global System Architecture</h3>
+
+<p>The system is organised in four layers. An offline extraction layer converts the source PDF into a validated node set, which is cached and shipped with the application. A knowledge layer holds that node set as a directed graph and provides lookup and search over it. An agent layer interprets questions, resolves them to activities, constructs deterministic answers, and applies the language model and its verification step. A presentation layer exposes the agent through a REST interface and a web client with two pages: a chat interface and an analytics dashboard.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT FIGURE HERE: fig1_architecture.png ]</p>
+<p class="caption">Figure 1.1 &ndash; Global architecture of the proposed system, from source document to user-facing answer.</p>
+
+<p>One consequence of this separation is worth noting early. Because extraction happens offline and its output is cached, the running application never touches the PDF. It loads a prepared node set at startup, holds it in memory, and answers from it. That decision was made for deployment reasons, and Chapter 5 explains what happened when it was not made.</p>
+
+<h3>1.5.3 Selected Technologies</h3>
+
+<table>
+<tr><th style="width: 26%;">Technology</th><th>Role in the system</th></tr>
+<tr><td>Python</td><td>Language for extraction, knowledge base, agent, and backend.</td></tr>
+<tr><td>pdfplumber</td><td>Character- and word-level PDF extraction with positional coordinates, which is what makes geometric reasoning about rotated headers and superscripts possible.</td></tr>
+<tr><td>Pydantic</td><td>Schema definition and validation for the node model, so malformed records fail at construction rather than at query time.</td></tr>
+<tr><td>networkx</td><td>Knowledge graph construction and traversal, using a directed multigraph so that a role can hold several distinct responsibilities over the same activity.</td></tr>
+<tr><td>scikit-learn</td><td>TF-IDF vectorisation and cosine similarity for free-text activity resolution.</td></tr>
+<tr><td>FastAPI</td><td>REST backend, chosen for its typed request and response models and automatic API documentation.</td></tr>
+<tr><td>React and Vite</td><td>Web client, built as a single-page application and served as static files by the backend.</td></tr>
+<tr><td>Groq and Ollama</td><td>Language model providers for answer phrasing, cloud-hosted and local respectively, behind a common interface so either can be used or neither.</td></tr>
+<tr><td>Docker</td><td>Containerisation, so the application runs identically in development and in deployment.</td></tr>
+<tr><td>Render</td><td>Hosting platform, used on its free tier.</td></tr>
+</table>
+<p class="tcaption">Table 1.5 &ndash; Selected technologies and their role in the system.</p>
+
+<h2>Conclusion</h2>
+
+<p>The DAM answers an important question, and the way it is published makes that answer expensive to retrieve. Manual consultation is slow and error-prone because the document's meaning lives in its layout, and generic document assistants fail for the same reason, with the added risk that they fail fluently. The requirements set out above respond to both problems, and the architecture proposed in response separates fact retrieval from phrasing so that the flexibility of a language model can be used without inheriting its unreliability. The next chapter turns to the source document itself and examines, in detail, what makes extracting it difficult.</p>
+
+<!-- ============ CHAPTER 2 ============ -->
+<h1>Chapter 2: Data Understanding &mdash; Analysis of the DAM Source Document</h1>
+
+<h2>Introduction</h2>
+
+<p>In most data science projects this chapter would describe a dataset: rows, columns, distributions, missing values. Here the raw material is a PDF, and the equivalent exercise is to understand how a printed page encodes information that no field in a table ever declares. The structure exists, but it is visual. A column belongs to a role because of where it sits on the page, not because anything in the file says so.</p>
+
+<p>This chapter therefore does two things. It describes what the document contains and how that content is organised, and it documents the specific ways automated extraction goes wrong on it. The second part matters as much as the first. Every parsing rule described in Chapter 3 exists because of a failure observed here, and each of those failures was found by comparing extracted output against a real page rather than by reasoning about what the extraction ought to produce.</p>
+
+<h2>2.1 Source Document Presentation</h2>
+
+<h3>2.1.1 Source and Context</h3>
+
+<p>The source is the African Development Bank Group's Delegation of Authority Matrix, an internal reference document of more than two hundred and fifty pages distributed as a PDF. It is not a published research dataset and has no accompanying schema, documentation, or machine-readable export. What exists is the document as staff receive it.</p>
+
+<p>Work was scoped to a seventy-nine-page subset covering three chapters. An earlier and narrower export of sixty-six pages was used at the very beginning of the project and then replaced, for two reasons. The larger file includes the glossary, the abbreviations list, and the authority-code legend, all of which the system needs as reference data rather than as content to be parsed. It also contains a full chapter on Non-Sovereign Operations that the initial scope had excluded. That chapter was brought into scope once its table structure was examined and found to be compatible with the same parsing approach, at the cost of one substantial new class of layout problem described in section 2.3.5.</p>
+
+<h3>2.1.2 Hierarchical Structure of the Document</h3>
+
+<p>The DAM is organised as a four-level hierarchy, and recovering that hierarchy correctly turned out to be one of the more consequential parts of the work.</p>
+
+<p>At the top are chapters, which group the Bank's activities into broad domains. Within a chapter are processes, identified by a rounded number such as 2.510, which group related activities. Within a process are tasks, identified by sequential numbers such as 2.513. Some tasks decompose further into child tasks, identified by a third number component such as 1.117.2. Finally, a small but important category of items are threshold variants: sub-items of a task keyed not by a sequence number but by a monetary band, expressing that the answer to "who approves this" changes depending on the amount involved.</p>
+
+<p>Identifier shape does not reliably indicate level, which is a trap worth stating explicitly. A task belongs to a process not because its identifier begins with the process identifier as a string, but because of arithmetic: tasks are grouped into a process by rounding down to the nearest ten. Task 2.513 belongs to process 2.510, and the string "2.513" does not begin with "2.510". Any implementation that derives the hierarchy by prefix matching gets two of the four levels wrong while appearing to work on the other two, which is precisely what happened in an early version and is discussed in section 3.5.</p>
+
+<h3>2.1.3 Table Layout and the Authority Notation</h3>
+
+<p>Content is presented as wide tables. The leftmost columns carry the activity identifier and its title. The remaining columns, of which there may be a dozen or more, each correspond to an organisational role, and their headers are rotated ninety degrees so that long role names fit within the available width.</p>
+
+<p>Each cell at the intersection of an activity and a role carries an authority code, or nothing at all if that role has no part in that activity. Codes follow the notation given in Table 1.1. Alongside the codes, superscript digits refer to footnotes printed at the bottom of the page, qualifying the responsibility with conditions such as delegation limits or specific circumstances.</p>
+
+<p>Two properties of this presentation create most of the difficulty. The codes are short, so distinguishing a code from a footnote marker cannot rely on length. And the association between a code and a role is purely positional, established by horizontal alignment between a cell and a header printed sideways somewhere above it.</p>
+
+<h2>2.2 Exploratory Analysis of the Document</h2>
+
+<h3>2.2.1 Global Overview and Node Distribution</h3>
+
+<p>Once parsed and validated, the seventy-nine-page subset yields 327 structured records, distributed across the four hierarchy levels as shown in Table 2.1. These records carry 1,776 individual responsibility entries, each one an assertion that a named role holds a specific authority code over a specific activity.</p>
+
+<table>
+<tr><th style="width: 34%;">Node type</th><th style="width: 20%;">Count</th><th>Description</th></tr>
+<tr><td>Chapter</td><td>3</td><td>Top-level domains of Bank activity covered by the processed subset.</td></tr>
+<tr><td>Process</td><td>35</td><td>Groups of related activities within a chapter.</td></tr>
+<tr><td>Task</td><td>138</td><td>Individual activities, the level most questions are about.</td></tr>
+<tr><td>Child task</td><td>102</td><td>Sub-activities of a task.</td></tr>
+<tr><td>Threshold variant</td><td>49</td><td>Variants of a task keyed by a monetary threshold band.</td></tr>
+<tr><td><b>Total</b></td><td><b>327</b></td><td></td></tr>
+</table>
+<p class="tcaption">Table 2.1 &ndash; Distribution of node types across the processed subset.</p>
+
+<p>The proportion of threshold variants is higher than an outside reader might expect, and it reflects something real about how the Bank delegates authority. Approval rights are frequently banded by amount, so a single named activity can carry three or four different approvers depending on the sum at stake. A system that treated each activity as having one answer would be wrong for roughly fifteen percent of the document.</p>
+
+<h3>2.2.2 Authority Code Distribution</h3>
+
+<p>Across the 1,776 responsibility entries, the codes are not evenly distributed. Informed markers and check-and-verify obligations are considerably more common than approvals, which is unsurprising: a single approval is usually surrounded by several roles that verify the work beforehand and several more that must be notified afterwards.</p>
+
+<p>This distribution has a direct design consequence. If a user asks who approves an activity and the system answers with only the approver, it returns the smallest part of the picture and omits obligations that are mandatory rather than contextual. That observation is where requirement FR4 came from, and the behaviour it specifies is implemented in Chapter 4.</p>
+
+<h3>2.2.3 Role and Actor Analysis</h3>
+
+<p>The document names 131 distinct roles across the processed subset, ranging from country office staff through sector managers, division managers, directors, and vice-presidents up to the Board. Role names are long and heavily abbreviated, which is what forces the rotated headers in the first place, and the abbreviations are not always defined in the document's own glossary.</p>
+
+<p>That last point produced a small but visible feature of the finished system. Some acronyms appear throughout the role names without ever being separately defined in the abbreviations pages. Rather than leaving a user to guess, the system maintains a small set of curated aliases for these, and it states plainly when an expansion comes from that curated set instead of from the document's own glossary. It is a minor honesty mechanism, but it belongs to the same principle as the rest of the design: the system should never present something as sourced from the document when it is not.</p>
+
+<p>Averaged across all 327 records, each activity carries 5.48 responsibility entries. Just under thirty percent of records carry no direct responsibilities at all, which at first looks like an extraction failure and mostly is not. Chapters and processes are organisational containers rather than activities, so they legitimately have none, and a further group of tasks are pure cross-references, discussed next.</p>
+
+<h3>2.2.4 Threshold Variants and Monetary Bands</h3>
+
+<p>Threshold variants were not part of the initial understanding of the document's structure. They were discovered during extraction, when rows appeared that had the shape of a task's sub-item but carried a monetary band where a sequence number was expected.</p>
+
+<p>Recognising them as a distinct level rather than forcing them into the child-task category mattered for correctness. A child task is a component of a task, and both may be performed. A threshold variant is an alternative to its siblings: exactly one applies to any given case, selected by the amount involved. Collapsing the two would have produced answers listing several approvers for a single transaction, all of them real in the document and only one of them applicable.</p>
+
+<h3>2.2.5 Cross-References and Redirects</h3>
+
+<p>A number of rows in the DAM record no responsibilities and instead contain a pointer to another part of the document. These take two forms. The first is an explicit list, phrased as "See DAM 16.100, 16.200" and similar. The second is a range, phrased as "Refer to Activities 2.114 &ndash; 2.117 in Section 2", which must be expanded to every identifier it covers rather than treated as two endpoints.</p>
+
+<p>Across the processed subset, fourteen such references were captured. A human reader handles these by turning to the referenced page and starting again. The system was built to follow them automatically, because a user who asks about activity 1.117.2 and is told that no responsibilities are recorded has been given a technically accurate and practically useless answer, when the document itself says where to look.</p>
+
+<h3>2.2.6 Consolidated View</h3>
+
+<p>Taken together, the exploratory analysis establishes several things that shape everything downstream. The document is hierarchical but its hierarchy cannot be derived from identifier strings. Its meaning is positional, carried by alignment between cells and rotated headers. A significant minority of its rows are not activities at all but pointers or threshold alternatives. And its responsibility entries are dominated by obligations that a naive question-answering system would discard as secondary.</p>
+
+<h2>2.3 Extraction Quality Assessment</h2>
+
+<p>This section documents what goes wrong when the document is processed automatically. Each issue below was identified by comparing extracted output against the printed page it came from. That method is slower than checking whether the code runs without error, and it is the only method that finds problems of this kind, because every one of these failures produces output that looks entirely reasonable until it is compared with the source.</p>
+
+<h3>2.3.1 Text Layer Inspection</h3>
+
+<p>PDF is a page description format. It records which glyph is drawn at which coordinate, with what font and size, and nothing about what those glyphs collectively mean. A library such as pdfplumber recovers characters and words along with their positions, but reconstructing rows, columns, reading order, and cell boundaries is left entirely to the application.</p>
+
+<p>The practical consequence is that every structural property of the document has to be rediscovered from geometry. A row is not a row in the file; it is a set of words whose vertical positions are close enough to be considered aligned. How close is close enough is not stated anywhere and had to be measured.</p>
+
+<h3>2.3.2 Rotated Column Headers</h3>
+
+<p>Role headers are printed at ninety degrees. Standard word extraction returns them as ordinary text with ordinary coordinates, giving no indication that they are rotated, and their reported horizontal position corresponds to the narrow strip the rotated text occupies rather than to the full column beneath it.</p>
+
+<p>Attributing a code to a role therefore requires clustering header text by its horizontal position and matching each cell against the nearest header cluster. A complication appeared partway through the document: on some pages the header row is printed once and the table continues onto following pages without repeating it. Those continuation pages have codes and no headers at all, and attribution fails completely unless the last seen header set is carried forward.</p>
+
+<h3>2.3.3 Fused Footnote Digits and Authority Codes</h3>
+
+<p>Footnote markers are printed as superscript digits immediately adjacent to authority codes. After extraction, a code such as A followed by footnote 3 arrives as the string "A3", which is indistinguishable by shape from the legitimate level-bearing code A3.</p>
+
+<p>Distinguishing them requires the vertical offset and font size of the digit relative to the letter, both of which pdfplumber reports per character. A superscript sits higher and is set smaller. The rule that separates the two cases was derived by measuring real characters on real pages rather than assumed, because the margins involved are small and a threshold guessed from intuition would have misclassified a substantial number of codes.</p>
+
+<p>A related defect affected the informed marker. The parenthesised informed character had been matched by scanning for a consecutive run of the characters "(", "i", ")". On real pages that marker is rendered as five separate characters, so the scan never matched anything. Before this was found, 174 of the 276 records in an early version of the extraction carried an informed marker in the printed document with no role ever attached to it in the extracted data. The failure was invisible in every output that did not compare records against the page.</p>
+
+<h3>2.3.4 Cross-Row Text Bleeding and Title Corruption</h3>
+
+<p>Activity titles wrap across lines, and in a dense table a wrapped title line can end up physically closer to the next activity's row than to its own. Where this happens, the title is attached to the wrong activity. Both activities then look plausible in isolation: one has a slightly short title, the other a slightly long one, and nothing flags an error.</p>
+
+<p>At its worst this affected roughly a quarter of the records produced by an early version of the parser. It was corrected by making title attachment conditional on the state of the parse rather than on proximity alone, using three signals: whether a task is currently open, whether the open task's text terminates with a full stop, and whether the incoming line carries authority codes when the open task already has its own. After those rules were applied, one residual case remained across the whole subset, on activity 2.222.1, and it is documented rather than silently accepted.</p>
+
+<h3>2.3.5 Split Rows in the Non-Sovereign Operations Chapter</h3>
+
+<p>The Non-Sovereign Operations chapter, added to scope after the initial parser was working, introduced a layout variation that broke row reconstruction. In that chapter a single logical row is sometimes rendered as two physically separated bands, with the authority codes drawn slightly below the activity text rather than aligned to it.</p>
+
+<p>The first attempted fix was a general one: merge any two vertically adjacent bands whose separation falls below a tolerance. Checking it before adopting it showed 1,614 candidate merges across the document, several of which were clearly wrong and would have fused unrelated activities. The fix was rejected and replaced by a narrower rule that merges a band only when its content consists entirely of authority codes, which is a strong signal that it belongs to the row above and cannot be an activity in its own right.</p>
+
+<h3>2.3.6 Consolidated Data Issues Summary</h3>
+
+<table>
+<tr><th style="width: 30%;">Issue</th><th style="width: 34%;">Effect if unhandled</th><th>Resolution</th></tr>
+<tr><td>Rotated column headers</td><td>Codes cannot be attributed to roles.</td><td>Cluster header text by horizontal position; carry the header set forward across continuation pages.</td></tr>
+<tr><td>Missing header rows on continuation pages</td><td>Whole pages of responsibilities lost.</td><td>Reuse the last seen header set until a new one appears.</td></tr>
+<tr><td>Footnote digits fused with codes</td><td>Codes misread; footnote qualifications lost.</td><td>Separate by measured vertical offset and font size of the character.</td></tr>
+<tr><td>Informed marker not matched</td><td>Informed parties absent from the majority of records.</td><td>Match the marker as the separate characters it is actually rendered as.</td></tr>
+<tr><td>Title bleeding across rows</td><td>Titles attached to the wrong activity; free-text search degraded.</td><td>Conditional attachment based on parse state, terminating punctuation, and code presence.</td></tr>
+<tr><td>Split rows in the NSO chapter</td><td>Responsibilities detached from their activity.</td><td>Merge a band only when it consists entirely of authority codes.</td></tr>
+<tr><td>Hierarchy derived from string prefixes</td><td>Two of four hierarchy levels silently wrong.</td><td>Derive parentage from explicit parent fields and process arithmetic.</td></tr>
+<tr><td>Cross-reference rows</td><td>Activities reported as having no responsibilities.</td><td>Extract references, expand ranges, and follow pointers at query time.</td></tr>
+</table>
+<p class="tcaption">Table 2.2 &ndash; Consolidated summary of extraction issues found in the source document.</p>
+
+<h2>Conclusion</h2>
+
+<p>The DAM is a well-organised document for a human reader and an adversarial one for an automated parser, because every structural property it has is expressed through layout. The issues catalogued in this chapter are not edge cases; between them they affected the hierarchy, the role attribution, the titles, and the informed parties, which is to say every component of an answer the system is expected to give.</p>
+
+<p>What the chapter also establishes is a working method. None of these problems was found by reading code or by reasoning about what the parser should produce. Each was found by taking extracted output and comparing it against the page it claimed to represent. That discipline carries through the rest of the thesis, and Chapter 3 describes the pipeline built on top of these findings.</p>
+
+<!-- ============ CHAPTER 3 ============ -->
+<h1>Chapter 3: Data Engineering Pipeline and Knowledge Graph Construction</h1>
+
+<h2>Introduction</h2>
+
+<p>This chapter describes how the source document becomes queryable data. It covers the processing environment and why it was chosen, the design of the extraction pipeline and the transformations applied at each stage, the validated node set that results, and the knowledge graph built on top of it. It closes with an assessment of the pipeline's performance and of the limitations that remain in its output.</p>
+
+<h2>3.1 Processing Environment</h2>
+
+<h3>3.1.1 Motivation for a Deterministic, Rule-Based Pipeline</h3>
+
+<p>An alternative approach to this extraction problem would be to train a model: annotate a sample of pages, learn to classify text regions, and generalise. It was rejected for reasons that were practical before they were principled. No annotated data existed, and producing enough of it for a single seventy-nine-page document would have consumed more effort than writing rules, while leaving the result harder to verify.</p>
+
+<p>Verifiability is the principled reason. A rule derived from measured character geometry can be checked against the page that motivated it, and when it fails, the failure is inspectable and the fix is local. A learned region classifier that misreads one table gives no comparable account of itself. For a document where errors are silent and plausible, being able to explain why a given character was interpreted the way it was is worth more than the flexibility a learned approach would add.</p>
+
+<h3>3.1.2 Why Not a Distributed Processing Framework</h3>
+
+<p>Distributed frameworks such as Apache Spark are the standard answer when a pipeline must process volumes that exceed a single machine. That is not the situation here. The full document is a few megabytes, the processed subset yields 327 records, and a complete rebuild of the knowledge base takes roughly fifteen to twenty seconds on an ordinary laptop.</p>
+
+<p>Introducing a distributed framework would have added an execution model, a cluster configuration, and a serialisation boundary to a problem that has none of the characteristics those things exist to address. The difficulty in this project is interpretive rather than computational: the hard part is deciding what a character means, not processing many of them quickly. The pipeline is therefore a single-pass, single-process program, which is the right shape for the problem and also the shape that makes it easy to inspect intermediate output during development.</p>
+
+<h3>3.1.3 Tooling</h3>
+
+<p>Extraction uses pdfplumber, which exposes characters and words with their coordinates, font names, and sizes. That character-level access is not a convenience but a requirement, since the superscript rule described in section 2.3.3 depends on per-character vertical offset and size and cannot be implemented on word-level output alone.</p>
+
+<p>The node model is defined with Pydantic, so that structural expectations are enforced at construction time. A record missing a required field, or carrying an authority code outside the known set, fails immediately and loudly rather than propagating into the graph and surfacing later as a strange answer.</p>
+
+<h2>3.2 Pipeline Design</h2>
+
+<h3>3.2.1 Global Architecture</h3>
+
+<p>The pipeline is a sequence of eight stages, each consuming the output of the previous one and each independently inspectable. Raw characters become physical rows, rows become task blocks, task blocks are cleaned and enriched with geometric and role information, and the enriched blocks are assembled into validated records and merged with the document's structural skeleton.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT FIGURE HERE: fig2_pipeline.png ]</p>
+<p class="caption">Figure 3.1 &ndash; The eight-stage data engineering pipeline, from raw PDF extraction to a validated node set.</p>
+
+<table>
+<tr><th style="width: 8%;">Stage</th><th style="width: 30%;">Name</th><th>Function</th></tr>
+<tr><td>1</td><td>Raw extraction</td><td>Characters and words with coordinates, fonts, and sizes are read from the PDF.</td></tr>
+<tr><td>2</td><td>Row reconstruction</td><td>Words are grouped into physical rows by vertical alignment, with split rows merged where the merge is provably safe.</td></tr>
+<tr><td>3</td><td>Task block detection</td><td>Rows are grouped into task blocks, and boundaries between consecutive activities are determined.</td></tr>
+<tr><td>4</td><td>Title and reference cleaning</td><td>Titles are normalised, cross-references are extracted and expanded, footnote digits are stripped from title text.</td></tr>
+<tr><td>5</td><td>Geometric attribution</td><td>Authority codes are separated from footnote markers by character geometry, and levels are attached.</td></tr>
+<tr><td>6</td><td>Role attribution</td><td>Codes are matched to roles by horizontal alignment with clustered, rotated column headers.</td></tr>
+<tr><td>7</td><td>Node assembly</td><td>Enriched blocks are validated against the schema and merged with the chapter and process skeleton.</td></tr>
+<tr><td>8</td><td>Validation</td><td>Whole-document consistency checks are run across the assembled node set.</td></tr>
+</table>
+<p class="tcaption">Table 3.1 &ndash; Stages of the data engineering pipeline.</p>
+
+<h3>3.2.2 Data Flow and Modular Organisation</h3>
+
+<p>Each stage lives in its own module, and the boundaries between them were drawn so that a failure can be localised by inspecting the output of one stage rather than by tracing execution through the whole program. During development this mattered constantly: when a record came out wrong, the question was always which stage first produced something incorrect, and that question is only cheap to answer if the intermediate results are inspectable.</p>
+
+<p>Parsing modules handle rows, task blocks, metadata, action geometry, column roles, and text cleaning. Modelling modules handle node construction, the structural skeleton, the graph, and the cache. The schema sits in its own module, depended on by both groups and depending on neither.</p>
+
+<h2>3.3 Data Ingestion</h2>
+
+<p>Ingestion walks the document page by page. For each page, characters are read with their coordinates and font metrics, and words are read with their bounding boxes. Both are retained, since different stages need different granularity: row reconstruction works on words, while the superscript rule works on characters.</p>
+
+<p>Reference data is ingested separately and from different pages of the same document. The authority code legend is transcribed into a structured file listing each full code, its level, and its meaning, and validated against the schema so that all seventeen entries load cleanly. The abbreviations pages are parsed into a glossary, which required its own handling: entries wrap across lines, some rows are section headings rather than definitions, and a term and its definition are occasionally rendered a fraction of a point out of alignment, so row grouping needs the same tolerance used elsewhere in the pipeline.</p>
+
+<h2>3.4 Document Processing and Normalisation</h2>
+
+<h3>3.4.1 Row Reconstruction</h3>
+
+<p>Words are grouped into rows by clustering their vertical positions. A tolerance is applied, because text that is visually on the same line is frequently not at an identical coordinate. Where the Non-Sovereign Operations chapter splits a logical row into two bands, the two are merged under the restricted condition described in section 2.3.5: only when the lower band consists entirely of authority codes.</p>
+
+<h3>3.4.2 Task Block Detection</h3>
+
+<p>Rows are then grouped into blocks, each corresponding to one activity. Boundary detection is the part of the pipeline that required the most iteration, because the visual cue for a boundary is inconsistent. Three signals are used together: whether a task is currently open, whether the open task's accumulated text ends with a full stop, and whether an incoming row carries authority codes when the open task already has some of its own. The third signal is the strongest, since a second batch of codes almost always indicates that the next activity has begun.</p>
+
+<h3>3.4.3 Title and Reference Cleaning</h3>
+
+<p>Titles are normalised by stripping footnote digits, collapsing whitespace, and removing cross-reference phrases that would otherwise be absorbed into the title as noise. Reference extraction is centralised in a single function used by every path that touches titles or notes. This was not the original design: two divergent implementations existed at one point, one of which handled a reference pattern the other did not, and the inconsistency produced titles that differed depending on which path had processed them.</p>
+
+<h3>3.4.4 Geometric Attribution of Authority Codes</h3>
+
+<p>Authority codes are identified within each row and separated from footnote markers by the character-level rule described in section 2.3.3. Level digits belonging to a code are retained as part of it; superscript digits are recorded separately as footnote references attached to that responsibility, so that a qualification printed at the bottom of the page remains connected to the specific responsibility it qualifies.</p>
+
+<h3>3.4.5 Role Attribution</h3>
+
+<p>Role headers are extracted, clustered by horizontal position, and associated with the column region they label. Each authority code found in a row is then matched to the header cluster whose horizontal extent contains it. Where a page carries no headers because the table has continued from a previous page, the last seen header set is carried forward.</p>
+
+<p>Roles that cannot be matched to any header are recorded as unresolved rather than discarded or guessed. Keeping them visible is deliberate: an unresolved role is a known gap that can be counted and reported, whereas a discarded one is an invisible loss.</p>
+
+<h2>3.5 Node Construction and Validation</h2>
+
+<p>Enriched blocks are assembled into records conforming to the schema, and merged with a structural skeleton that supplies the chapter and process nodes, since those are organisational containers that the table parser never emits as activities.</p>
+
+<p>Parentage is derived explicitly rather than inferred from identifier shape. Each record carries pointers to its parent, and the hierarchy is reconstructed from those pointers. An earlier implementation derived children by string prefix matching, which happens to work for two of the four levels and fails for the other two, and the failure was invisible until threshold variants entered the identifier space and a task's grandchildren began colliding with its direct children under the same prefix. The bug was caught by a consistency check requiring that every record's children be of the expected type and that every child's own parent pointer point back, rather than by inspection.</p>
+
+<table>
+<tr><th style="width: 52%;">Indicator</th><th>Value</th></tr>
+<tr><td>Structured records produced</td><td>327</td></tr>
+<tr><td>Responsibility entries extracted</td><td>1,776</td></tr>
+<tr><td>Distinct roles identified</td><td>131</td></tr>
+<tr><td>Unresolved role entries</td><td>10 (0.56%)</td></tr>
+<tr><td>Average responsibilities per record</td><td>5.48</td></tr>
+<tr><td>Records with no direct responsibilities</td><td>29.63%</td></tr>
+<tr><td>Cross-references captured</td><td>14</td></tr>
+<tr><td>Residual title corruption</td><td>1 record (2.222.1)</td></tr>
+</table>
+<p class="tcaption">Table 3.2 &ndash; Data quality indicators after node construction.</p>
+
+<h2>3.6 Knowledge Graph Modelling</h2>
+
+<h3>3.6.1 Why a Graph</h3>
+
+<p>The validated node set could have been stored as relational tables or as a flat document collection. A graph was chosen because the questions the system must answer are relationship questions. "Who approves this activity" is a traversal from an activity node along edges of a particular type, and "which activities does this role approve" is the same traversal in reverse. Both are single operations on a graph and joins or scans on a flat structure.</p>
+
+<p>A directed multigraph is used rather than a simple graph, because a role can hold more than one distinct responsibility over the same activity. Two nodes may therefore be connected by several parallel edges, each carrying its own authority code and footnote references.</p>
+
+<h3>3.6.2 Node and Edge Schema</h3>
+
+<p>The graph contains two kinds of node. Activity nodes correspond one-to-one with the 327 structured records. Role nodes correspond to the 131 distinct roles. Edges carry the relationships between them.</p>
+
+<table>
+<tr><th style="width: 28%;">Edge type</th><th style="width: 26%;">From &rarr; To</th><th>Meaning</th></tr>
+<tr><td><code>contains</code></td><td>Activity &rarr; Activity</td><td>Hierarchical containment: chapter to process, process to task, task to child task or threshold variant.</td></tr>
+<tr><td><code>responsible_for</code></td><td>Role &rarr; Activity</td><td>A recorded responsibility, carrying the authority code, its level, and any footnote references.</td></tr>
+<tr><td><code>references</code></td><td>Activity &rarr; Activity</td><td>A cross-reference extracted from the activity's own text, including ranges expanded to their members.</td></tr>
+</table>
+<p class="tcaption">Table 3.3 &ndash; Edge types in the knowledge graph.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT FIGURE HERE: fig3_graph.png ]</p>
+<p class="caption">Figure 3.2 &ndash; Excerpt of the knowledge graph around activity 3.111, showing the containment edge from its parent process and the responsibility edges connecting it to its approving and informed roles.</p>
+
+<h3>3.6.3 Graph Statistics</h3>
+
+<p>The assembled graph holds 459 nodes and 2,108 edges. The node count is the sum of the 327 activities and the 131 roles, plus one aggregate node. The edge count is dominated by responsibility edges, with containment edges accounting for the hierarchy and a small number of reference edges added from cross-references, six of which came from the reference patterns added after the initial extraction.</p>
+
+<h2>3.7 Pipeline Evaluation</h2>
+
+<h3>3.7.1 Execution and Caching</h3>
+
+<p>A full rebuild from the PDF takes roughly fifteen to twenty seconds. That is acceptable offline and unacceptable per request, so the assembled node set is serialised to a cache file at build time and loaded at application startup. The running service never opens the PDF.</p>
+
+<p>This was not the original arrangement, and the reason it changed is covered in Chapter 5: the first deployment attempt parsed the document during startup and was terminated by the hosting platform for exceeding its memory limit. Caching resolved that, and it also removed a subtler risk, since parsing at startup would have made the served content depend on the runtime environment rather than on a verified build artefact.</p>
+
+<h3>3.7.2 Data Quality Outcomes</h3>
+
+<p>The unresolved-role rate of 0.56 percent is the pipeline's headline quality figure, and it should be read carefully. It measures the proportion of extracted responsibility entries whose role could not be matched to a column header. It does not measure whether the correct code was extracted for every cell, which no automated check can establish in the absence of ground truth. That second question was addressed by sampling: specific activities were compared entry by entry against the printed page, including activities chosen precisely because they had previously been extracted incorrectly.</p>
+
+<h3>3.7.3 Observed Limitations</h3>
+
+<p>Two records in the processed subset, 2.516 and 2.522, have empty titles that the parser could not recover, and one record, 2.222.1, retains a residual title corruption. All three are known and documented rather than quietly accepted. A candidate fix for the last case was implemented, tested, found not to resolve the target case, found to introduce a regression elsewhere, and reverted. Leaving a documented defect in place was judged better than carrying a change that made the overall extraction worse.</p>
+
+<p>The pipeline has also only been exercised against three chapters. The remaining chapters of the full document use the same table conventions as far as can be determined, but that expectation is untested, and processing them would be the first step of any continuation of this work.</p>
+
+<h2>Conclusion</h2>
+
+<p>The pipeline converts a document whose structure is purely visual into 327 validated records carrying 1,776 responsibility entries, with under one percent of those entries unresolved, and turns that output into a graph of 459 nodes and 2,108 edges that answers relationship questions by traversal. Each stage is deterministic and inspectable, which is what allowed the defects described in Chapter 2 to be found, fixed, and prevented from recurring. The next chapter builds the agent that queries this graph.</p>
+
+<!-- ============ CHAPTER 4 ============ -->
+<h1>Chapter 4: Retrieval, Grounded Generation and Agent Design</h1>
+
+<h2>Introduction</h2>
+
+<p>The knowledge graph holds the facts. This chapter describes the layer that turns a typed question into an answer drawn from it. Three problems have to be solved in sequence: working out which activity the user means, working out what they want to know about it, and saying it back in a way that reads naturally without becoming unfaithful in the process.</p>
+
+<p>The third problem is where most of the design effort went, and it is the one that distinguishes this system from a conventional retrieval-augmented assistant. The language model here is not trusted to decide anything. It receives facts that have already been retrieved and is permitted only to rephrase them, and what it produces is verified against those facts before it is shown.</p>
+
+<h2>4.1 Retrieval Methodology</h2>
+
+<h3>4.1.1 Identifier Fast Path</h3>
+
+<p>When a question contains something shaped like an activity identifier, the system tries a direct lookup first. Identifiers are unique, so a match is exact and carries no uncertainty. This path is cheap and it is the one that serves users who already know what they are looking for.</p>
+
+<p>An identifier that is not in the node set is treated as a distinct outcome rather than as a failed lookup. This distinction matters more than it sounds. In an earlier version, an unrecognised identifier simply fell through to free-text search over the whole question, including the bogus identifier itself. The remaining words in the question, things like "task", "who", and "approves", share enough vocabulary with real activity titles to score above zero, so the system would return a confident answer about an unrelated activity while the user believed they were being told about the identifier they had asked about. The behaviour was reachable with ordinary phrasing, not a contrived edge case, and it is the sort of failure that makes a compliance tool worse than useless.</p>
+
+<h3>4.1.2 Free-Text Resolution</h3>
+
+<p>Questions that name an activity rather than identifying it are resolved by lexical similarity. Activity titles are vectorised with TF-IDF and compared against the question by cosine similarity, and the highest-scoring node is returned along with its score.</p>
+
+<p>Process-level titles are included in the index alongside tasks, child tasks, and threshold variants. They were excluded at first, on the reasoning that users ask about activities rather than about organisational groupings. That reasoning was wrong in a specific way: a user asking about the organisation of missions in the non-sovereign chapter was matching nothing useful, because the only node whose title actually contained that phrasing was a process and processes were not indexed. What the agent does with a process-level match is the agent's concern, not the search layer's, and the search layer's job is to find the right node.</p>
+
+<h3>4.1.3 Why Lexical Retrieval Rather Than Embeddings</h3>
+
+<p>Semantic retrieval with learned embeddings is the more fashionable choice and would be the right one for a large, varied corpus written in ordinary language. This corpus is neither large nor varied. It is a few hundred short titles written in a controlled institutional vocabulary, where the words a user is likely to type are mostly the words the document already uses.</p>
+
+<p>Lexical matching also has a property that matters for this project: its behaviour is explainable. A score can be traced to shared terms, a mismatch can be diagnosed by looking at the vocabulary, and the whole layer runs with no model download, no inference cost, and no dependency on an external service. Given that retrieval accuracy is the foundation everything else rests on, the ability to reason about why a given node was returned was worth more than the additional recall an embedding model might have offered.</p>
+
+<h3>4.1.4 Typo Tolerance</h3>
+
+<p>People misspell things, particularly long institutional phrases. Rather than relying on a language model to interpret intent, the system applies a deterministic correction step: each alphabetic word in the question is compared against the vocabulary the document itself uses, and replaced with the closest match when the similarity exceeds a threshold and the word is not already an exact match.</p>
+
+<p>The threshold was calibrated against a real false positive rather than chosen by intuition. Set too low, ordinary words get rewritten into document vocabulary they merely resemble, which corrupts questions that were correct to begin with. The value in use was fixed by testing both the real misspellings the correction was built to catch and the false positive that first exposed the problem. Because the step is deterministic, it behaves identically whether or not a language model provider is reachable.</p>
+
+<h2>4.2 Evaluation Protocol and Confidence Semantics</h2>
+
+<p>There is no held-out test set here, because there is no labelled corpus to hold out. Correctness is established instead by comparison against the source document, and every resolution carries a method label and a confidence value so that the basis of an answer is visible to the user rather than implied.</p>
+
+<table>
+<tr><th style="width: 26%;">Method</th><th style="width: 20%;">Confidence</th><th>Interpretation</th></tr>
+<tr><td><code>id</code></td><td>1.0</td><td>Exact identifier match. No ambiguity.</td></tr>
+<tr><td><code>text_search</code></td><td>TF-IDF score</td><td>Resolved from the activity's name. The score is shown, and low scores are flagged in the interface.</td></tr>
+<tr><td><code>invalid_id</code></td><td>&mdash;</td><td>An identifier was recognised in the question but does not exist in the document.</td></tr>
+<tr><td><code>needs_clarification</code></td><td>&mdash;</td><td>The question is too vague to resolve to a single activity.</td></tr>
+<tr><td><code>out_of_scope</code></td><td>&mdash;</td><td>The question is not about the subject matter of the document.</td></tr>
+<tr><td><code>glossary</code></td><td>&mdash;</td><td>The question asked for the expansion of an abbreviation.</td></tr>
+<tr><td><code>action_code_legend</code></td><td>&mdash;</td><td>The question asked what an authority code means.</td></tr>
+<tr><td><code>smalltalk</code></td><td>&mdash;</td><td>Conversational input with no lookup component.</td></tr>
+</table>
+<p class="tcaption">Table 4.1 &ndash; Resolution methods and their confidence semantics.</p>
+
+<p>Exposing the method alongside the answer is a small decision with a large effect on trust. A user who can see that an answer came from an exact identifier match treats it differently from one resolved by name at a middling similarity score, and that difference in treatment is appropriate.</p>
+
+<h2>4.3 Deterministic Answer Construction</h2>
+
+<h3>4.3.1 Intent Detection</h3>
+
+<p>Once an activity is resolved, the system determines what is being asked about it. Questions map onto the document's authority codes, and the mapping has to accommodate the way people actually phrase things: "who signs off on this" means approval, "who has to check this" means check and verify.</p>
+
+<p>The mapping is deliberately not naive about the letter C. As set out in section 1.3.1.1, C1 and C2 mean check and verify while C3 and C4 mean consult, and treating the word "check" as equivalent to the bare letter C would merge two unrelated obligations. Intent detection therefore works against full codes rather than their first character.</p>
+
+<h3>4.3.2 Mandatory Obligation Surfacing</h3>
+
+<p>An answer reports what was asked and then adds what the document makes mandatory regardless. If an activity has a recorded check-and-verify obligation, that obligation is stated even when the question was about approval. If informed parties are recorded, they are named.</p>
+
+<p>The reasoning is that these are not contextual extras. A check-and-verify entry in the DAM is an institutional requirement, and a new employee asking a narrow question is exactly the person who does not know to ask the other three. The note is suppressed only when it would duplicate the answer already given, so a question about who checks an activity does not repeat its own answer as a footnote.</p>
+
+<h3>4.3.3 Cross-Reference Following</h3>
+
+<p>Where a resolved activity has no responsibilities of its own but does carry a cross-reference, the system follows the reference and reports the target's responsibilities, stating that it has done so. This mirrors what a human reader does when a row tells them to look elsewhere, and it converts a dead end into an answer.</p>
+
+<h3>4.3.4 Honest Refusal</h3>
+
+<p>Three cases produce an explicit non-answer. An identifier that does not exist is reported as not existing, with a suggestion to check it or describe the activity in words. A question too vague to resolve prompts for more detail. A question outside the document's subject matter is declined as out of scope.</p>
+
+<p>None of these paths is allowed to degrade into a best guess. This is the behaviour that requirement FR7 specifies and the property that gives the system's positive answers their value: a tool that answers everything tells you nothing about which of its answers to trust.</p>
+
+<h2>4.4 Auxiliary Query Types</h2>
+
+<p>Not every question is an authority lookup. Three additional categories are handled directly.</p>
+
+<p>Glossary questions ask what an abbreviation means and are answered from the abbreviations parsed out of the document, supplemented by a small curated set of aliases for acronyms that appear in role names without being separately defined. When an expansion comes from the curated set, the system says so rather than presenting it as sourced from the document.</p>
+
+<p>Authority-code questions ask what a code means and are answered from the transcribed legend. Detection here is deliberately conservative about bare single letters, since "I" collides constantly with the pronoun. A bare code counts as a real mention only when it appears alongside another code or is unambiguous on its own, such as the parenthesised informed marker or a letter-and-digit combination that is not a plausible English word. The rule was checked against a batch of ordinary questions, including sentences such as "I approve this" and "A2 is fine", before it was trusted.</p>
+
+<p>Conversational input, greetings and thanks and questions about what the system can do, is matched against anchored patterns and answered directly, short-circuiting the lookup pipeline. The patterns are anchored against the whole message rather than searched as substrings, because a substring test matches "hi" inside "history of the DAM" and inside any question that happens to open with a greeting.</p>
+
+<h2>4.5 Hybrid Language Model Layer</h2>
+
+<p>Answer phrasing is delegated to a language model through a provider interface with two implementations and three operating modes.</p>
+
+<table>
+<tr><th style="width: 20%;">Mode</th><th style="width: 26%;">Provider</th><th>Behaviour</th></tr>
+<tr><td>Auto</td><td>Cloud provider, falling back to local, falling back to template</td><td>Default. Uses whichever provider is available, and the deterministic template if neither is.</td></tr>
+<tr><td>Cloud</td><td>Groq</td><td>Hosted inference. Fast, requires an API key and network access.</td></tr>
+<tr><td>Local</td><td>Ollama</td><td>Runs on the same machine or in a companion container. No external dependency.</td></tr>
+<tr><td>Off</td><td>None</td><td>Template answers only. Every lookup capability remains available.</td></tr>
+</table>
+<p class="tcaption">Table 4.2 &ndash; Language model providers and operating modes.</p>
+
+<p>The interface between the agent and the providers is narrow by design, which paid off during the project when a hosted model was deprecated by its provider and began returning errors on the deployed instance. The fix was a single constant change behind the interface, with no effect on the agent, the retrieval layer, or the tests covering them.</p>
+
+<p>The mode selector is exposed in the interface, and it reports the actual model names each mode would use by reading them from the provider classes rather than from a hard-coded list, so the displayed configuration cannot drift away from what the backend actually does.</p>
+
+<h2>4.6 Grounded Generation and the Verification Check</h2>
+
+<h3>4.6.1 The Contract Given to the Model</h3>
+
+<p>The model never sees the knowledge graph and never chooses what to retrieve. It receives a question, a set of already-retrieved facts, and a system prompt instructing it to state those facts naturally, to invent nothing, to omit nothing, and to avoid formatting of any kind. Where the answer must be produced in another language, an additional rule instructs it to translate the sentence while copying role names, identifiers, and footnote numbers exactly as given.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT FIGURE HERE: fig4_grounding.png ]</p>
+<p class="caption">Figure 4.1 &ndash; The grounded generation flow. The model may only rephrase facts that have already been verified, and any rephrasing that drops or alters a fact is discarded in favour of the deterministic template answer.</p>
+
+<h3>4.6.2 The Verification Step</h3>
+
+<p>A prompt is an instruction, not a guarantee. The verification step is what turns the instruction into a property of the system.</p>
+
+<p>Before a generated answer is returned, every role name in the facts backing that answer is checked for presence in the generated text. If any is missing, the generated answer is discarded and the deterministic template answer is returned in its place. The check is a containment test rather than a similarity judgement, which means it cannot be satisfied by a paraphrase: a model that renames a role, merges two roles into one, or quietly drops the third of four informed parties fails the check, regardless of how fluent the result is.</p>
+
+<p>Comparison is performed after normalising whitespace and case on both sides. That tolerance was added after the check was observed rejecting otherwise faithful rephrasings over nothing but incidental spacing differences. It loosens formatting sensitivity without loosening what is actually verified, since the same words in the same order must still be present.</p>
+
+<h3>4.6.3 Answer Length and the Fallback Rate</h3>
+
+<p>The verification step initially fired more often than expected, and the cause turned out to be a conflict between two instructions rather than model unreliability. The system prompt asked for an answer in one to three sentences. Activities with many recorded responsibilities cannot be stated completely in three sentences, so the model, following the brevity instruction, dropped facts, and the check correctly rejected the result.</p>
+
+<p>The fix relaxed brevity rather than accuracy. When the number of facts backing an answer reaches a threshold, the brevity rule is replaced with an instruction to use as many sentences as the facts require, while every other constraint stays in place. The fallback rate dropped and the verification criterion was left untouched, which was the point: the accuracy requirement was never the thing that needed adjusting.</p>
+
+<h2>4.7 Conversational Capabilities</h2>
+
+<h3>4.7.1 Context Carry-Over</h3>
+
+<p>A user who has just asked about an activity and then asks "and who has to be informed?" expects the second question to be understood against the first. The interface passes the previously resolved activity identifier with each question, and where a follow-up contains no subject of its own, it is answered against that activity, with the interface stating that the subject was carried over.</p>
+
+<p>Carry-over is suppressed for question types that have nothing to do with the previous activity. Authority-code questions were briefly swallowed by it, so that asking what a code means while an activity was in context produced an answer about that activity instead of about the code.</p>
+
+<h3>4.7.2 Tone Adaptation</h3>
+
+<p>Questions are classified as neutral, frustrated, or confused, and a short empathetic opener is prepended where the tone is not neutral. Classification runs only when a cheap pre-filter suggests it is worth doing, so the common case costs nothing extra, and it is applied to what the user actually typed rather than to any internally translated version of it, since tone belongs to the user's own words.</p>
+
+<h3>4.7.3 Multilingual Support</h3>
+
+<p>Questions in French, Spanish, Portuguese, or Arabic are detected by a cheap pre-filter based on character ranges and function-word lists, translated into English for retrieval, and answered in the language they were asked in. Retrieval itself remains English-only, which keeps the index and its behaviour unchanged.</p>
+
+<p>The verification check is not translated. It continues to look for the literal English role names inside the answer, whatever language the surrounding sentence is in, which is deliberate: a French answer that dropped a role name fails exactly as an English one would. Arabic additionally required the interface to switch to right-to-left layout, which is a correctness issue in presentation rather than in translation. Where translation is needed and no provider is available, the system says so instead of running non-English text through an English-only index and returning a confusing refusal.</p>
+
+<h2>4.8 Worked Examples and Discussion</h2>
+
+<p>The following exchanges were run against the delivered build and are reproduced as the system produced them.</p>
+
+<p>Asking <i>"who approves 2.126"</i> resolves by identifier with confidence 1.0 to the quarterly mission programme activity, and names the Regional Director General and the Director of the Nigeria office as approvers, with the abbreviation expanded inline. The answer also states that the task must be checked and verified by the Sector Manager and the Supporting Department Division Manager, and that the concerned Sector Vice-President, the Regional Vice-President, and the Task Manager or Project Team must be informed. None of that was asked for. All of it is mandatory.</p>
+
+<p>Asking <i>"who needs to be informed for quarterly mission program"</i> resolves the same activity from its name alone, with the answer now centred on the informed parties.</p>
+
+<p>Asking <i>"who aproves the qaurterly mision program"</i>, with two deliberate misspellings, resolves identically. The correction is deterministic, so it behaves the same with or without a model provider available.</p>
+
+<p>Asking <i>"who initiates 1.117.2"</i> exercises the redirect path. That activity's own row records no responsibilities and points to another activity, so the system follows the pointer and reports the target's responsibilities instead of dead-ending.</p>
+
+<p>Asking <i>"who approves of Communication with Co-Financiers of projects"</i> followed by <i>"and who are the informed parties?"</i> exercises carry-over: the second question stays on the activity resolved by the first.</p>
+
+<p>Asking <i>"what happens with 9.999.999"</i> produces a refusal, stating that the identifier does not exist and suggesting the user check it or describe the activity in words. This is the behaviour the design exists to produce, and it is worth reading it as a result rather than as a limitation.</p>
+
+<h2>Conclusion</h2>
+
+<p>The agent resolves questions through an identifier fast path and a lexical search layer, both deterministic, and constructs answers from records held in the graph. A language model improves how those answers read and is prevented from affecting what they say by a verification step that compares generated text against the retrieved facts and discards anything that has lost one. Around that core sit the behaviours that make the system usable in practice: typo tolerance, redirect following, mandatory obligation surfacing, context carry-over, multilingual handling, and explicit refusal. The next chapter presents the application built on top of this agent and the testing that supports it.</p>
+
+<!-- ============ CHAPTER 5 ============ -->
+<h1>Chapter 5: Implementation Results and Delivered Platform</h1>
+
+<h2>Introduction</h2>
+
+<p>This chapter presents what was actually delivered: a hosted web application with a chat interface and an analytics dashboard, the REST interface between them and the agent, the test suite that supports the whole system, and the deployment arrangement that keeps it running on a free hosting tier.</p>
+
+<h2>5.1 The Delivered Application</h2>
+
+<h3>5.1.1 Overview and Architecture</h3>
+
+<p>The application is a single-page web client served as static files by the same backend that exposes the API. The backend loads the cached node set once at startup, builds the graph and the search index in memory, and answers requests from those structures. There is no database, because the knowledge base is read-only, fits comfortably in memory, and is versioned with the code as a build artefact.</p>
+
+<p>The web layer holds no domain logic. Every decision about what an answer contains is made in the agent, and the backend wraps it. That separation was maintained deliberately, and it is what made the interface, the providers, and the deployment target each replaceable without touching the parts of the system that determine correctness.</p>
+
+<h3>5.1.2 The Chat Interface</h3>
+
+<p>The chat page is the primary interface. A user types a question and receives an answer, together with the metadata that makes the answer auditable: the resolved activity identifier, how it was resolved, the confidence where one applies, whether a language model was used for phrasing, and which language the answer is in.</p>
+
+<p>Two controls sit in the header. One selects the language model mode described in Table 4.2, including switching it off entirely. The other selects the answer language, with an automatic option that follows the language of the question. Below any answer that was phrased by a model, a control reveals the underlying deterministic answer, so a user can always see the unembellished version of what the document says.</p>
+
+<p>Low-confidence resolutions are marked visually. Conversations are kept in a sidebar so that earlier exchanges remain available, and the layout collapses to a single column with a menu on narrow screens, since consultation frequently happens on a phone.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT SCREENSHOT HERE: chat interface ]</p>
+<p class="caption">Figure 5.1 &ndash; The chat interface of the delivered application.</p>
+
+<h3>5.1.3 The Analytics Dashboard</h3>
+
+<p>The dashboard presents the structure of the document itself rather than answers to questions. It reports the node counts by type, the total number of responsibility entries, the distribution of authority codes, the roles most frequently involved, the proportion of unresolved roles, and the graph totals.</p>
+
+<p>Two of its indicators are worth singling out, because they describe the extraction rather than the document. The average number of responsibilities per record and the proportion of records with no direct responsibilities are both data quality signals that were invisible before the document was structured, and both were used during development to detect regressions: a sudden change in either after a parser change is a reliable sign that something has broken.</p>
+
+<p>The dashboard is filterable by chapter, and its charts are linked, so selecting an authority code in the distribution chart re-scopes the roles chart to show who most often holds that particular authority.</p>
+
+<p style="text-align: center; color: #595959; font-style: italic;">[ INSERT SCREENSHOT HERE: analytics dashboard ]</p>
+<p class="caption">Figure 5.2 &ndash; The analytics dashboard of the delivered application.</p>
+
+<h2>5.2 REST Interface</h2>
+
+<table>
+<tr><th style="width: 30%;">Endpoint</th><th style="width: 14%;">Method</th><th>Purpose</th></tr>
+<tr><td><code>/api/ask</code></td><td>POST</td><td>Core endpoint. Accepts a question, an optional model mode, an optional previously resolved activity for carry-over, and an optional target language. Returns the answer, the deterministic answer, the resolved identifier, the resolution method and score, the backing facts, and the language and model metadata.</td></tr>
+<tr><td><code>/api/health</code></td><td>GET</td><td>Liveness check, used by the hosting platform and by the interface's status indicator. Reports how many nodes are loaded.</td></tr>
+<tr><td><code>/api/llm/config</code></td><td>GET</td><td>Reports the model names each mode would currently use, read from the provider classes.</td></tr>
+<tr><td><code>/api/dashboard/summary</code></td><td>GET</td><td>Aggregate statistics backing the dashboard, including per-chapter breakdowns and graph totals.</td></tr>
+</table>
+<p class="tcaption">Table 5.1 &ndash; REST API endpoints exposed by the backend.</p>
+
+<h2>5.3 Testing and Validation</h2>
+
+<p>The system carries 374 automated tests across 23 files. The number matters less than their provenance: these are not tests written to reach a coverage figure. Almost every one exists because a specific defect was found, and the test was written to pin the corrected behaviour so it could not silently return.</p>
+
+<table>
+<tr><th style="width: 34%;">Test file</th><th style="width: 12%;">Tests</th><th>Area covered</th></tr>
+<tr><td><code>test_task_blocks.py</code></td><td>25</td><td>Task boundary detection, title attachment, threshold-variant hierarchy</td></tr>
+<tr><td><code>test_row_merge.py</code></td><td>5</td><td>Split-row merging in the Non-Sovereign Operations chapter</td></tr>
+<tr><td><code>test_column_roles.py</code></td><td>8</td><td>Rotated header extraction and role attribution</td></tr>
+<tr><td><code>test_title_corruption.py</code></td><td>10</td><td>Character-level title recovery for cross-row bleeding</td></tr>
+<tr><td><code>test_metadata.py</code></td><td>11</td><td>Reference extraction and footnote-digit stripping</td></tr>
+<tr><td><code>test_glossary_parsing.py</code></td><td>7</td><td>Abbreviations list extraction</td></tr>
+<tr><td><code>test_build_nodes.py</code></td><td>7</td><td>Node assembly and hierarchy correctness</td></tr>
+<tr><td><code>test_graph.py</code></td><td>7</td><td>Graph construction and edge validation</td></tr>
+<tr><td><code>test_nodes_cache.py</code></td><td>2</td><td>Lossless cache save and load</td></tr>
+<tr><td><code>test_search.py</code></td><td>8</td><td>Identifier fast path and free-text resolution</td></tr>
+<tr><td><code>test_typo_correct.py</code></td><td>18</td><td>Typo-tolerance thresholds</td></tr>
+<tr><td><code>test_smalltalk.py</code></td><td>40</td><td>Greeting, farewell, and capability detection</td></tr>
+<tr><td><code>test_action_codes.py</code></td><td>20</td><td>Authority-code explanation and carry-over exclusion</td></tr>
+<tr><td><code>test_glossary_agent.py</code></td><td>32</td><td>Glossary lookup and inline acronym expansion</td></tr>
+<tr><td><code>test_agent.py</code></td><td>29</td><td>Answer orchestration, mandatory notes, context carry-over</td></tr>
+<tr><td><code>test_llm.py</code></td><td>15</td><td>Provider mocking, mode resolution, failure handling</td></tr>
+<tr><td><code>test_generate.py</code></td><td>19</td><td>Verification-step correctness and answer-length scaling</td></tr>
+<tr><td><code>test_translate.py</code></td><td>26</td><td>Language detection and translation handling</td></tr>
+<tr><td><code>test_tone.py</code></td><td>25</td><td>Tone pre-filter, classification, prefix application</td></tr>
+<tr><td><code>test_backend.py</code></td><td>29</td><td>End-to-end API behaviour</td></tr>
+<tr><td><code>test_dashboard_data.py</code></td><td>15</td><td>Dashboard metrics and chapter scoping</td></tr>
+<tr><td><code>test_frontend_source.py</code></td><td>16</td><td>Structural checks on the web client source</td></tr>
+<tr><td><b>Total</b></td><td><b>374</b></td><td><b>across 23 files</b></td></tr>
+</table>
+<p class="tcaption">Table 5.2 &ndash; Breakdown of the automated test suite.</p>
+
+<p>Automated tests were not the only verification. Extraction correctness was checked by comparing specific records against the printed pages they came from, which is the only method that catches a plausible-looking wrong answer, and the running system was exercised through its own HTTP interface with real questions before each significant change was accepted.</p>
+
+<h2>5.4 Deployment</h2>
+
+<p>The application is containerised, with a multi-stage build that compiles the web client and then packages it alongside the Python service. A companion composition adds a local model container for offline use, and the cloud provider needs no container at all since it is reached over the network in the same way from inside or outside the container.</p>
+
+<p>Deployment targets a free hosting tier, with automatic redeployment on each change to the main branch. The first deployment attempt failed, and the reason is instructive. The service parsed the PDF during startup, which pushed memory use past the platform's limit and caused the process to be terminated before it could serve anything. The fix was to move parsing to build time and ship the serialised node set, so startup became a file load. Startup memory fell below the limit and startup time fell with it.</p>
+
+<p>One verification gap is worth stating plainly. The container images could not be built or run inside the development environment used for part of this work, since no container runtime was available there. What could be checked statically was checked: the composition file parses as valid configuration with the intended structure, and the container's start command matches the invocation already proven to work outside a container. A real build and run on a developer machine was needed to close that gap, and was carried out before the system was relied upon for demonstration.</p>
+
+<h2>5.5 User Guide</h2>
+
+<p>Using the system requires no training, which was a design goal rather than an accident, but three behaviours are worth knowing.</p>
+
+<p>Questions can name an activity or give its identifier. Identifiers give certainty; names give convenience, and the confidence indicator shows which kind of resolution produced the answer. Follow-up questions do not need to restate their subject, since the system stays on the last activity discussed. And when an answer has been phrased by a language model, the control beneath it reveals the underlying deterministic answer, which is the version to rely on if anything about the phrasing seems off.</p>
+
+<p>Two habits help. Describing an activity in the document's own terms improves resolution, because retrieval is lexical. And an answer that comes back marked as low confidence should be treated as a suggestion to check the identifier rather than as a finding.</p>
+
+<h2>Conclusion</h2>
+
+<p>The delivered platform is a working web application rather than a prototype: a chat interface backed by the agent, a dashboard over the document's own structure, a documented REST interface, 374 automated tests, and an automated deployment on free hosting. The deployment failure described above is included because it illustrates the same pattern as the rest of the project, where an assumption that looked reasonable held until it met the real environment and was corrected once it did.</p>
+
+<!-- ============ GENERAL CONCLUSION ============ -->
+<h1>General Conclusion</h1>
+
+<p>This work began with a document that answers an important question badly, not because its content is wrong but because its form makes retrieval expensive. The DAM states who may approve, check, review, initiate, and be informed of each of the Bank's activities, and it states it inside wide tables with sideways headers and a compact notation that resists both manual lookup and automated processing.</p>
+
+<p>What was built in response is a system that separates the question of what the facts are from the question of how to say them. The document was parsed into 327 validated records carrying 1,776 responsibility entries, with under one percent of those entries left unresolved, and turned into a graph of 459 nodes and 2,108 edges. Questions are resolved to activities through an exact identifier path and a lexical search layer, answers are constructed from records in that graph, and a language model rewrites those answers into natural sentences under a verification step that rejects any rewriting which drops or alters a fact. The result is delivered as a hosted application with a chat interface and an analytics dashboard, supported by 374 automated tests.</p>
+
+<p>Three conclusions seem worth drawing from the work.</p>
+
+<p>The first concerns document extraction. Every substantial defect encountered during this project produced output that looked entirely plausible, and none would have been caught by checking that the code ran without error. They were caught by comparing extracted records against the pages they came from. For documents whose structure is visual, that comparison is not a quality-assurance nicety; it is the only method that works.</p>
+
+<p>The second concerns language models in factual settings. A prompt instructing a model not to invent facts is a request, not a guarantee. Making it a property of the system required a mechanical check outside the model, comparing its output against the facts it was given. The check is simple, it is cheap, and it is the reason a generative component could be used at all in a compliance context. Prompting alone would not have been enough, and the measured fallback behaviour during development confirms that.</p>
+
+<p>The third concerns refusal. The system's willingness to say that something does not exist, or that a question falls outside what it can answer, is what gives its positive answers meaning. A tool that always produces an answer supplies no information about which of its answers to trust.</p>
+
+<h2>Limitations</h2>
+
+<p>Three chapters of the DAM were processed out of a document exceeding two hundred and fifty pages. The remaining chapters appear to use the same conventions, but that expectation is untested. Two records have titles the parser could not recover and one retains a residual corruption, all three documented rather than hidden. Retrieval is lexical, so a question phrased entirely in vocabulary the document does not use will resolve poorly. And the system reflects one version of one document: it has no mechanism for detecting that the underlying DAM has been revised, which in an institutional setting is a real operational concern rather than a theoretical one.</p>
+
+<h2>Perspectives</h2>
+
+<p>The most direct continuation is to process the remaining chapters, which mainly tests whether the parsing rules generalise as expected. Beyond that, a hybrid retrieval layer combining the current lexical matching with a semantic component would improve resolution for questions phrased in outside vocabulary, provided the verification step remains in place unchanged.</p>
+
+<p>A versioning mechanism able to compare a newly issued DAM against the current knowledge base and report what changed would turn a static reference into something maintainable. And since the graph already encodes responsibilities as relationships, the analytics side could be extended from descriptive statistics toward governance questions the printed document cannot easily answer: where authority concentrates, which roles appear in unusually many approval paths, and where a single point of failure exists in a chain of obligations.</p>
+
+<!-- ============ BIBLIOGRAPHY ============ -->
+<h1>Bibliography and Webography</h1>
+
+<h2>Institutional Sources</h2>
+<p>[1] African Development Bank Group. <i>Delegation of Authority Matrix</i>. Internal reference document, PDF, 250+ pages. Source data for this work; an internal Bank document, not publicly published.</p>
+<p>[2] African Development Bank Group. Institutional website. <a href="https://www.afdb.org">https://www.afdb.org</a></p>
+
+<h2>Methodology</h2>
+<p>[3] Chapman, P., Clinton, J., Kerber, R., Khabaza, T., Reinartz, T., Shearer, C., and Wirth, R. <i>CRISP-DM 1.0: Step-by-step Data Mining Guide</i>. SPSS Inc., 2000.</p>
+<p>[4] Wirth, R. and Hipp, J. "CRISP-DM: Towards a Standard Process Model for Data Mining." <i>Proceedings of the Fourth International Conference on the Practical Application of Knowledge Discovery and Data Mining</i>, 2000.</p>
+
+<h2>Information Retrieval and Knowledge Graphs</h2>
+<p>[5] Manning, C. D., Raghavan, P., and Schütze, H. <i>Introduction to Information Retrieval</i>. Cambridge University Press, 2008.</p>
+<p>[6] Hogan, A. et al. "Knowledge Graphs." <i>ACM Computing Surveys</i>, vol. 54, no. 4, 2021.</p>
+<p>[7] Lewis, P. et al. "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks." <i>Advances in Neural Information Processing Systems</i>, 2020.</p>
+<p>[8] Ji, Z. et al. "Survey of Hallucination in Natural Language Generation." <i>ACM Computing Surveys</i>, vol. 55, no. 12, 2023.</p>
+
+<h2>Technical Documentation</h2>
+<p>[9] pdfplumber documentation. <a href="https://github.com/jsvine/pdfplumber">https://github.com/jsvine/pdfplumber</a></p>
+<p>[10] NetworkX documentation. <a href="https://networkx.org/documentation/stable/">https://networkx.org/documentation/stable/</a></p>
+<p>[11] scikit-learn documentation, feature extraction from text. <a href="https://scikit-learn.org/stable/modules/feature_extraction.html">https://scikit-learn.org/stable/modules/feature_extraction.html</a></p>
+<p>[12] FastAPI documentation. <a href="https://fastapi.tiangolo.com/">https://fastapi.tiangolo.com/</a></p>
+<p>[13] Pydantic documentation. <a href="https://docs.pydantic.dev/">https://docs.pydantic.dev/</a></p>
+<p>[14] React documentation. <a href="https://react.dev/">https://react.dev/</a></p>
+<p>[15] Docker documentation. <a href="https://docs.docker.com/">https://docs.docker.com/</a></p>
+<p>[16] Render deployment documentation. <a href="https://render.com/docs">https://render.com/docs</a></p>
+<p>[17] Groq API documentation. <a href="https://console.groq.com/docs">https://console.groq.com/docs</a></p>
+<p>[18] Ollama documentation. <a href="https://github.com/ollama/ollama">https://github.com/ollama/ollama</a></p>
+
+</body>
+</html>

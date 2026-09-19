@@ -343,6 +343,13 @@ def test_dashboard_route_served(client):
     assert "/assets/" in res.text
 
 
+def test_login_route_served(client):
+    res = client.get("/login")
+    assert res.status_code == 200
+    assert "Sign in" in res.text
+    assert "/assets/" in res.text
+
+
 def test_ask_without_llm_field_is_pure_deterministic(client):
     res = client.post("/api/ask", json={"question": "who approves 3.111"})
     body = res.json()
@@ -396,8 +403,25 @@ def test_ask_llm_success_path_uses_grounded_phrasing(client):
         assert "GROQ_API_KEY" in body["llm_error"]
 
 
-def test_dashboard_summary_reflects_real_graph(client):
+def test_dashboard_summary_requires_authentication(client):
     res = client.get("/api/dashboard/summary")
+    assert res.status_code == 401
+
+
+def test_dashboard_summary_reflects_real_graph(client):
+    # The dashboard is administrator-only (Chapter 5) - the first
+    # account ever created becomes an administrator (see
+    # webapp/backend.py's signup()), and tests/conftest.py guarantees
+    # the users table is empty at the start of every test, so this
+    # signup is reliably "first."
+    signup = client.post(
+        "/api/auth/signup",
+        json={"email": "dashboard-test@example.com", "password": "testpassword123"},
+    )
+    assert signup.json()["role"] == "administrator"
+    token = signup.json()["access_token"]
+
+    res = client.get("/api/dashboard/summary", headers={"Authorization": f"Bearer {token}"})
     assert res.status_code == 200
     body = res.json()
     assert body["total_nodes"] == 327

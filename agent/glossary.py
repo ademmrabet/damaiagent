@@ -6,12 +6,6 @@ from knowledge.typo_correct import correct_words
 
 GLOSSARY_PATH = Path(__file__).resolve().parent.parent / "data" / "reference" / "abbreviations.json"
 
-# Deliberately narrow trigger phrasing - only fires on "what does X
-# mean/stand for", "define X", "meaning of X" style questions. Does
-# NOT trigger on a bare "what is X", since that overlaps too heavily
-# with ordinary DAM-task questions like "what is 2.120" - those need
-# to keep reaching the normal node-resolution pipeline in qa.py, not
-# get hijacked here.
 _TRIGGER_PATTERNS = [
     re.compile(
         r"what does\s+(?:the\s+)?(?:acronym\s+|abbreviation\s+)?(.+?)\s+(?:mean|means|stand for|stands for)\b",
@@ -25,39 +19,15 @@ _TRIGGER_PATTERNS = [
     re.compile(r"\bmeaning of\s+(.+?)(?:\?|$)", re.IGNORECASE),
 ]
 
-# Bare "what's X" / "what is X" / "whats X" - deliberately handled
-# separately from _TRIGGER_PATTERNS above, not merged into them,
-# because this phrasing is genuinely ambiguous ("what is 2.120" must
-# still reach the normal DAM id lookup). Only ever treated as a
-# glossary question when: (a) it's a single bare token with no dots
-# or spaces (a DAM id always has a dot, e.g. "2.120"; a task
-# description is always multiple words), and (b) that token actually
-# resolves in the glossary - if it doesn't resolve, this returns no
-# match at all rather than an honest "not found", since an
-# unresolved bare "what's X" might just as easily be a mistyped task
-# question as a real glossary miss, and guessing wrong here is worse
-# than falling through to the normal pipeline.
 _BARE_WHATS_PATTERN = re.compile(r"^whats?(?:'s|\s+is)?\s+(.+?)\s*\??$", re.IGNORECASE)
 _BARE_ACRONYM_SHAPE = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,7}$")
 
-# The trigger phrasing's own words, not the term being asked about -
-# typo-correcting "what dose DDG men" into "what does DDG mean" should
-# never risk touching "DDG" itself. Safe in practice even without this
-# vocabulary being exhaustive: correct_words() already skips ALL-CAPS
-# and sub-4-letter words, which covers virtually every real acronym in
-# this glossary (see MANUAL_ALIASES / abbreviations.json).
 _GLOSSARY_TRIGGER_VOCAB = {
     "what", "whats", "does", "the", "acronym", "abbreviation",
     "mean", "means", "stand", "stands", "for", "is", "meaning",
     "definition", "of", "define",
 }
 
-# Matches a standalone all-caps token like "DDG" or "RDVP" embedded in
-# a longer role name (e.g. "Country Manager / DDG") - built from
-# checking real role names extracted from the DAM: composite roles
-# consistently spell out full words in Title Case and only use
-# ALL-CAPS for an embedded acronym, so this stays narrow to genuine
-# acronym mentions instead of matching ordinary words.
 _ACRONYM_TOKEN = re.compile(r"\b[A-Z][A-Z0-9]{1,6}\b")
 
 
@@ -69,18 +39,6 @@ def _load_glossary():
 
 _GLOSSARY = _load_glossary()
 
-# Manual, hand-added exceptions - NOT extracted from pages 2-7, kept
-# in a separate dict rather than merged into abbreviations.json so
-# that file stays a pure, reproducible extraction of the PDF (rerun
-# parsing/glossary.py against the source and you get exactly
-# abbreviations.json back, no hidden manual edits). Added here because
-# real usage surfaced a real gap: "RDNG" appears directly in DAM role
-# names (confirmed: "RDG / Director RDNG", "Country Manager / DDG RDG
-# / Director RDNG") but the Abbreviations list itself never defines it
-# as its own entry - only "RDG" is defined there, with a note that RDG
-# "also covers the Director of the Nigeria Country Office". This is
-# that same fact, just also reachable under the exact acronym the DAM
-# actually uses in role names.
 MANUAL_ALIASES = {
     "RDNG": (
         "RDNG",
@@ -149,17 +107,6 @@ def detect_glossary_query(query):
     if detection:
         return detection
 
-    # A looser threshold than knowledge/typo_correct.py's 0.88 default
-    # on purpose: short trigger words ("what"/"does") only reach ~0.75
-    # against a common 1-character transposition typo ("waht", "dose")
-    # - a 4-letter word's ratio ceiling under a transposition is just
-    # lower than a longer word's. 0.88 was raised specifically to stop
-    # a large, organic-language vocabulary (DAM title words) from
-    # false-positiving on unrelated real words; that risk is much
-    # smaller here - this vocabulary is a short, curated, semantically
-    # distinct list of ~16 words, checked directly against a batch of
-    # unrelated realistic words before lowering this (only one weak
-    # collision found: "form" -> "for", low-impact even if it fires).
     corrected = correct_words(query, _GLOSSARY_TRIGGER_VOCAB, min_ratio=0.75)
     if corrected != query:
         return _detect_glossary_query_raw(corrected)

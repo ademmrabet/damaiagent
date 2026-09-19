@@ -4,8 +4,9 @@ import Header from '../components/Header.jsx';
 import LlmPicker from '../components/LlmPicker.jsx';
 import LanguagePicker from '../components/LanguagePicker.jsx';
 import ConversationSidebar from '../components/ConversationSidebar.jsx';
+import LogoutButton from '../components/LogoutButton.jsx';
 import useConversations from '../hooks/useConversations.js';
-import { askQuestion } from '../api.js';
+import { askQuestion, isLoggedIn } from '../api.js';
 import { LANGUAGE_NAMES, RTL_LANGUAGES, stringsFor } from '../i18n.js';
 import './chat.css';
 
@@ -85,12 +86,6 @@ function MessageBubble({ message, index, t }) {
     meta.usedLlm &&
     meta.deterministicAnswer &&
     meta.deterministicAnswer !== text;
-  // The answer actually came back in a non-English language only when
-  // the LLM phrasing step both ran AND succeeded - answerLanguage
-  // alone just reflects what was *requested* (see webapp/backend.py,
-  // docs/decisions.md 2026-09-03), so a failed/unavailable LLM still
-  // correctly shows the fallback warning below instead of falsely
-  // claiming success.
   const answeredInOtherLanguage =
     meta && meta.answerLanguage && meta.answerLanguage !== 'en' && meta.usedLlm;
   const languageFellBack =
@@ -159,12 +154,6 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [llmMode, setLlmMode] = useState('auto');
-  // The language picker's own selection - 'auto' (default) keeps the
-  // existing per-question auto-detect behavior; anything else is an
-  // explicit override sent to the backend as target_language (see
-  // api.js, webapp/backend.py, docs/decisions.md 2026-09-03). Also
-  // drives which UI_STRINGS dictionary the surrounding chrome (send
-  // button, placeholder, meta labels) renders in.
   const [uiLanguage, setUiLanguage] = useState('auto');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const chatRef = useRef(null);
@@ -179,24 +168,19 @@ export default function Chat() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      window.location.replace('/login');
+    }
+  }, []);
+
   async function handleSubmit(e) {
     e.preventDefault();
     const question = input.trim();
     if (!question || !activeConversation) return;
 
-    // Captured up front, not read again after the await - if the user
-    // switches conversations while a request is in flight, the answer
-    // still lands in the conversation that actually asked the
-    // question, not whatever happens to be on screen when it resolves.
     const targetId = activeConversation.id;
 
-    // The most recent node_id this conversation resolved to, if any -
-    // sent along so a pronoun-style follow-up ("who are the informed
-    // parties for THAT ACTIVITY?") has a real anchor instead of the
-    // backend guessing off incidental word overlap (see
-    // agent/qa.py's answer_question, docs/decisions.md 2026-08-06).
-    // Read from activeConversation.messages BEFORE appendMessage below
-    // adds this new question, same reasoning as capturing targetId.
     let previousNodeId = null;
     for (let i = activeConversation.messages.length - 1; i >= 0; i -= 1) {
       const m = activeConversation.messages[i];
@@ -253,6 +237,7 @@ export default function Chat() {
           <>
             <LanguagePicker value={uiLanguage} onChange={setUiLanguage} />
             <LlmPicker value={llmMode} onChange={setLlmMode} />
+            <LogoutButton />
           </>
         }
         onMenuClick={() => setSidebarOpen((o) => !o)}

@@ -1,0 +1,228 @@
+% =====================================================================
+%  END-OF-STUDIES PROJECT — MAIN DOCUMENT
+%  Adem Mrabet — Polytech Intl — Data Science — 2025/2026
+%
+%  This single file compiles on its own. Pages get added in the
+%  marked slots further down as you write them.
+% =====================================================================
+
+\documentclass[12pt,a4paper,oneside]{report}
+
+% ------------------------- ENCODING & LANGUAGE -----------------------
+\usepackage[utf8]{inputenc}     % lets you type accented characters directly
+\usepackage[T1]{fontenc}        % proper output encoding (fixes copy-paste)
+\usepackage[english]{babel}     % hyphenation rules
+
+% ------------------------- PAGE GEOMETRY -----------------------------
+% left margin is wider than right to leave room for binding
+\usepackage[a4paper,top=2.7cm,bottom=2.7cm,left=3cm,right=2.5cm,
+            headheight=15pt]{geometry}
+
+% ------------------------- FONTS & SPACING ---------------------------
+\usepackage{mathpazo}                  % Palatino body text
+\usepackage[scaled=0.92]{helvet}       % Helvetica-like headings
+\usepackage{microtype}                 % subtle spacing improvements
+\usepackage{setspace}
+\onehalfspacing                        % 1.5 line spacing
+
+% ------------------------- COLOURS -----------------------------------
+\usepackage{xcolor}
+\definecolor{myblue}{HTML}{00723F}       % main accent (AfDB green)
+\definecolor{mydark}{HTML}{14532D}       % darker shade for titles
+\definecolor{mygray}{HTML}{595959}       % muted grey
+
+% ------------------------- GRAPHICS & TABLES -------------------------
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,color=mydark}}
+
+% ------------------------- HEADING STYLES ----------------------------
+\usepackage{titlesec}
+
+% Chapter: big coloured title with a rule underneath.
+% The [ ... ] at the end is "after-code" — it runs after the title.
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\huge\bfseries\color{mydark}}
+  {\filright\Large\textcolor{myblue}{\chaptertitlename\ \thechapter}}
+  {8pt}
+  {\Huge}
+  [\vspace{4pt}{\color{myblue}\titlerule[1.4pt]}]
+\titlespacing*{\chapter}{0pt}{-10pt}{28pt}
+
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{mydark}}{\thesection}{10pt}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{myblue}}{\thesubsection}{8pt}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\bfseries\itshape\color{mygray}}
+  {\thesubsubsection}{6pt}{}
+
+% Number and list four levels deep (1.2.3.4), like the reference theses
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% ------------------------- HEADERS & FOOTERS -------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.5pt}
+\fancyhead[L]{\small\sffamily\color{mygray}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\sffamily\color{mygray}\thepage}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[R]{\small\sffamily\color{mygray}\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% ------------------------- LINKS -------------------------------------
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=mydark,
+  urlcolor=myblue,
+  pdftitle={End-of-Studies Project},
+  pdfauthor={Adem Mrabet}
+}
+
+% ------------------------- HELPER -------------------------------------
+% \blankpage — a genuinely empty page (LaTeX drops pages with no content,
+% so \mbox{} gives it something invisible to hold on to)
+\newcommand{\blankpage}{%
+  \newpage
+  \thispagestyle{empty}
+  \mbox{}
+  \newpage
+}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\pagenumbering{roman}          % front matter: i, ii, iii ...
+
+% --------------------------------------------------------------------
+% SLOT 1 — TITLE PAGE           (add later)
+% --------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------
+% SLOT 2 — SIGNATURE PAGE       (add later)
+% --------------------------------------------------------------------
+
+
+% ====================== DEDICATION ==================================
+\chapter*{Dedication}
+\addcontentsline{toc}{chapter}{Dedication}
+\markboth{Dedication}{Dedication}
+
+% NOTE: the green rule under the title is drawn automatically by the
+% \titleformat{\chapter} definition in the preamble. Do not add another
+% \rule here or you get two lines.
+
+\vspace{1cm}
+
+% ---------- EDIT FROM HERE ----------
+
+\noindent I dedicate this work:
+
+\vspace{0.6cm}
+
+\noindent\textbf{To my father,}\\
+who taught me what quiet determination looks like long before I understood
+the word. You believed in me on the days I could not manage it myself, and
+every value I brought to this work started with something you showed me first.
+
+\vspace{0.5cm}
+
+\noindent\textbf{To my mother,}\\
+for a love that never once wavered, for sacrifices whose size I only
+understood years later, and for being the calm I could always come back to,
+no matter how heavy this project got.
+
+\vspace{0.5cm}
+
+\noindent\textbf{To my brother,}\\
+who has been a steady presence my whole life, and who never had to be asked.
+
+\vspace{0.5cm}
+
+\noindent\textbf{To my girlfriend,}\\
+thank you does not cover it. You were patient on the nights this project took
+more than I had planned to give, you believed in me when I doubted myself, and
+you stood beside me through the hardest stretches.
+
+\vspace{0.5cm}
+
+\noindent\textbf{To my friends,}\\
+Ayoub and Alaa, whom I met during this Master's and could not be more grateful
+to have found. To Fayrouz and Houde, for always being there. And to Brahim,
+my childhood friend.
+
+% ---------- EDIT TO HERE ----------
+
+\vspace{1.5cm}
+\begin{flushright}
+\textit{Adem}
+\end{flushright}
+
+\blankpage
+% ====================== END DEDICATION ==============================
+
+
+% --------------------------------------------------------------------
+% SLOT 3 — ACKNOWLEDGEMENTS     (add later)
+% --------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------
+% SLOT 4 — TABLE OF CONTENTS    (add later)
+%   \tableofcontents
+% --------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------
+% SLOT 5 — LIST OF FIGURES / TABLES / ACRONYMS   (add later)
+%   \listoffigures
+%   \listoftables
+% --------------------------------------------------------------------
+
+
+\pagenumbering{arabic}         % body: 1, 2, 3 ...
+
+% --------------------------------------------------------------------
+% SLOT 6 — GENERAL INTRODUCTION (add later)
+% --------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------
+% SLOT 7 — CHAPTERS 1 TO 5      (add later)
+% --------------------------------------------------------------------
+
+% Temporary placeholder so the document has body content while you build.
+% Delete this chapter once you add the real ones.
+\chapter{Placeholder Chapter}
+\section{A Section}
+Text goes here. Delete this whole chapter when the real ones are ready.
+
+\subsection{A Subsection}
+More text.
+
+\subsubsection{A Sub-subsection}
+This level is numbered 1.1.1.1 and appears in the contents.
+
+
+% --------------------------------------------------------------------
+% SLOT 8 — GENERAL CONCLUSION   (add later)
+% --------------------------------------------------------------------
+
+
+% --------------------------------------------------------------------
+% SLOT 9 — BIBLIOGRAPHY         (add later)
+% --------------------------------------------------------------------
+
+
+\end{document}

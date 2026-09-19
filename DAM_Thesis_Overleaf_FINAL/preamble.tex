@@ -1,0 +1,187 @@
+% ============================================================
+% Preamble: The DAM AI Agent - Master's Thesis
+% Modern, professional academic template
+% ============================================================
+
+\usepackage[a4paper,top=2.7cm,bottom=2.7cm,left=3cm,right=2.5cm,headheight=15pt]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+
+% ---- A handful of Unicode symbols used in the source content (arrows,
+% approx/less-equal signs from technical descriptions) that are not in
+% pdflatex's default inputenc table.
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}}
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}
+\DeclareUnicodeCharacter{2260}{\ensuremath{\neq}}
+\DeclareUnicodeCharacter{26A0}{\textbf{[!]}}
+
+% ---- Typography: Palatino body + Helvetica headings, a warm,
+% professional pairing that is universally available on Overleaf
+% (no fontspec/XeLaTeX dependency needed, compiles under pdflatex).
+\usepackage{mathpazo}
+\usepackage[scaled=0.92]{helvet}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\linespread{1.08}
+
+% ---- Color palette, matching the delivered application's own
+% forest-green accent color.
+\usepackage{xcolor}
+\definecolor{thesisgreen}{HTML}{1E6B3C}
+\definecolor{thesisgreendark}{HTML}{143F24}
+\definecolor{thesisgray}{HTML}{555555}
+\definecolor{thesislightgray}{HTML}{F5F5F5}
+\definecolor{thesisrule}{HTML}{CCCCCC}
+
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{colortbl}
+\usepackage{float}
+\usepackage{caption}
+\captionsetup{font=small,labelfont={bf,color=thesisgreendark},margin=1cm}
+\usepackage{enumitem}
+\setlist{topsep=4pt,itemsep=2pt,parsep=0pt}
+\usepackage{setspace}
+\onehalfspacing
+
+% ---- Chapter / section styling (titlesec) - modern look: large
+% colored chapter number, rule beneath the title, sans-serif headings.
+\usepackage{titlesec}
+\titleformat{\chapter}[display]
+  {\normalfont\sffamily\huge\bfseries\color{thesisgreendark}}
+  {\filright\Large\textcolor{thesisgreen}{\chaptertitlename}\ \thechapter}
+  {8pt}
+  {\Huge}
+  [\vspace{4pt}{\color{thesisgreen}\titlerule[1.4pt]}]
+\titlespacing*{\chapter}{0pt}{-10pt}{28pt}
+
+\titleformat{\section}
+  {\normalfont\sffamily\Large\bfseries\color{thesisgreendark}}{\thesection}{10pt}{}
+\titleformat{\subsection}
+  {\normalfont\sffamily\large\bfseries\color{thesisgreen}}{\thesubsection}{8pt}{}
+\titleformat{\subsubsection}
+  {\normalfont\sffamily\normalsize\bfseries\itshape\color{thesisgray}}{\thesubsubsection}{6pt}{}
+
+% Unnumbered "mini-heading" used for the ~100 dated entries reproduced
+% verbatim in Annex F - visually distinct, but deliberately excluded
+% from the table of contents (starred \subsection*), the same design
+% choice used in the Word version of this report and for the same
+% reason: 100+ TOC entries for one appendix would drown out the
+% document's real navigational structure.
+\titleformat{name=\subsection,numberless}
+  {\normalfont\sffamily\large\bfseries\color{thesisgreen}}{}{0pt}{}
+\titlespacing*{name=\subsection,numberless}{0pt}{14pt}{6pt}
+\titleformat{name=\subsubsection,numberless}
+  {\normalfont\sffamily\normalsize\bfseries\itshape\color{thesisgray}}{}{0pt}{}
+\titlespacing*{name=\subsubsection,numberless}{0pt}{10pt}{4pt}
+
+% ---- Headers / footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyhead[L]{\small\sffamily\color{thesisgray}\nouppercase{\leftmark}}
+\fancyhead[R]{\small\sffamily\color{thesisgray}\thepage}
+\fancypagestyle{plain}{%
+  \fancyhf{}
+  \fancyhead[R]{\small\sffamily\color{thesisgray}\thepage}
+  \renewcommand{\headrulewidth}{0pt}
+}
+
+% ---- Table of contents / lists styling
+\usepackage{tocloft}
+\renewcommand{\cftchapfont}{\sffamily\bfseries\color{thesisgreendark}}
+\renewcommand{\cftchappagefont}{\sffamily\color{thesisgreendark}}
+\renewcommand{\cftsecfont}{\sffamily\color{thesisgray}}
+\renewcommand{\cftsecpagefont}{\sffamily\color{thesisgray}}
+\setlength{\cftbeforechapskip}{10pt}
+
+% ---- Hyperlinks
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=thesisgreendark,
+  citecolor=thesisgreendark,
+  urlcolor=thesisgreen,
+  bookmarksnumbered=true,
+  pdftitle={The DAM AI Agent: A CRISP-DM Case Study},
+  pdfauthor={Adem Mrabet}
+}
+
+% ---- Code listings (mirrors the light-gray monospace boxes used in
+% the Word version of this report)
+\usepackage{listings}
+\lstdefinestyle{thesiscode}{
+  backgroundcolor=\color{thesislightgray},
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  frame=single,
+  framerule=0pt,
+  framesep=6pt,
+  rulecolor=\color{thesislightgray},
+  xleftmargin=4pt,
+  xrightmargin=4pt,
+  showstringspaces=false,
+  captionpos=b,
+  numbers=none,
+}
+% listings doesn't decode multi-byte UTF-8 by default, which breaks on
+% the accented-character literals that appear in a couple of code
+% excerpts (language-detection regexes). Map the accented characters
+% that actually occur in this project's code excerpts to their LaTeX
+% accent-command equivalents so listings can typeset them.
+\lstset{style=thesiscode,
+  extendedchars=true,
+  literate=%
+    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1 {ý}{{\'y}}1
+    {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1 {Ý}{{\'Y}}1
+    {à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
+    {À}{{\`A}}1 {È}{{\`E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
+    {ã}{{\~a}}1 {õ}{{\~o}}1 {ñ}{{\~n}}1 {Ã}{{\~A}}1 {Õ}{{\~O}}1 {Ñ}{{\~N}}1
+    {ç}{{\c c}}1 {Ç}{{\c C}}1
+    {â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
+    {Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
+    {ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1 {ÿ}{{\"y}}1
+    {Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
+    {å}{{\r a}}1 {Å}{{\r A}}1
+    {æ}{{\ae}}1 {Æ}{{\AE}}1 {œ}{{\oe}}1 {Œ}{{\OE}}1
+    {ø}{{\o}}1 {Ø}{{\O}}1 {ð}{{\dh}}1 {Ð}{{\DH}}1 {þ}{{\th}}1 {Þ}{{\TH}}1
+    {ß}{{\ss}}1
+}
+\captionsetup[lstlisting]{font=small,labelfont={bf,color=thesisgray},singlelinecheck=false,margin=0pt}
+
+% ---- Quote blocks (Annex D excerpts)
+\usepackage{framed}
+\definecolor{quotebar}{HTML}{1E6B3C}
+\renewenvironment{quote}{%
+  \begin{adjustwidth}{1em}{1em}\itshape\color{thesisgray}
+}{%
+  \end{adjustwidth}
+}
+\usepackage{changepage}
+
+% ---- Misc
+\usepackage{amssymb}
+\usepackage{pdflscape}
+\usepackage{appendix}
+\clubpenalty=10000
+\widowpenalty=10000
+\raggedbottom
+\emergencystretch=2.5em
+\tolerance=1200
+
+% ---- Numbering depth: both reference theses number to four levels
+% (e.g. 1.3.1.1) and list them in the contents.
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}

@@ -1,0 +1,422 @@
+% =====================================================================
+%  CHAPTER 1 --- WORKING FILE
+%  Your own drafted text is inserted where you already wrote it
+%  (1.3.1.1, part of 1.3.1.2). Everything else is still a %% WRITE
+%  block: guidance only, no prose. Fill those yourself.
+% =====================================================================
+
+\chapter{Project Framework, State of the Art, and Needs Analysis}
+\minitoc
+
+\section*{Introduction}
+\addcontentsline{toc}{section}{Introduction}
+
+%% WRITE [2 paragraphs, ~half a page] -- write this LAST, once the rest exists
+%% Para 1: where the project came from, what it was asked to fix.
+%% Para 2: requirements came from watching the current process fail, not
+%%   from a spec handed to you up front.
+
+
+\section{General Framework of the Project}
+
+%% WRITE [1 short paragraph] Final-year project, Master's in Data Sciences,
+%% Polytech Intl. Six-month internship, ~4 months on the build.
+%% WRITE [1-2 sentences] What kept you on the subject.
+
+\begin{table}[h]
+\centering
+\caption{Framework of the project.}
+\label{tab:framework}
+\begin{tabular}{|p{0.34\textwidth}|p{0.56\textwidth}|}
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Item}} & \textcolor{white}{\textbf{Detail}} \\
+\hline
+Project type & End-of-studies project \\ \hline
+Host institution & Polytech Intl, Tunis \\ \hline
+Programme & Professional Master's in Data Science \\ \hline
+Academic year & 2025 -- 2026 \\ \hline
+Duration & Six months \\ \hline
+Client organisation & African Development Bank Group \\ \hline
+Academic supervisor & Dr.~Marouene Chaieb \\ \hline
+Professional supervisors & Mr.~Yasser Ahmad, Mr.~Surya Joymungul \\ \hline
+Source document & Delegation of Authority Matrix, over 250 pages \\ \hline
+Scope processed & 79-page subset covering three chapters \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Host Organisation}
+
+%% WRITE [1-2 sentences] Bridge into 1.2.1 / 1.2.2.
+
+\subsection{Presentation of Polytech Intl}
+
+%% WRITE [2 paragraphs] Polytech Intl facts (verify founding year + AUF
+%% membership on the school's own site) + connect to your Master's programme.
+
+\subsection{Project Context and the Client Organisation}
+
+%% WRITE [3-4 paragraphs]
+%% POSITIONING: Polytech hosted/supervised; AfDB was the client. Don't say
+%% you worked "at" AfDB.
+%% AfDB facts: founded 1964, HQ Abidjan, 81 members, RDGN covers Tunisia/
+%% Algeria/Morocco/Mauritania/Libya from Tunis [confirm wording with Yasser
+%% or Surya].
+%% ONE SENTENCE ONLY YOU CAN WRITE: how the subject reached you.
+
+\begin{table}[h]
+\centering
+\caption{The client organisation at a glance.}
+\label{tab:afdb}
+\begin{tabular}{|p{0.34\textwidth}|p{0.56\textwidth}|}
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Item}} & \textcolor{white}{\textbf{Detail}} \\
+\hline
+Institution & African Development Bank Group \\ \hline
+Founded & 1964 \\ \hline
+Headquarters & Abidjan, C\^ote d'Ivoire \\ \hline
+Membership & 81 countries: 54 regional, 27 non-regional \\ \hline
+Purpose & Economic development and social progress across regional member countries \\ \hline
+Group entities & African Development Bank, African Development Fund, Nigeria Trust Fund \\ \hline
+Regional office concerned & RDGN: Tunisia, Algeria, Morocco, Mauritania, Libya \\ \hline
+Regional hub & Tunis \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Study of the Existing System and Critical Analysis}
+
+%% WRITE [2-3 sentences] Bridge: 1.3.1 = what the document demands of a
+%% reader, 1.3.2 = how existing tools measure up against that.
+
+\subsection{Context of Delegation of Authority in Development Banking}
+
+%% WRITE [1-2 sentences] Bridge into 1.3.1.1.
+
+\subsubsection{Definition and Stakes of the DAM}
+
+% ---------------------------------------------------------------------
+% YOUR DRAFT (cleaned). Read it, make it sound like you, change anything.
+% ---------------------------------------------------------------------
+The DAM, or Delegation of Authority Matrix, is an internal document that
+the Bank established to identify who is responsible for performing a
+specific action on a specific task. The Bank relies on it because it
+delegates the President's authority down to the appropriate level, which
+keeps decisions moving: without it, every decision in the institution
+would have to reach the President's desk.
+
+A typical DAM page is made of two tables sharing the page, with the
+footnotes underneath both. The smaller one, in the top right, gives a
+two-line reminder of what each authority code letter means, for a reader
+who has forgotten -- but it stops there, and does not explain the
+numbers. The main table carries the process, the child task, and the
+roles with the authority codes assigned to them.
+
+There are five authority codes, but seventeen distinct notations, because
+most codes take a level. The letter alone is not the answer. Take C: on
+its own it means Check and Verify, and C1 and C2 are its two levels:
+
+\begin{itemize}
+\item \textbf{C1} -- examine the activity against a checklist of
+  standards and preconditions, and let it proceed only if they are all
+  satisfied
+\item \textbf{C2} -- clear it as compliant with policy and regulation,
+  after consulting the relevant departments
+\end{itemize}
+
+Both translate to \textit{I can stop this}. But C3 and C4 are not levels
+of checking at all -- they mean Consult, an unrelated obligation that
+happens to share the letter:
+
+\begin{itemize}
+\item \textbf{C3} -- tap the opinion of an independent function (IDEV,
+  BCRM) or a knowledgeable expert
+\item \textbf{C4} -- the Board of Directors or Board of Governors must be
+  consulted, while the President or Management still holds the approval
+\end{itemize}
+
+These translate to \textit{I'm just here to give my opinion}.
+
+%% ONE SENTENCE STILL NEEDED -- your own payoff line: the top-right legend
+%% explains the letters but not the numbers, and the numbers are exactly
+%% what separates "I can stop this" from "I'm just here to give my opinion."
+
+\subsubsection{Governance and Compliance Requirements}
+
+%% ---------------------------------------------------------------------
+%% PARAGRAPH 1 -- SKIPPED FOR NOW.
+%% Status of the document: not advisory, the control baseline. Only
+%% write the audit-testing claim if Yasser or Surya actually confirmed
+%% it -- otherwise leave this out rather than assert it.
+%% ---------------------------------------------------------------------
+
+% ---------------------------------------------------------------------
+% YOUR DRAFT (paragraph 2 -- accuracy, no tolerance). Cleaned, audit
+% claim removed since it wasn't confirmed. Check it still sounds like you.
+% ---------------------------------------------------------------------
+Most reference documents tolerate being approximately right. If a staff
+member misreads the time of a meeting, the worst outcome is that they
+miss it -- they can read the minutes afterward. The DAM cannot work this
+way: if a staff member misreads it or skips a required role while
+carrying out a task, that task proceeds without an authorisation it
+needed, and nothing rejects it or flags it in the moment. The consequence
+is not that the reader fails to get an answer -- it is that they act on
+a confident, incomplete one, with nothing in the process to tell them so.
+
+%% ---------------------------------------------------------------------
+%% PARAGRAPH 3 -- NOT WRITTEN YET. Completeness is part of correctness.
+%% You have all three facts, just not on the page yet:
+%%  - an answer naming only the approver can still omit a mandatory
+%%    check/verify step -- that omission is what makes a true answer
+%%    misleading
+%%  - Yasser's rule: the check/verify step must always be surfaced,
+%%    whatever was actually asked, because it's easier for new staff to
+%%    remember "always check for this" than to know when it applies
+%%  - the sharpest case: a task can have NO recorded approver and still
+%%    carry a mandatory check -- so "no one approves this" is a true
+%%    answer that still leaves out the one thing that mattered
+%% ---------------------------------------------------------------------
+while working with the DAM, when the answer only has the approver role, it can still cause a staff member to miss a mandatory check/verify step. This omission can lead to a misleading answer, as the check/verify step is crucial for ensuring compliance. Yasser's rule emphasizes that the check/verify step must always be surfaced, regardless of the question asked, as it is easier for new staff to remember "always check for this" than to know when it applies. In the sharpest case, a task can have no recorded approver and still carry a mandatory check, meaning that "no one approves this" is a true answer that still leaves out the one thing that mattered.
+%% ---------------------------------------------------------------------
+%% PARAGRAPH 4 -- NOT WRITTEN YET. Checkability.
+%% A compliance answer has to be verifiable against its source, or trust
+%% in it is irrational. Without that, you've replaced one opaque
+%% authority (the PDF) with a worse one.
+%% ---------------------------------------------------------------------
+
+%% ---------------------------------------------------------------------
+%% PARAGRAPH 5 -- NOT WRITTEN YET. Who carries the cost.
+%% New staff: no colleague to ask yet, no sense of which obligations are
+%% implicit. Points forward into 1.3.1.3.
+%% ---------------------------------------------------------------------
+Finally the DAM File can be hard to understand for new staff, without proper guidance. the staff memebr may miss a crucial information while reading the document.
+\subsubsection{Challenges in Consulting the DAM in Practice}
+
+%% WRITE [5 paragraphs] -- you have ALL of this from our conversation:
+%% 1. The five physical steps: find the file (laptop or email, no
+%%    canonical copy) -> find the task -> find the A -> verify the
+%%    subscript -> check for a footnote. Land on: two of five steps can
+%%    fail before you even reach the code.
+%% 2. Near-identical titles, different authority. Your own finding.
+%%    Numbers: 185 near-duplicate title pairs; 180 of them (97.3%) carry
+%%    different responsibilities; 124 have a different approver outright.
+%%    Table: 2.432.4.a (p.43, "Individual Consultant <= UA 50,000",
+%%    approver = Sector Manager) vs 2.433.4.c (p.44, "> UA 250,000",
+%%    approver = PRC) -- titles 98.4% similar, facing pages.
+%% 3. Your own mistake: you misread the wrong one of two near-identical
+%%    tasks while verifying the model's answers for hallucinations --
+%%    the person most motivated to read carefully, doing nothing but
+%%    that, still got it wrong. Say it plainly, first person.
+%% 4. The legend gap connects here too if you didn't use it in 1.3.1.1:
+%%    even you forgot the C1/C3 difference once.
+%% 5. Close: because consultation is this costly, people stop doing it
+%%    and ask a colleague instead -- which isn't auditable, and the
+%%    error never gets caught.
+
+% ---------------------------------------------------------------------
+% FIGURE: schematic DAM page mock-up, invented content. Rotated headers,
+% codes, one superscript, one redirect row, callout on "A^3" asking:
+% code digit or footnote digit?
+% ---------------------------------------------------------------------
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.9\textwidth]{figures/dam_page.png}
+% \caption{Schematic of a DAM page, showing rotated role headers,
+% authority codes, and a superscript footnote marker.}
+% \label{fig:dampage}
+% \end{figure}
+
+\subsection{Study of Existing Systems}
+
+%% WRITE [3-4 sentences] Four categories aimed at this problem, none
+%% works, each fails for its own reason -- those reasons become 1.4.
+
+\subsubsection{Manual Consultation and Document Search}
+%% WRITE [2 paragraphs] Ctrl+F = string matching, no table awareness.
+%% Turn: search gives a location, not an answer.
+
+\subsubsection{Generic Document Question-Answering Assistants}
+%% WRITE [3 paragraphs] ChatPDF/NotebookLM/Copilot -- RAG, name the term.
+%% Failure is structural: flattening destroys the page's positional
+%% meaning before the model is even involved.
+% \begin{figure}[h]
+% \centering
+% \includegraphics[width=0.85\textwidth]{figures/chatpdf_test.png}
+% \caption{A general-purpose document assistant answering a DAM
+% authority question.}
+% \label{fig:chatpdf}
+% \end{figure}
+
+\subsubsection{Commercial Document-Extraction Services}
+%% WRITE [2 paragraphs] Azure/Textract/Document AI/LlamaParse -- concede
+%% they're good at tables first. Three reasons ruled out: cost/
+%% confidentiality, fit, explainability (give explainability the most
+%% room -- ties back to why you verify the model's output too).
+
+\subsubsection{Critical Analysis: Limitations of Current Approaches}
+%% WRITE [3 paragraphs] Shared assumption failures, then the big one:
+%% none of them has any concept of being wrong. Hand off to the table.
+
+\begin{table}[h]
+\centering
+\caption{Existing approaches assessed against the needs of this project.}
+\label{tab:existing}
+\small
+\begin{tabular}{|p{0.26\textwidth}|c|c|c|c|c|}
+\hline
+\rowcolor{myblue}
+\textcolor{white}{\textbf{Requirement}} &
+\textcolor{white}{\textbf{Search}} &
+\textcolor{white}{\textbf{Assistants}} &
+\textcolor{white}{\textbf{Extraction}} &
+\textcolor{white}{\textbf{GRC}} &
+\textcolor{white}{\textbf{This work}} \\
+\hline
+Preserves positional table meaning & No & No & Partly & Yes & Yes \\ \hline
+Answers a question, not a location & No & Yes & No & Yes & Yes \\ \hline
+Answer traceable to a source row & No & No & Partly & Yes & Yes \\ \hline
+Refuses when it cannot answer & N/A & No & N/A & Yes & Yes \\ \hline
+Surfaces mandatory obligations & No & No & No & Partly & Yes \\ \hline
+Tolerates typos and loose phrasing & No & Yes & N/A & No & Yes \\ \hline
+Document stays inside the institution & Yes & No & No & Yes & Yes \\ \hline
+No per-page or licence cost & Yes & Partly & No & No & Yes \\ \hline
+Deployable within this project & Yes & Yes & Yes & No & Yes \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Functional Needs Analysis}
+
+%% WRITE [2-3 sentences] Bridge: these came from 1.3, not from nowhere.
+
+\subsection{Functional Requirements}
+%% WRITE [1 short paragraph] intro to the table below.
+
+\begin{longtable}{|p{0.08\textwidth}|p{0.26\textwidth}|p{0.54\textwidth}|}
+\caption{Functional requirements.}\label{tab:fr}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Ref.}} & \textcolor{white}{\textbf{Requirement}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Ref.}} & \textcolor{white}{\textbf{Requirement}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endhead
+FR1 & Direct identifier lookup & Given a valid activity identifier, return that activity's recorded authority information with full confidence. \\ \hline
+FR2 & Natural-language lookup & Resolve an activity described by name rather than identifier, and report the confidence of that resolution. \\ \hline
+FR3 & Authority-role queries & Answer who approves, reviews, checks, initiates or must be informed, using the document's own notation. \\ \hline
+FR4 & Mandatory obligation surfacing & Always surface a recorded check-and-verify obligation and any informed parties, whatever the question asked. \\ \hline
+FR5 & Cross-reference resolution & Follow a redirect automatically rather than reporting that no responsibilities exist. \\ \hline
+FR6 & Typing and phrasing tolerance & Tolerate common misspellings and phrasing variation. \\ \hline
+FR7 & Honest refusal & State plainly when an identifier does not exist or a question is out of scope. \\ \hline
+FR8 & Conversational continuity & Answer a follow-up against the activity discussed immediately before. \\ \hline
+FR9 & Structural analytics & Expose node counts, authority-code distribution, most-involved roles, per-chapter breakdowns. \\ \hline
+FR10 & Multilingual questions & Answer in the language asked, without translating role names or identifiers. \\ \hline
+FR11 & Authenticated access & Require authentication, and restrict analytical features to authorised roles. \\ \hline
+FR12 & Voice input & Allow a question to be dictated in any supported interface language. \\ \hline
+FR13 & Document attachment & Allow a supporting document to be attached and queried, with its answers clearly distinguished from DAM answers. \\ \hline
+FR14 & Fully localised interface & Every interface element available in each supported language, including right-to-left layout. \\ \hline
+FR15 & Conversation export & Export a conversation as PDF preserving questions, answers and provenance metadata. \\ \hline
+FR16 & Conversation sharing & Share a read-only view of a conversation through a link encoded as a QR code. \\ \hline
+\end{longtable}
+
+\subsection{Non-Functional Requirements}
+%% WRITE [1 short paragraph]. NFR1 takes precedence over everything else --
+%% say so explicitly.
+
+\begin{longtable}{|p{0.08\textwidth}|p{0.26\textwidth}|p{0.54\textwidth}|}
+\caption{Non-functional requirements.}\label{tab:nfr}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Ref.}} & \textcolor{white}{\textbf{Requirement}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Ref.}} & \textcolor{white}{\textbf{Requirement}} & \textcolor{white}{\textbf{Description}} \\
+\hline
+\endhead
+NFR1 & Factual fidelity & No answer may contain a role, code or qualification absent from the source for that activity. Takes precedence over fluency, speed and everything else. \\ \hline
+NFR2 & Traceability & Every answer attributable to a specific activity record. Implementation note: the source identifier is displayed for this purpose, but nothing currently enforces the link -- see limitations. \\ \hline
+NFR3 & Availability without external services & Core lookup works with no model provider reachable, degrading to template answers. \\ \hline
+NFR4 & Response time & Answers within seconds on free hosting, which rules out re-parsing per request. \\ \hline
+NFR5 & Reproducibility & The same question yields the same underlying facts on every run. \\ \hline
+NFR6 & Portability & Identical behaviour on a developer machine and on the hosting platform. \\ \hline
+NFR7 & Usability on any device & Usable on a phone. \\ \hline
+NFR8 & Credential protection & Credentials never stored in recoverable form; session tokens expire. \\ \hline
+NFR9 & Upload safety & Attachments constrained by type and size, never executed. \\ \hline
+\end{longtable}
+
+\subsection{Project Constraints}
+%% WRITE [1 short paragraph] framing these as design shapers, not excuses.
+
+\begin{table}[h]
+\centering
+\caption{Project constraints and their consequences.}
+\label{tab:constraints}
+\begin{tabular}{|p{0.30\textwidth}|p{0.58\textwidth}|}
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Constraint}} & \textcolor{white}{\textbf{Consequence}} \\
+\hline
+No labelled training data & Ruled out a supervised model; pushed retrieval toward lexical methods needing no training corpus. \\ \hline
+Document scope & Over 250 pages; work scoped to a 79-page subset, the remainder left as future work. \\ \hline
+No infrastructure budget & Free hosting tiers only, which constrained memory and forced the knowledge base to be cached at build time. \\ \hline
+No ground truth & Correctness established by comparison against real pages, which set the pace of the data understanding phase. \\ \hline
+\end{tabular}
+\end{table}
+
+\section{Proposed Solution}
+
+%% WRITE [1-2 sentences] Bridge into 1.5.1.
+
+\subsection{General Presentation of the Solution}
+%% WRITE [2-3 paragraphs] Separate WHAT THE FACTS ARE from HOW THEY ARE
+%% SAID. Facts from a validated knowledge base; phrasing from a model
+%% restricted to rewording; a verification step rejects any answer that
+%% dropped or altered a role name, falling back to a template instead.
+
+\subsection{Global System Architecture}
+%% WRITE [2 paragraphs] Four layers: offline extraction -> knowledge graph
+%% -> agent -> presentation. Note: extraction is offline and cached, so
+%% the running app never opens the PDF.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{figures/fig1_architecture.png}
+\caption{Global architecture of the proposed system, from source document to
+user-facing answer.}
+\label{fig:architecture}
+\end{figure}
+
+\subsection{Selected Technologies}
+%% WRITE [1 short paragraph] then the table. Give each tool its REASON.
+
+\begin{longtable}{|p{0.26\textwidth}|p{0.62\textwidth}|}
+\caption{Selected technologies and their role in the system.}\label{tab:tech}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Technology}} & \textcolor{white}{\textbf{Role}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Technology}} & \textcolor{white}{\textbf{Role}} \\
+\hline
+\endhead
+Python & Extraction, knowledge base, agent and backend. \\ \hline
+pdfplumber & Character-level extraction with coordinates and font metrics, which is what makes the superscript and rotated-header rules possible. \\ \hline
+Pydantic & Schema validation, so malformed records fail at construction rather than at query time. \\ \hline
+networkx & Knowledge graph as a directed multigraph, since a role can hold several responsibilities over one activity. \\ \hline
+scikit-learn & TF-IDF vectorisation and cosine similarity for free-text resolution. \\ \hline
+FastAPI & REST backend with typed request and response models. \\ \hline
+React and Vite & Single-page web client, served as static files by the backend. \\ \hline
+Groq and Ollama & Cloud and local model providers behind one interface, so either or neither can be used. \\ \hline
+Web Speech API & Browser-native voice input, requiring no server-side audio handling. \\ \hline
+python-jose, passlib & Token issuing and password hashing for authentication. \\ \hline
+ReportLab & Server-side PDF generation for conversation export. \\ \hline
+statsmodels & Time-series decomposition and forecasting in the analytics layer. \\ \hline
+Docker & Containerisation, identical behaviour in development and deployment. \\ \hline
+Render & Hosting, free tier. \\ \hline
+\end{longtable}
+
+\section*{Conclusion}
+\addcontentsline{toc}{section}{Conclusion}
+
+%% WRITE [1-2 paragraphs] -- write LAST. The DAM answers an important
+%% question expensively; manual and generic-AI consultation both fail
+%% because the meaning lives in the layout; the architecture separates
+%% retrieval from phrasing so a model's flexibility doesn't inherit its
+%% unreliability. Hand off to Chapter 2.

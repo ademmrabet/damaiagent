@@ -3,10 +3,6 @@ from pathlib import Path
 
 from schema.schema import Node
 
-# has_children/actions are @computed_field on Node - always derivable
-# from children/responsibilities, so caching them would just be dead
-# weight on disk and Node recomputes them for free the moment
-# load_nodes() reconstructs each one.
 _COMPUTED_FIELDS = {"has_children", "actions"}
 
 

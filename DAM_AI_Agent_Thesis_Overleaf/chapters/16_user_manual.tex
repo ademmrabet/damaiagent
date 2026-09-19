@@ -1,0 +1,55 @@
+\chapter{User Manual and Deployment Guide}
+\label{ch:user-manual-and-deployment-guide}
+This chapter is a practical reference for anyone who wants to run, extend, or evaluate the system directly, rather than only read about it. It consolidates material from the project's own \texttt{docs/\allowbreak{}llm\_\allowbreak{}setup.md}, \texttt{docs/\allowbreak{}hosting.md}, and \texttt{docs/\allowbreak{}docker\_\allowbreak{}setup.md}.
+
+\section{Running the system with no setup at all}
+The system works with zero configuration: the "No LLM (template answer)" mode is the default, and it returns the same deterministic, graph-backed answers the project has used since its first working version. No API key, no local model, and no internet access beyond loading the page are required for this mode. Every other mode described below is an enhancement to answer phrasing and language support, never a requirement for correct, factual answers.
+
+\section{Local setup (bare metal)}
+\begin{enumerate}
+\item Clone the repository and install Python dependencies: \texttt{pip install -r requirements.txt}.
+\item Build the frontend once (and again after any frontend source change): \texttt{cd webapp/\allowbreak{}frontend \&\& npm install \&\& npm run build}.
+\item Optionally copy \texttt{.env.example} to \texttt{.env} and fill in \texttt{GROQ\_\allowbreak{}API\_\allowbreak{}KEY} and/or \texttt{OLLAMA\_\allowbreak{}HOST}/\texttt{OLLAMA\_\allowbreak{}MODEL} to enable LLM-phrased answers.
+\item Start the server: \texttt{python -m uvicorn webapp.backend:app --host 127.0.0.1 --port 8000}.
+\item Open \texttt{http:/\allowbreak{}/\allowbreak{}127.0.0.1:8000/\allowbreak{}} for the landing page, \texttt{/\allowbreak{}chat} for the chat interface, and \texttt{/\allowbreak{}dashboard} for the analytics dashboard.
+\end{enumerate}
+\section{Local setup (Docker)}
+\texttt{docker compose up --build} builds and starts both the \texttt{app} service (this project's own code, including the frontend build step) and an \texttt{ollama} service for local LLM phrasing, on a shared Docker network. No manual frontend build step is needed — the two-stage Dockerfile (Section 10.2) handles it as part of the image build. The Groq cloud option needs no additional container; setting \texttt{GROQ\_\allowbreak{}API\_\allowbreak{}KEY} in \texttt{.env} is sufficient.
+
+\section{Environment variables reference}
+\begin{longtable}{|p{0.28\textwidth}|p{0.28\textwidth}|p{0.28\textwidth}|}
+\hline
+\rowcolor{thesisgreen}\textcolor{white}{\textbf{Variable}} & \textcolor{white}{\textbf{Purpose}} & \textcolor{white}{\textbf{Default}} \\
+\hline\endhead
+\texttt{GROQ\_\allowbreak{}API\_\allowbreak{}KEY} & Authenticates requests to Groq's cloud API & none (Groq mode disabled without it) \\
+\hline
+\texttt{GROQ\_\allowbreak{}MODEL} & Overrides the Groq model used & \texttt{openai/\allowbreak{}gpt-oss-120b} \\
+\hline
+\texttt{OLLAMA\_\allowbreak{}HOST} & Base URL of a local Ollama server & \texttt{http:/\allowbreak{}/\allowbreak{}localhost:11434} \\
+\hline
+\texttt{OLLAMA\_\allowbreak{}MODEL} & Overrides the local Ollama model used & \texttt{llama3.1} \\
+\hline
+\texttt{PORT} & Overrides the port uvicorn binds to (used by hosting platforms) & \texttt{8000} \\
+\hline
+\end{longtable}
+\section{Choosing an LLM mode}
+"Off" always returns the deterministic template answer with no phrasing pass. "Ollama (local)" requires a local Ollama installation with a pulled model, has no network dependency once the model is downloaded, and incurs no API cost. "Groq (API)" requires a free Groq account and API key, and responds in well under a second on the free tier. "Auto" prefers Groq first (as of the September 2026 reordering described in Section 8.5) and falls back to Ollama if no API key is configured, or to the deterministic template if neither is available — this mode never fails outright, only degrades.
+
+\section{Deploying to Render (free tier)}
+\begin{enumerate}
+\item Push the repository to GitHub.
+\item On Render: New → Web Service → connect the repository.
+\item Environment: Docker (auto-detected from the root \texttt{Dockerfile}).
+\item Health Check Path: \texttt{/\allowbreak{}api/\allowbreak{}health}.
+\item Add the \texttt{GROQ\_\allowbreak{}API\_\allowbreak{}KEY} environment variable under the service's Environment tab.
+\item Leave the port field untouched — Render injects its own \texttt{PORT}, which the Dockerfile's shell-form \texttt{CMD} already respects.
+\item If redeploying after an earlier failed build, use Manual Deploy → Clear build cache and deploy, not a plain retry, since a plain retry can reuse cached layers from a previous failing build.
+\item Allow a few minutes for the first build (npm install, Vite build, pip install, and the nodes-cache build step, per the Dockerfile's layer order).
+\item Because the free tier sleeps after 15 minutes of inactivity, open the deployed URL a minute or two before a live demonstration to avoid the 30–60 second cold-start delay occurring in front of an audience.
+\end{enumerate}
+\section{API reference}
+See Annex H for the complete endpoint reference with example requests and responses.
+
+\section{Verifying an LLM mode is actually working}
+Ask the identical question under two different LLM modes and confirm the underlying facts (role names, authority codes, footnote numbers) never change, only the phrasing does. This is the direct, hands-on demonstration of the grounded-generation guarantee described in Section 8.4: retrieval is fixed and deterministic regardless of which LLM mode is active, or whether one is active at all.
+

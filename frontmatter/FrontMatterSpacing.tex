@@ -1,0 +1,35 @@
+% ---------------------------------------------------------------
+% CHAPTER-HEAD TOP SPACING
+% fncychap hard-codes \vspace*{50pt} at the top of every chapter head,
+% which is why \tableofcontents, \listoffigures, \listoftables and every
+% \chapter*{} page sit lower than the geometry top margin suggests.
+% These two definitions are fncychap's own, with only that value changed.
+% Keep them AFTER \usepackage[...]{fncychap}.
+% Tune \chapheadtop to taste: 0pt = flush with the top margin.
+% ---------------------------------------------------------------
+\newlength{\chapheadtop}
+\setlength{\chapheadtop}{0pt}
+
+\makeatletter
+\def\@makechapterhead#1{%
+  \vspace*{\chapheadtop}%
+  {\parindent \z@ \raggedright \normalfont
+    \ifnum \c@secnumdepth >\m@ne
+      \if@mainmatter
+        \DOCH
+      \fi
+    \fi
+    \interlinepenalty\@M
+    \if@mainmatter
+      \DOTI{#1}%
+    \else
+      \DOTIS{#1}%
+    \fi
+  }}
+\def\@makeschapterhead#1{%
+  \vspace*{\chapheadtop}%
+  {\parindent \z@ \raggedright \normalfont
+    \interlinepenalty\@M
+    \DOTIS{#1}%
+  }}
+\makeatother

@@ -10,25 +10,9 @@ LANGUAGE_NAMES = {
     "ar": "Arabic",
 }
 
-# Cheap, deterministic, LLM-free pre-filter - same "don't pay for what
-# you don't need" reasoning as knowledge/typo_correct.py only running
-# when a word doesn't already match: the overwhelming majority of real
-# traffic here is English, and every non-English query costs an EXTRA
-# Groq round trip (translate the query in, translate the answer back
-# out) on top of the normal one. This heuristic only decides whether
-# it's worth even ATTEMPTING translation - it is never trusted for the
-# real language identification itself, that's always the LLM's job
-# once this flags true. Defaults to "assume English" on anything
-# ambiguous or too short, rather than paying the extra round trip on
-# every message.
 _ARABIC_SCRIPT = re.compile(r"[\u0600-\u06FF]")
 _ACCENTED_LATIN = re.compile(r"[àâäéèêëïîôöùûüçñãõ]", re.IGNORECASE)
 _WORD_RE = re.compile(r"[a-zà-ÿ']+")
-# "o" and "as" deliberately left out of the Portuguese set - both are
-# also common, short English tokens ("as needed", "as approved"), and
-# unlike the rest of these lists neither is distinctive enough to
-# trust on a single hit. Everything kept here is a real, whole-word
-# match risk of essentially zero in ordinary English DAM phrasing.
 _FUNCTION_WORDS = {
     "fr": {
         "le", "la", "les", "des", "une", "qui", "que", "pour", "dans",

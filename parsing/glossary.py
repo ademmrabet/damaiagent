@@ -12,16 +12,6 @@ TOP_MERGE_TOLERANCE = 3.0
 TITLE_FONT_SIZE_MIN = 20
 TERM_COLUMN_MAX_X0 = 145
 
-# Every one of these pages ends with a lone lower-case roman numeral
-# (the page footer's own page number, e.g. "xiv", "xv", "xvi" ... in
-# strict page order across pages 2-7) landing close enough in `top` to
-# the last real definition row on the page that TOP_MERGE_TOLERANCE
-# folds it into that row's text - confirmed by checking that these
-# trailing tokens form an unbroken page-number sequence, not real
-# content. Stripped as a final cleanup pass rather than filtered at
-# the row level, since it's cheaper and more precise than trying to
-# exclude the footer at cluster time (which risks also cutting real
-# single-word defs).
 _ROMAN_NUMERAL_WORD = re.compile(
     r"^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$"
 )
@@ -123,11 +113,6 @@ def extract_abbreviations(page, term_max_x0=TERM_COLUMN_MAX_X0):
             continue
 
         if term_words and def_words:
-            # A fresh term arriving alongside definition text is what
-            # actually starts a new entry - NOT "any row with
-            # definition-column text", which would wrongly treat a
-            # definition that simply wraps onto its own line (no new
-            # term on it) as a brand new, term-less entry.
             if current:
                 entries.append(current)
             current = {"term": term_text, "definition": def_text}

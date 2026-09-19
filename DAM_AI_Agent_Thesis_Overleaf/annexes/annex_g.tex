@@ -1,0 +1,319 @@
+\chapter{Key Code Excerpts}
+\label{ch:key-code-excerpts}
+This annex reproduces the actual source code of the ten functions this report leans on most heavily when describing how a specific guarantee is implemented — so that a claim like "the grounding check normalizes whitespace before comparing" can be checked against the real sixty lines of Python that implement it, not a paraphrase. Each excerpt is preceded by a one- or two-sentence pointer back to the report section that discusses it, and reproduces the function's own in-code documentation and comments unchanged, since those comments are themselves part of this project's decision-logging discipline (Section 3.4) and often cite the exact real numbers or real failure cases that motivated the code.
+
+\section{The grounding check — \texttt{agent/\allowbreak{}generate.py}}
+Discussed in Section 8.4 and Section 9.4. \texttt{\_\allowbreak{}mentions\_\allowbreak{}expected\_\allowbreak{}facts()} is the function that decides whether an LLM's rephrased answer is trustworthy enough to show a user, and \texttt{\_\allowbreak{}normalize\_\allowbreak{}for\_\allowbreak{}match()} is the whitespace/case tolerance fix described in Section 9.4.
+
+\begin{lstlisting}[caption={agent/generate.py — normalization and the grounding check}]
+def _normalize_for_match(s):
+    # Collapses whitespace and lowercases before comparing - makes the
+    # grounding check robust to trivial formatting noise a model might
+    # introduce (extra/missing spaces, different casing) WITHOUT
+    # weakening what it actually verifies: the exact same words, in the
+    # exact same order, still have to be present. Added 2026-09-03 (see
+    # docs/decisions.md) after finding this was rejecting some
+    # otherwise-faithful rephrasings over nothing but incidental
+    # whitespace/case differences.
+    return " ".join(s.lower().split())
+
+
+def _mentions_expected_facts(text, structured_result):
+    """
+    Grounding check, not just a hopeful prompt: every role name in the
+    facts that back this answer must still be present, verbatim (modulo
+    whitespace/case - see _normalize_for_match), in the LLM's
+    rephrasing. Guards against the model quietly dropping, merging, or
+    renaming a role while still sounding fluent - the exact failure
+    mode that makes free-form LLM output risky for a compliance
+    document, even under a strict system prompt.
+    """
+    roles = structured_result.get("roles")
+    if not roles:
+        return True
+    normalized_text = _normalize_for_match(text)
+    return all(_normalize_for_match(r["role"]) in normalized_text for r in roles)
+\end{lstlisting}
+\section{Sentence-cap scaling for many-fact answers — \texttt{agent/\allowbreak{}generate.py}}
+Discussed in Section 9.4 as the actual fix for the "LLM unavailable" fallback firing too often — relaxing brevity pressure without ever touching the accuracy requirement above.
+
+\begin{lstlisting}[caption={agent/generate.py — build\_grounding\_prompt, abbreviated}]
+_SHORT_ANSWER_RULE = (
+    "5. Answer in 1-3 sentences. No bullet points, no headers, no "
+    "markdown, no emoji."
+)
+
+_LONG_ANSWER_RULE = (
+    "5. Use as many sentences as you need to naturally state every fact "
+    "below - there are several this time. A longer, complete answer "
+    "that keeps every fact intact is much better than a short one that "
+    "drops or blends any of them. Still no bullet points, no headers, "
+    "no markdown, no emoji."
+)
+
+MANY_FACTS_THRESHOLD = 4
+
+
+def build_grounding_prompt(question, structured_result, target_language="en"):
+    roles = structured_result.get("roles") or []
+    system = SYSTEM_PROMPT
+    if len(roles) >= MANY_FACTS_THRESHOLD:
+        system = system.replace(_SHORT_ANSWER_RULE, _LONG_ANSWER_RULE)
+    # ... target-language rule 6 and the final prompt assembly follow;
+    # see the full file for the complete function.
+    return system, user
+\end{lstlisting}
+\section{Deterministic typo correction — \texttt{knowledge/\allowbreak{}typo\_\allowbreak{}correct.py}}
+Discussed in Section 10.11. Note the code comment's exact, measured similarity scores for both the real typos this was built to catch and the false positive that calibrated the final threshold.
+
+\begin{lstlisting}[caption={knowledge/typo\_correct.py}]
+import difflib
+import re
+
+_WORD_PATTERN = re.compile(r"[A-Za-z']+")
+
+# Tuned against a real false-positive, not picked arbitrarily: 0.82
+# was loose enough to "correct" the genuinely-different, correctly-
+# spelled word "unrelated" into "related" (ratio 0.875 - they share a
+# root, textbook false positive for any edit-distance approach) purely
+# because "related" happened to be the closest word in a narrow
+# ~1400-word DAM-title vocabulary. Every real typo this feature was
+# built for - "aproves"/"approves" (0.933), "chek"/"check" (0.889),
+# "intiates"/"initiates" (0.941), "qaurterly"/"quarterly" (0.889),
+# "mision"/"mission" (0.923), "helo"/"hello" (0.889) - still clears
+# 0.88 with room to spare, so raising the floor to 0.88 closes that
+# false-positive gap without losing any of the cases that motivated
+# building this in the first place.
+DEFAULT_MIN_RATIO = 0.88
+DEFAULT_MIN_WORD_LENGTH = 4
+
+
+def correct_words(text, vocabulary, min_ratio=DEFAULT_MIN_RATIO, min_word_length=DEFAULT_MIN_WORD_LENGTH):
+    """
+    Deterministic, offline typo correction - no LLM, no network.
+    Replaces each alphabetic word in `text` with its closest match in
+    `vocabulary` when it isn't already an exact match (case-
+    insensitive) but is close enough (difflib SequenceMatcher ratio
+    >= min_ratio). Conservative on purpose - a word with no
+    sufficiently close match is left exactly as typed.
+    """
+    lower_vocab = {w.lower() for w in vocabulary}
+
+    def replace(match):
+        word = match.group()
+        if len(word) < min_word_length or word.isupper():
+            return word
+        lowered = word.lower()
+        if lowered in lower_vocab:
+            return word
+        candidates = difflib.get_close_matches(lowered, lower_vocab, n=1, cutoff=min_ratio)
+        if not candidates:
+            return word
+        corrected = candidates[0]
+        return corrected.capitalize() if word[0].isupper() else corrected
+
+    return _WORD_PATTERN.sub(replace, text)
+\end{lstlisting}
+\section{Action-code legend detection — \texttt{agent/\allowbreak{}action\_\allowbreak{}codes.py}}
+Discussed in Section 10.6. The conservative rule for treating a bare letter like "I" as a real code mention (rather than the pronoun) is the core of the fix for the context-carryover bug.
+
+\begin{lstlisting}[caption={agent/action\_codes.py — detect\_action\_code\_query}]
+_BARE_CODE_TOKEN = re.compile(r"\b([ICRA][1-4]?)\b")
+_SUFFIXED_CODE = re.compile(r"^[ICRA][1-4]$")
+
+
+def detect_action_code_query(query):
+    """
+    Returns {"codes": [...]} or {"codes": None} (generic legend
+    question) if this looks like a question about the DAM's action-code
+    legend, else None. Deliberately conservative about single bare
+    letters (I/C/R/A) by themselves - "I" in particular collides with
+    the pronoun far too often to trust alone. Only treated as a real
+    code mention when EITHER: two or more code-shaped tokens appear
+    together (a list, like the real "I, A and (i)" case this was built
+    from), or at least one token is unambiguous on its own ("(i)", or a
+    letter+digit combination like "A2"/"C1" that is not a plausible
+    English word).
+    """
+    if not _EXPLAIN_TRIGGER.search(query):
+        return None
+
+    codes = _extract_code_tokens(query)
+    has_unambiguous = any(c == "( i )" or _SUFFIXED_CODE.match(c) for c in codes)
+
+    if codes and (len(codes) >= 2 or has_unambiguous):
+        valid = [c for c in codes if c in _CODES]
+        if valid:
+            return {"codes": valid}
+
+    if _GENERIC_LEGEND_TRIGGER.search(query):
+        return {"codes": None}
+
+    return None
+\end{lstlisting}
+\section{Tone pre-filter and empathetic prefix — \texttt{llm/\allowbreak{}tone.py}}
+Discussed in Section 8.6 and Section 10.6. \texttt{looks\_\allowbreak{}emotional()} is the cheap, deterministic gate that decides whether the one paid LLM classification call is even worth attempting; \texttt{apply\_\allowbreak{}tone\_\allowbreak{}prefix()} is the deliberately non-LLM response-adaptation step that follows it.
+
+\begin{lstlisting}[caption={llm/tone.py — the pre-filter and the deterministic prefix}]
+_REPEATED_PUNCTUATION = re.compile(r"[!?]{2,}")
+_ALL_CAPS_WORD = re.compile(r"\b[A-Z]{4,}\b")
+
+_FRUSTRATION_PATTERNS = re.compile(
+    r"\b(useless|terrible|annoying|frustrat\w*|ridiculous|broken|"
+    r"stupid|worst|hate|sucks?|ugh+|wtf|ffs|seriously)\b|"
+    r"\b(still (not|isn'?t|doesn'?t)|not working|doesn'?t work|"
+    r"come on|waste of time|fix this|this again)\b",
+    re.IGNORECASE,
+)
+
+_CONFUSION_PATTERNS = re.compile(
+    r"\b(confus\w*|clueless|lost|huh)\b|"
+    r"\b(don'?t (get|understand)|doesn'?t make sense|no idea what|"
+    r"not sure what|what does that mean|i'?m (so )?lost)\b",
+    re.IGNORECASE,
+)
+
+
+def looks_emotional(text):
+    """
+    Cheap, deterministic pre-filter - decides whether it's even worth
+    ATTEMPTING the Groq tone classification, never trusted for the
+    actual tone itself.
+    """
+    if _REPEATED_PUNCTUATION.search(text):
+        return True
+    if _ALL_CAPS_WORD.search(text):
+        return True
+    if _FRUSTRATION_PATTERNS.search(text):
+        return True
+    if _CONFUSION_PATTERNS.search(text):
+        return True
+    return False
+
+
+def apply_tone_prefix(answer, tone, language="en"):
+    """
+    Prepends a short, tone-appropriate opener to `answer` when `tone`
+    is "frustrated" or "confused" - a no-op for "neutral". Kept
+    entirely separate from `deterministic_answer` in the caller - this
+    is a warmth/UX layer on top of the facts, never part of the
+    trusted facts themselves.
+    """
+    prefixes = EMPATHY_PREFIXES.get(language, EMPATHY_PREFIXES["en"])
+    prefix = prefixes.get(tone)
+    if not prefix:
+        return answer
+    return f"{prefix} {answer}"
+\end{lstlisting}
+\section{Multi-language pre-filter — \texttt{llm/\allowbreak{}translate.py}}
+Discussed in Section 8.6 and Section 10.4. Mirrors the same cost-avoidance pattern as G.5's tone pre-filter — a cheap heuristic gates an expensive LLM round trip.
+
+\begin{lstlisting}[caption={llm/translate.py — looks\_non\_english}]
+_ARABIC_SCRIPT = re.compile(r"[\u0600-\u06FF]")
+_ACCENTED_LATIN = re.compile(r"[àâäéèêëïîôöùûüçñãõ]", re.IGNORECASE)
+_WORD_RE = re.compile(r"[a-zà-ÿ']+")
+
+_FUNCTION_WORDS = {
+    "fr": {"le", "la", "les", "des", "une", "qui", "que", "pour", "dans",
+           "est", "du", "avec", "sont", "quels", "quelles"},
+    "es": {"el", "los", "las", "que", "es", "una", "por", "para", "con",
+           "quien", "quienes", "cuales", "cual"},
+    "pt": {"os", "que", "uma", "por", "para", "com", "quem", "quais", "qual"},
+}
+
+
+def looks_non_english(text):
+    """
+    Best-effort guess, not a real language detector - just cheap
+    enough to gate the expensive path. A single whole-word hit is
+    enough - measured directly against a realistic short question
+    ("qui approuve 3.111") that only contains ONE real function word
+    ("qui") once the DAM-specific verb is excluded; a 2-hit
+    requirement (an earlier version of this check) missed it entirely.
+    """
+    if _ARABIC_SCRIPT.search(text):
+        return True
+    if _ACCENTED_LATIN.search(text):
+        return True
+    words = set(_WORD_RE.findall(text.lower()))
+    return any(words & lang_words for lang_words in _FUNCTION_WORDS.values())
+\end{lstlisting}
+\section{Lossless node caching — \texttt{modeling/\allowbreak{}nodes\_\allowbreak{}cache.py}}
+Discussed in Section 10.1, the fix for the Render out-of-memory failure. Reproduced in full since it is short — the entire mechanism that lets the backend skip a 12.7-second PDF re-parse on every process startup.
+
+\begin{lstlisting}[caption={modeling/nodes\_cache.py — complete file}]
+import json
+from pathlib import Path
+
+from schema.schema import Node
+
+# has_children/actions are @computed_field on Node - always derivable
+# from children/responsibilities, so caching them would just be dead
+# weight on disk and Node recomputes them for free the moment
+# load_nodes() reconstructs each one.
+_COMPUTED_FIELDS = {"has_children", "actions"}
+
+
+def save_nodes(nodes, cache_path):
+    """Serializes {id: Node} to a single JSON file at cache_path."""
+    cache_path = Path(cache_path)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        node_id: node.model_dump(exclude=_COMPUTED_FIELDS)
+        for node_id, node in nodes.items()
+    }
+    cache_path.write_text(json.dumps(data))
+
+
+def load_nodes(cache_path):
+    """Reconstructs {id: Node} from a file written by save_nodes()."""
+    data = json.loads(Path(cache_path).read_text())
+    return {node_id: Node(**node_data) for node_id, node_data in data.items()}
+\end{lstlisting}
+\section{The \texttt{/\allowbreak{}api/\allowbreak{}ask} request/response contract — \texttt{webapp/\allowbreak{}backend.py}}
+Discussed throughout Chapter 10. The \texttt{Question} model is the complete contract between the frontend and the agent, including the explicit language-override field added in September 2026.
+
+\begin{lstlisting}[caption={webapp/backend.py — the Question model}]
+class Question(BaseModel):
+    question: str
+    llm: Optional[str] = None
+    # The node_id this same chat thread last resolved to, if any - the
+    # frontend tracks this per conversation and sends it back so
+    # pronoun-style follow-ups have a real anchor instead of
+    # resolve_query guessing off incidental word overlap.
+    previous_node_id: Optional[str] = None
+    # Explicit language picker override for the ANSWER's language -
+    # independent of whatever language the question text itself is
+    # in. None/"auto"/omitted keeps the original auto-detect-from-the-
+    # question behavior. Any other supported code (en/fr/es/pt/ar)
+    # always wins.
+    target_language: Optional[str] = None
+\end{lstlisting}
+\section{Tone detection wired into the request handler — \texttt{webapp/\allowbreak{}backend.py}}
+Discussed in Section 8.6. This is the final step of the \texttt{/\allowbreak{}api/\allowbreak{}ask} handler — the point where the prefix from G.5 is actually applied to whatever answer the rest of the pipeline already produced, regardless of which path produced it.
+
+\begin{lstlisting}[caption={webapp/backend.py — end of ask(), tone detection}]
+    detected_tone = "neutral"
+    if provider is not None and looks_emotional(payload.question):
+        tone_result = detect_tone(payload.question, provider)
+        detected_tone = tone_result["tone"]
+
+    result["detected_tone"] = detected_tone
+    result["answer"] = apply_tone_prefix(result["answer"], detected_tone, answer_language)
+
+    return result
+\end{lstlisting}
+\section{Reproducibility of the knowledge-graph query used in Figure 3}
+Discussed in Section 8.1. This illustrates the exact graph query whose output was checked, role-for-role and footnote-for-footnote, against a real screenshot of the source document.
+
+\begin{lstlisting}[caption={conceptual reconstruction of the validated query, modeling/graph.py}]
+# responsible_roles(graph, node_id, action=None) walks every
+# `responsible_for` edge out of the given DAM node, optionally
+# filtered to one authority-code action, and returns the connected
+# role nodes with their edge attributes (level, footnote_refs).
+#
+# responsible_roles(graph, "3.111", action="A") returned, verified
+# against the real printed table on page 58 of the source PDF:
+#   [{"role": "Origination Sector Manager", "level": 3, "footnote_refs": [3]},
+#    {"role": "Supporting Dept. Division Manager", "level": 4, "footnote_refs": [4]}]
+\end{lstlisting}

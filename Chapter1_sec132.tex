@@ -1,0 +1,117 @@
+\subsection{Study of Existing Systems}
+
+Before building anything, it is worth asking what already exists. Four
+categories of tool could plausibly be pointed at this problem. None of them
+solves it, but the reasons they fail are specific rather than general, and those
+reasons are what shaped the design in Section~1.5.
+
+\subsubsection{Manual consultation and document search}
+
+The current process is a person opening the PDF and using whatever search their
+viewer provides. Full-text search finds character strings. That helps when you
+already know the exact title of an activity or its identifier, and it helps very
+little otherwise. Searching for ``approve'' returns hundreds of hits across the
+document with no ranking by relevance. Searching for a half-remembered activity
+name returns nothing unless the words you remember match the words that were
+printed.
+
+There is a deeper limit. Search returns locations, not answers. It can tell you
+that a phrase appears on page 24. It cannot tell you who approves the activity
+described there, because doing so would require knowing that the page holds a
+table, that the table's headers are rotated, and that a particular letter in a
+particular cell means approval by a particular role.
+
+\subsubsection{Generic document question-answering assistants}
+
+A second category is the general-purpose document assistant: upload a PDF, ask
+questions in plain language, get answers back. Tools in this space include
+ChatPDF, NotebookLM, Microsoft Copilot and the file-upload modes of the major
+chat assistants. They work by splitting a document into passages, embedding
+those passages as vectors, retrieving the passages closest to the question, and
+handing them to a language model that writes the reply.
+
+On prose this works well. On this document it fails, and the reason is
+structural rather than a question of model quality. Converting a DAM page to
+plain text destroys the spatial relationships that carry its meaning. A rotated
+header that identified a column becomes a loose string somewhere in the
+extracted text, no longer attached to the codes beneath it. A retrieved passage
+can therefore contain an activity name and the letter A without preserving the
+fact that the A sat in the column belonging to a specific director. The model is
+handed text from which the answer has already been removed, and it produces
+something plausible from what is left.
+
+% TODO-ADEM: worth 15 minutes -- upload two or three DAM pages to ChatPDF or
+% NotebookLM, ask "who approves 2.126", and screenshot the result. If it answers
+% wrongly or vaguely, that screenshot is worth more in a defence than any amount
+% of reasoning, and it turns this subsection from an argument into evidence.
+
+\subsubsection{Commercial document-extraction services}
+
+A third category does not answer questions at all, but extracts structure:
+Azure Document Intelligence, AWS Textract, Google Document AI, and more recent
+layout-aware parsers such as LlamaParse. These are considerably better at tables
+than a general-purpose library, and they are the serious alternative to writing
+extraction rules by hand.
+
+Three things ruled them out here. They are priced per page and require sending
+an internal governance document to an external service, which is a decision a
+bank makes deliberately rather than one a student makes casually. They are tuned
+for common business documents, invoices, receipts, contracts, forms, rather than
+for a bespoke authority matrix with rotated headers and superscript-qualified
+codes. And when they get a cell wrong they offer no account of why, which
+matters in a document where a wrong answer looks exactly like a right one. A
+rule derived from a measured character offset can be checked against the page
+that motivated it. A confidence score cannot.
+
+\subsubsection{Critical analysis: limitations of current approaches}
+
+None of these approaches fails through lack of engineering. Each fails because
+of an assumption that does not hold for this document.
+
+Text search assumes the user can phrase their need in the document's own
+vocabulary. Generic assistants assume that flattening a document into passages
+preserves its meaning, which is false for a table whose semantics are
+positional. Extraction services assume the document resembles the business forms
+they were trained on. Enterprise governance platforms, the fourth category, do
+model delegation of authority properly, but they expect the institution to
+re-enter its rules into their own data model, which is a change-management
+programme rather than a tool.
+
+There is also a limitation the first three share, and it matters more than any
+of the above. None of them has a concept of being wrong. A search returns
+results, a model returns text, and in neither case does the system distinguish
+an answer it can support from one it cannot. For a compliance reference, that
+distinction is the entire point. Table~\ref{tab:existing} sets the four
+approaches against the properties this project actually needed.
+
+\begin{table}[h]
+\centering
+\caption{Existing approaches assessed against the requirements of this project.}
+\label{tab:existing}
+\small
+\begin{tabular}{|p{0.26\textwidth}|c|c|c|c|c|}
+\hline
+\rowcolor{myblue}
+\textcolor{white}{\textbf{Requirement}} &
+\textcolor{white}{\textbf{Search}} &
+\textcolor{white}{\textbf{Assistants}} &
+\textcolor{white}{\textbf{Extraction}} &
+\textcolor{white}{\textbf{GRC}} &
+\textcolor{white}{\textbf{This work}} \\
+\hline
+Preserves positional table meaning & No & No & Partly & Yes & Yes \\ \hline
+Answers a question, not a location & No & Yes & No & Yes & Yes \\ \hline
+Answer traceable to a source row & No & No & Partly & Yes & Yes \\ \hline
+Refuses when it cannot answer & --- & No & --- & Yes & Yes \\ \hline
+Surfaces mandatory obligations & No & No & No & Partly & Yes \\ \hline
+Tolerates typos and loose phrasing & No & Yes & --- & No & Yes \\ \hline
+Document stays inside the institution & Yes & No & No & Yes & Yes \\ \hline
+No per-page or licence cost & Yes & Partly & No & No & Yes \\ \hline
+Deployable within this project & Yes & Yes & Yes & No & Yes \\ \hline
+\end{tabular}
+\end{table}
+
+Read down the final column and the specification writes itself. What was needed
+was something that keeps the table's structure, answers rather than locates,
+shows its source, admits when it does not know, and runs without sending the
+document anywhere. That is the system described from Section~1.5 onward.

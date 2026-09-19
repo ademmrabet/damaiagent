@@ -1,0 +1,22 @@
+\chapter{Client Organization: African Development Bank Group}
+\label{ch:client}
+
+\section{The African Development Bank Group}
+
+The African Development Bank Group is a regional multilateral development finance institution whose mandate is to finance and support economic and social development across its African member countries, through sovereign and non-sovereign lending, grants, technical assistance, and policy engagement. Like any institution that commits and disburses significant financial resources across a large, geographically distributed organization, it depends on a clearly defined internal authority structure: a documented answer, for every category of decision, to the question of exactly which role or committee is permitted to take it, at what threshold, and who else must be consulted or informed. The Delegation of Authority Matrix is that documented answer, and its accuracy and accessibility are not administrative details -- they are a control mechanism the institution's financial governance depends on.
+
+\section{Project Context and Working Model}
+
+The project was carried out with domain access to the DAM document and direct feedback access to a professional supervisor within the Bank, Mr.~Yasser Ahmad, with additional professional supervision from Mr.~Surya Joymungul, working in continuous collaboration with an AI coding assistant on the technical implementation. The working model that emerged, and that is visible throughout the decision log in Annex~F, combined domain knowledge from the client side (what a Check/Verify authority code actually means operationally, which questions a real user would actually ask, what a specific test question should honestly fail to answer) with the intern's own implementation work, verified continuously against real data rather than accepted on faith.
+
+\section{Tools and Technologies}
+
+The project's technology choices were made under three real constraints: no budget for paid infrastructure, no labeled training data, and a hard academic deadline. The resulting stack -- Python for the entire backend (\texttt{pdfplumber}, \texttt{scikit-learn}, \texttt{networkx}, FastAPI, Pydantic), React and Vite for the frontend, Docker for containerization, and Render for free-tier hosting -- reflects those constraints directly rather than an unconstrained ``best tool for the job'' selection; each individual choice is explained and justified at the point in this thesis where it was made, most substantially in Chapter~8 (Modeling) and Chapter~10 (Deployment).
+
+\section{Data Confidentiality}
+
+The DAM source document itself is an internal African Development Bank document and is treated accordingly throughout this project: it is never exposed through any public repository or public-facing file download, and this thesis quotes only the specific, narrow examples (individual activity identifiers, individual role titles, individual authority codes) necessary to explain a technical point, never the document as a whole.
+
+\section{Project Governance: The Decision Log}
+
+Rather than a conventional project-management artifact (a Gantt chart, a sprint board), this project's actual governance mechanism was a single running, dated Markdown file (\texttt{docs/decisions.md}), appended to continuously as the project progressed, recording every scope decision, every confirmed bug and its fix, and every accepted trade-off, in the order it happened and with the real evidence that justified it. This thesis's author considers that file the project's single most valuable artifact, independent of the code itself, and Chapter~12 discusses why; the file is reproduced in its entirety as Annex~F.
