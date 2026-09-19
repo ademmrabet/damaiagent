@@ -381,10 +381,20 @@ def test_ask_llm_ollama_falls_back_when_unreachable(client):
 
 
 def test_ask_llm_success_path_uses_grounded_phrasing(client):
+    # 2026-09-19 update (see docs/decisions.md): the mandatory
+    # Check/Verify + informed-party notes are no longer part of what
+    # the LLM has to state - agent/generate.py now only asks it to
+    # rephrase the roles the question's intent actually matched (here,
+    # just the two approve roles), then re-attaches 3.111's real
+    # informed-party note ("CPO ..., Country Manager DDG ... must also
+    # be informed.") afterward, verbatim. The mocked reply reflects
+    # what a real model would plausibly say when it's only given those
+    # two facts - it has no grounds to also mention CPO/Country
+    # Manager DDG, since neither is in its facts or reference answer
+    # anymore.
     fake_reply = (
         "Origination Sector Manager and Supporting Dept. Division Manager "
-        "both need to sign off on this one. CPO and Country Manager DDG "
-        "must also be informed."
+        "both need to sign off on this one."
     )
     with patch("llm.groq_provider.requests.post") as post:
         post.return_value.raise_for_status = lambda: None
@@ -395,7 +405,10 @@ def test_ask_llm_success_path_uses_grounded_phrasing(client):
         )
     body = res.json()
     if body["used_llm"]:
-        assert body["answer"] == fake_reply
+        assert body["answer"] == (
+            fake_reply + " CPO (Country Programme Officer), Country Manager "
+            "DDG (DDG = Deputy Director-General) must also be informed."
+        )
         assert body["llm_provider"] == "groq"
     else:
         # GROQ_API_KEY isn't set in this environment - falls back honestly

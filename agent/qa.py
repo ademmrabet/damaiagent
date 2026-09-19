@@ -71,6 +71,9 @@ def _empty_result(answer, method, score=None):
         "node_title": None,
         "node_type": None,
         "intent": None,
+        "llm_facts": None,
+        "base_answer": answer,
+        "mandatory_notes_text": "",
     }
 
 
@@ -249,13 +252,25 @@ def _format_reference_pointer(node, nodes, graph, intent=None):
 
 
 def _format_intent_answer(node, intent, roles, matching, nodes, graph):
+    """
+    Returns (base_answer, notes) rather than a single combined string -
+    callers that just want the display text join them the same way
+    this function used to internally (f"{base} {notes}" if notes else
+    base); answer_question also keeps `base_answer` and `notes`
+    separate so agent/generate.py can ask an LLM to rephrase only
+    `base_answer` and re-attach `notes` afterward untouched, instead of
+    requiring every mandatory-note role name to also survive the
+    rephrase verbatim (see docs/decisions.md, 2026-09-19 - that
+    inflated fact count was the single biggest driver of grounding-
+    check fallbacks).
+    """
     if not matching:
         if not roles:
             pointer = _format_children_pointer(node, nodes)
             if not pointer:
                 pointer = _format_reference_pointer(node, nodes, graph, intent)
             if pointer:
-                return pointer
+                return pointer, ""
         base = (
             f"No one is recorded to {intent['name']} on {node.id} "
             f"({node.title!r}) in the DAM."
@@ -268,7 +283,7 @@ def _format_intent_answer(node, intent, roles, matching, nodes, graph):
         )
 
     notes = _format_mandatory_notes(roles, intent["name"])
-    return f"{base} {notes}" if notes else base
+    return base, notes
 
 
 def _format_full_answer(node, roles, nodes, graph):
@@ -411,15 +426,22 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
 
     if intent:
         matching = _matching_roles(roles, intent)
-        answer = _format_intent_answer(node, intent, roles, matching, nodes, graph)
+        base_answer, mandatory_notes_text = _format_intent_answer(
+            node, intent, roles, matching, nodes, graph
+        )
+        answer = f"{base_answer} {mandatory_notes_text}" if mandatory_notes_text else base_answer
         facts = list(matching)
         if intent["name"] != "check":
             facts.extend(_check_verify_roles(roles))
         if intent["name"] != "informed":
             facts.extend(_informed_roles(roles))
+        llm_facts = matching
     else:
-        answer = _format_full_answer(node, roles, nodes, graph)
+        base_answer = _format_full_answer(node, roles, nodes, graph)
+        answer = base_answer
+        mandatory_notes_text = ""
         facts = roles
+        llm_facts = None
 
     return {
         "answer": answer,
@@ -430,4 +452,7 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         "node_title": node.title,
         "node_type": node.node_type,
         "intent": intent["name"] if intent else None,
+        "llm_facts": llm_facts,
+        "base_answer": base_answer,
+        "mandatory_notes_text": mandatory_notes_text,
     }

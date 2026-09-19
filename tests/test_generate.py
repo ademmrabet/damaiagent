@@ -80,6 +80,50 @@ MANY_FACTS = {
 }
 
 
+# Mirrors a real answer where the mandatory-notes roles (2026-09-03)
+# have been split out of what the LLM must reproduce (2026-09-19, see
+# docs/decisions.md) - `llm_facts` only has the one role the question
+# actually asked about; `roles` still has all 6 (the primary role plus
+# the check/verify and informed-party note roles), same as before this
+# split existed, so anything still reading the wider `roles` list
+# keeps working unchanged.
+APPROVE_WITH_NOTES = {
+    "answer": (
+        "For 2.126 ('Quarterly Mission program'), the following "
+        "approve(s): RDG / Director RDNG. This task must also be "
+        "checked/verified by Sector Manager, Supporting Dept. Division "
+        "Manager. Concerned Sector VP, RDVP, Task Manager/ Task Team "
+        "Members must also be informed."
+    ),
+    "base_answer": (
+        "For 2.126 ('Quarterly Mission program'), the following "
+        "approve(s): RDG / Director RDNG."
+    ),
+    "mandatory_notes_text": (
+        "This task must also be checked/verified by Sector Manager, "
+        "Supporting Dept. Division Manager. Concerned Sector VP, RDVP, "
+        "Task Manager/ Task Team Members must also be informed."
+    ),
+    "node_id": "2.126",
+    "method": "id",
+    "score": 1.0,
+    "roles": [
+        {"role": "RDG / Director RDNG", "action": "A", "level": None, "footnote_refs": []},
+        {"role": "Sector Manager", "action": "C", "level": None, "footnote_refs": []},
+        {"role": "Supporting Dept. Division Manager", "action": "C", "level": None, "footnote_refs": []},
+        {"role": "Concerned Sector VP", "action": "( i )", "level": None, "footnote_refs": []},
+        {"role": "RDVP", "action": "( i )", "level": None, "footnote_refs": []},
+        {"role": "Task Manager/ Task Team Members", "action": "( i )", "level": None, "footnote_refs": []},
+    ],
+    "llm_facts": [
+        {"role": "RDG / Director RDNG", "action": "A", "level": None, "footnote_refs": []},
+    ],
+    "node_title": "Quarterly Mission program",
+    "node_type": "task",
+    "intent": "approve",
+}
+
+
 class FakeProvider:
     name = "fake"
 
@@ -293,4 +337,95 @@ def test_grounding_check_still_catches_a_genuinely_different_name():
     # still has to fail.
     provider = FakeProvider(response="The Origination Manager approves this one alone.")
     result = humanize_answer("who approves 3.111", RESOLVED, provider)
+    assert result["used_llm"] is False
+
+
+# Grounding-fallback frequency reduction (2026-09-19, see docs/
+# decisions.md) - a real screenshot showed a 9-fact answer (1 approve
+# role plus 8 check/informed note roles) fail grounding and fall back
+# to the template. Splitting the mandatory-notes roles out of what the
+# LLM must reproduce is the fix: it only ever needs to preserve the
+# roles the question's intent actually matched.
+def test_llm_only_needs_to_preserve_the_matched_role_not_the_note_roles():
+    provider = FakeProvider(response="RDG / Director RDNG is the one who approves this.")
+    result = humanize_answer("who approves 2.126", APPROVE_WITH_NOTES, provider)
+    assert result["used_llm"] is True
+    assert result["error"] is None
+
+
+def test_mandatory_notes_are_reattached_verbatim_after_a_successful_rephrase():
+    # The LLM's job shrinks to the primary sentence only - the notes
+    # text always comes back byte-exact, never at the LLM's mercy.
+    provider = FakeProvider(response="RDG / Director RDNG is the one who approves this.")
+    result = humanize_answer("who approves 2.126", APPROVE_WITH_NOTES, provider)
+    assert result["text"].startswith("RDG / Director RDNG is the one who approves this.")
+    assert APPROVE_WITH_NOTES["mandatory_notes_text"] in result["text"]
+
+
+def test_grounding_prompt_only_lists_the_matched_role_in_english():
+    # _facts_block (fed to the LLM) and the grounding check itself
+    # should both be scoped to llm_facts on English answers - the note
+    # roles never even appear as something the model has to get right.
+    _, user = build_grounding_prompt("who approves 2.126", APPROVE_WITH_NOTES)
+    assert "RDG / Director RDNG" in user
+    assert "Sector Manager" not in user
+    assert "Concerned Sector VP" not in user
+
+
+def test_non_english_answer_still_requires_every_note_role_verbatim():
+    # Deliberately NOT split for non-English answers yet -
+    # mandatory_notes_text is a fixed English template with no
+    # per-language translation, so re-attaching it after a French
+    # rephrase would tack an untranslated English sentence onto an
+    # otherwise-French answer. A French response that only covers the
+    # approve role (mirroring the English-only test above) should
+    # still correctly fail grounding here.
+    provider = FakeProvider(response="RDG / Director RDNG approuve cela.")
+    result = humanize_answer(
+        "qui approuve 2.126", APPROVE_WITH_NOTES, provider, target_language="fr"
+    )
+    assert result["used_llm"] is False
+    assert result["text"] == APPROVE_WITH_NOTES["answer"]
+
+
+# A real role name in this DAM's own extracted data has no space
+# before its slash ("Task Manager/ Task Team Members" - a raw-PDF-
+# extraction artifact, not a meaningful fact). Its own dedicated
+# fixture, scoped so the slash-spaced role is actually in `llm_facts`
+# and required by the grounding check - APPROVE_WITH_NOTES doesn't
+# exercise this since its one llm_fact ("RDG / Director RDNG") already
+# has consistent spacing.
+INITIATE_WITH_SLASH_ROLE = {
+    "answer": "For 2.111 ('...'), the following initiate(s): Task Manager/ Task Team Members.",
+    "base_answer": "For 2.111 ('...'), the following initiate(s): Task Manager/ Task Team Members.",
+    "mandatory_notes_text": "",
+    "node_id": "2.111",
+    "method": "id",
+    "score": 1.0,
+    "roles": [
+        {"role": "Task Manager/ Task Team Members", "action": "I", "level": None, "footnote_refs": []},
+    ],
+    "llm_facts": [
+        {"role": "Task Manager/ Task Team Members", "action": "I", "level": None, "footnote_refs": []},
+    ],
+    "node_title": "...",
+    "node_type": "task",
+    "intent": "initiate",
+}
+
+
+def test_grounding_check_tolerates_inconsistent_slash_spacing():
+    # An LLM naturally "cleaning up" the missing space before the slash
+    # while writing fluent prose shouldn't fail grounding over pure
+    # formatting noise, not an actual dropped or altered fact.
+    provider = FakeProvider(response="Task Manager / Task Team Members initiates this one.")
+    result = humanize_answer("who initiates 2.111", INITIATE_WITH_SLASH_ROLE, provider)
+    assert result["used_llm"] is True
+
+
+def test_grounding_check_still_catches_a_real_change_around_the_slash():
+    # The slash-spacing tolerance must not become a loophole for an
+    # actually different name.
+    provider = FakeProvider(response="Task Manager and Team initiates this one.")
+    result = humanize_answer("who initiates 2.111", INITIATE_WITH_SLASH_ROLE, provider)
     assert result["used_llm"] is False

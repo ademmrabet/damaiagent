@@ -1,3 +1,5 @@
+import re
+
 from agent.authority import action_label
 from llm.base import LLMUnavailableError
 from llm.translate import LANGUAGE_NAMES
@@ -42,8 +44,37 @@ SYSTEM_PROMPT = (
 )
 
 
-def _facts_block(structured_result):
-    roles = structured_result.get("roles")
+def _scoped_facts(structured_result, target_language):
+    """
+    The role list the LLM actually has to preserve verbatim - not
+    always the same as the full `roles`/`answer` used for the
+    deterministic display text. English answers use `llm_facts` when
+    present (just the roles the question's intent matched, e.g. the
+    approvers for "who approves X") rather than the wider `roles` list
+    that also folds in the mandatory Check/Verify + informed-party
+    notes (see agent/qa.py's answer_question). Those notes are a fixed
+    boilerplate sentence, not something that needs a creative
+    rephrase, and asking the LLM to also reproduce every name in them
+    verbatim was the single biggest driver of grounding-check
+    fallbacks once a task had several informed parties (see docs/
+    decisions.md, 2026-09-19) - `humanize_answer` re-attaches that
+    sentence afterward untouched instead.
+
+    Non-English answers deliberately keep the old, wider behavior:
+    `mandatory_notes_text` is a fixed English template with no
+    per-language translation yet (see llm/tone.py's EMPATHY_PREFIXES
+    for the pattern this would follow if that's ever added), so
+    splitting it out today would tack an untranslated English sentence
+    onto an otherwise-translated answer - worse than the status quo.
+    Also falls back to `roles` for hand-built structured_result
+    fixtures (tests/test_generate.py) that predate `llm_facts`.
+    """
+    if target_language == "en" and structured_result.get("llm_facts") is not None:
+        return structured_result["llm_facts"]
+    return structured_result.get("roles") or []
+
+
+def _facts_block(roles):
     if not roles:
         return "(no responsibilities recorded for this item)"
 
@@ -61,7 +92,8 @@ def _facts_block(structured_result):
 def build_grounding_prompt(question, structured_result, target_language="en"):
     node_id = structured_result.get("node_id")
     node_title = structured_result.get("node_title")
-    roles = structured_result.get("roles") or []
+    roles = _scoped_facts(structured_result, target_language)
+    reference_answer = structured_result.get("base_answer") or structured_result["answer"]
 
     system = SYSTEM_PROMPT
     if len(roles) >= MANY_FACTS_THRESHOLD:
@@ -80,28 +112,49 @@ def build_grounding_prompt(question, structured_result, target_language="en"):
     user = (
         f'User question: "{question}"\n\n'
         f"Matched DAM item: {node_id} ({node_title!r})\n\n"
-        f"Verified facts:\n{_facts_block(structured_result)}\n\n"
+        f"Verified facts:\n{_facts_block(roles)}\n\n"
         f"Reference answer (already correct, restyle it - don't just "
-        f"copy it verbatim): {structured_result['answer']}"
+        f"copy it verbatim): {reference_answer}"
     )
     return system, user
 
 
 def _normalize_for_match(s):
-    return " ".join(s.lower().split())
+    """
+    Lowercases and collapses whitespace runs (2026-09-03), then also
+    normalizes spacing immediately around "/" (2026-09-19) - one real
+    role name in this DAM's own extracted data ("Task Manager/ Task
+    Team Members") has no space before its slash, a raw-PDF-extraction
+    artifact, not a meaningful fact. An LLM naturally "cleaning up"
+    that spacing while writing fluent prose was a real, avoidable
+    grounding-check false rejection - same category of incidental-
+    formatting-noise problem this function already existed to solve,
+    just a punctuation case the original whitespace-only version
+    didn't cover. Comparing both sides through this same function (see
+    _mentions_expected_facts) makes it symmetric regardless of which
+    side - the stored role name or the LLM's rephrasing - has the
+    inconsistent spacing.
+    """
+    collapsed = " ".join(s.lower().split())
+    return re.sub(r"\s*/\s*", "/", collapsed)
 
 
-def _mentions_expected_facts(text, structured_result):
+def _mentions_expected_facts(text, structured_result, target_language="en"):
     """
-    Grounding check, not just a hopeful prompt: every role name in the
-    facts that back this answer must still be present, verbatim (modulo
-    whitespace/case - see _normalize_for_match), in the LLM's
-    rephrasing. Guards against the model quietly dropping, merging, or
-    renaming a role while still sounding fluent - the exact failure
-    mode that makes free-form LLM output risky for a compliance
-    document, even under a strict system prompt.
+    Grounding check, not just a hopeful prompt: every role name the LLM
+    was actually asked to preserve (see _scoped_facts) must still be
+    present, verbatim modulo whitespace/case/slash-spacing - see
+    _normalize_for_match - in its rephrasing. Guards against the model
+    quietly dropping, merging, or renaming a role while still sounding
+    fluent - the exact failure mode that makes free-form LLM output
+    risky for a compliance document, even under a strict system
+    prompt. Checked against the same scoped list `_facts_block` showed
+    the model, not the wider `roles` - the mandatory-notes roles this
+    excludes on English answers are re-attached verbatim by
+    humanize_answer afterward, never at the LLM's mercy in the first
+    place.
     """
-    roles = structured_result.get("roles")
+    roles = _scoped_facts(structured_result, target_language)
     if not roles:
         return True
     normalized_text = _normalize_for_match(text)
@@ -150,7 +203,7 @@ def humanize_answer(question, structured_result, provider, target_language="en")
             "error": str(exc),
         }
 
-    if not llm_text or not _mentions_expected_facts(llm_text, structured_result):
+    if not llm_text or not _mentions_expected_facts(llm_text, structured_result, target_language):
         return {
             "text": deterministic,
             "used_llm": False,
@@ -158,4 +211,7 @@ def humanize_answer(question, structured_result, provider, target_language="en")
             "error": "LLM output failed the grounding check (missing/altered role names)",
         }
 
-    return {"text": llm_text, "used_llm": True, "provider": provider.name, "error": None}
+    notes = structured_result.get("mandatory_notes_text")
+    final_text = f"{llm_text} {notes}" if target_language == "en" and notes else llm_text
+
+    return {"text": final_text, "used_llm": True, "provider": provider.name, "error": None}

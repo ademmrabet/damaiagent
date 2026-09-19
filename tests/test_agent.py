@@ -464,6 +464,92 @@ def test_help_recognizes_new_employee_phrasings_not_just_the_word_help(setup):
         assert "Delegation of Authority Matrix" in result["answer"]
 
 
+def test_full_dump_answer_shows_action_names_not_bare_letter_codes(setup):
+    # Real bug from a live screenshot (2026-09-19, see docs/
+    # decisions.md): a no-intent "tell me about X" answer grouped roles
+    # under bare codes only ("I:", "A:", "( i ):"), which an LLM
+    # rephrasing step then parroted back verbatim with no license to
+    # expand them. Verified directly against real answer_question
+    # output before pinning this, not guessed.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "tell me about 2.111", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert result["node_id"] == "2.111"
+    assert "Initiate (I):" in result["answer"]
+    assert "Approve (A):" in result["answer"]
+    assert "Informed:" in result["answer"]
+    assert "  I:" not in result["answer"]
+    assert "  A:" not in result["answer"]
+
+
+def test_bare_single_letter_followup_with_no_other_subject_is_recognized(setup):
+    # Narrower gap in the 2026-09-03 fix above: that one only covered
+    # multi-code questions ("what's I, A and (i)?") and unambiguous
+    # single codes ("what does C2 mean"). A lone bare "I" with nothing
+    # else in the sentence ("what I means?") still fell through to
+    # context-carryover and silently re-answered the previous question
+    # instead - a second real live bug (2026-09-19, see docs/
+    # decisions.md).
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves 2.126", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+    assert first["node_id"] == "2.126"
+
+    followup = answer_question(
+        "what I means ?",
+        nodes, graph, vectorizer, matrix, searchable_ids,
+        previous_node_id=first["node_id"],
+    )
+
+    assert followup["node_id"] is None
+    assert followup["method"] == "action_code_legend"
+    assert "Initiate" in followup["answer"]
+
+
+def test_answer_with_mandatory_notes_exposes_llm_facts_narrower_than_roles(setup):
+    # The split that lets agent/generate.py ask an LLM to rephrase only
+    # the roles the question actually asked about, and re-attach the
+    # mandatory Check/Verify + informed-party notes afterward
+    # untouched, instead of requiring every note role to also survive
+    # an LLM rephrase verbatim (see docs/decisions.md, 2026-09-19).
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "who approves 2.126", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert result["llm_facts"] == [
+        r for r in result["roles"] if r["role"] == "RDG / Director RDNG"
+    ]
+    assert len(result["llm_facts"]) < len(result["roles"])
+    assert "must also be checked/verified by" in result["mandatory_notes_text"]
+    assert "must also be informed" in result["mandatory_notes_text"]
+    assert result["base_answer"] in result["answer"]
+    assert result["mandatory_notes_text"] in result["answer"]
+
+
+def test_no_intent_answer_has_no_split_llm_facts(setup):
+    # The full-dump ("tell me about X") path has no separate
+    # "mandatory notes" concept to split out - every role IS the
+    # primary answer, so llm_facts stays None and mandatory_notes_text
+    # stays empty, same as before this feature existed.
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    result = answer_question(
+        "tell me about 2.111", nodes, graph, vectorizer, matrix, searchable_ids
+    )
+
+    assert result["intent"] is None
+    assert result["llm_facts"] is None
+    assert result["mandatory_notes_text"] == ""
+    assert result["base_answer"] == result["answer"]
+
+
 def test_reference_entirely_out_of_document_scope_says_so_honestly(setup):
     # Adem's real screenshot: 2.312.2's row on the actual DAM page is
     # just "See DAM 16.100, 16.200, 16.300, and 16.400" spanning the

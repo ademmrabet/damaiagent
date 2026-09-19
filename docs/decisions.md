@@ -2890,3 +2890,90 @@ Originate" instead of repeating the 2.111 breakdown, and the 2.111
 answer itself now reads "Initiate (I): ...", "Approve (A): ...",
 "Informed: ...". Full suite re-run after: 397 passed, 1 xfailed - same
 as before these changes, no regressions.
+
+## 2026-09-19 - Reduced the LLM grounding-fallback rate
+
+A third thing in the same screenshot session: "who approves missions?"
+correctly resolved via context-carryover (a bare text search on that
+phrase alone actually top-matches 2.513.3 "Approve Loan Disbursement
+Application" at 0.34, an unrelated loan task - 2.111 only scores 0.21
+on its own, so falling back to the already-open node was the right
+call, not a bug), but the LLM rephrasing failed its grounding check
+and fell back to the deterministic template. Investigated instead of
+just re-prompting blindly, since Groq isn't reachable from this
+sandbox to test empirically:
+
+1. **Root cause, measured, not guessed**: the mandatory Check/Verify +
+   informed-party notes (2026-09-03) get folded into the same
+   `roles`/"facts" list the LLM must reproduce verbatim. For 2.111's
+   approve answer that's 9 distinct role names in one rephrase - even
+   at a generous 95% per-role preservation rate, 9 independent
+   "don't touch this name" constraints only compound to roughly a 63%
+   overall pass rate on parroting-adjacent tasks like this.
+
+2. **Fix**: split "the roles the question's intent actually matched"
+   (`llm_facts`) out from "the full role list including mandatory
+   notes" (`roles`, unchanged in meaning - `tests/test_agent.py`
+   still pins this). `agent/qa.py::answer_question` now also returns
+   `base_answer` (the answer sentence without notes) and
+   `mandatory_notes_text` (the notes alone). `agent/generate.py` asks
+   the LLM to rephrase only `base_answer`/`llm_facts` - for 2.111's
+   approve answer, that's 9 facts down to 2 - and `humanize_answer`
+   re-attaches `mandatory_notes_text` afterward, verbatim, never at
+   the LLM's mercy. English answers only: `mandatory_notes_text` is a
+   fixed English template with no per-language translation yet (same
+   pattern as `llm/tone.py`'s hand-translated EMPATHY_PREFIXES would
+   need to follow if that's ever added), so non-English answers keep
+   the old, wider, single-pass behavior rather than risk tacking an
+   untranslated English sentence onto a French/Spanish/Portuguese/
+   Arabic answer.
+
+3. **Second, independent fix found while investigating**: exactly one
+   role name in the whole dataset ("Task Manager/ Task Team Members")
+   has no space before its slash - a raw PDF-extraction artifact, not
+   a meaningful fact - but it's used in 7 of 1776 responsibility rows,
+   several on frequently-asked nodes (2.111 among them). An LLM
+   naturally "cleaning up" that spacing while writing fluent prose
+   (e.g. "Task Manager / Task Team Members") was a real, avoidable
+   grounding-check false rejection, confirmed directly: the *old*
+   `_normalize_for_match` genuinely fails on this exact pair, the new
+   one passes. Extended it to also normalize spacing immediately
+   around "/", the same "tolerate incidental formatting noise, not
+   real content changes" mission it was already built for on 2026-09-
+   03, just a punctuation case that version didn't cover.
+
+**One found-and-fixed regression along the way**: updating this broke
+`tests/test_backend.py::test_ask_llm_success_path_uses_grounded_
+phrasing` - its mocked fake Groq reply had been hand-written to
+include an informed-party mention itself (matching the *old* unified-
+prompt design), so once the real code stopped asking the LLM to state
+that note, the mock's hardcoded informed clause and the newly
+re-attached deterministic one appeared back to back, doubled up. Not a
+production bug (a real model given only the 2 approve-role facts has
+no grounds to also invent CPO/Country Manager DDG - rule 1 explicitly
+forbids adding anything not listed) - fixed by updating the mock reply
+to what a real model would plausibly say given its new, narrower
+facts, and asserting the final answer is that reply plus 3.111's real
+informed note, exactly once.
+
+Verified analytically against real DAM data (Groq itself still
+unreachable from this sandbox, same limitation as every other LLM
+feature here): 2.111's approve-intent answer now only requires the LLM
+to preserve 2 role names instead of 9, a simulated natural rephrase
+using inconsistent slash spacing on the real data now passes where the
+old normalizer would have rejected it, and non-English grounding still
+requires the full note-inclusive set (no language-mixing regression).
+New tests added: `tests/test_agent.py` (action-label display fix,
+bare-single-letter follow-up fix, `llm_facts`/`base_answer`/
+`mandatory_notes_text` shape) and `tests/test_generate.py` (notes
+split scoping, verbatim re-attachment, non-English opt-out, slash-
+spacing tolerance and its boundary). Full suite: 407 passed, 1
+xfailed - up from 397 by the new tests, no regressions elsewhere.
+
+**Worth watching in production**: this whole fix is reasoned from
+measured facts (role-name frequency, a slash-spacing diff, the
+combinatorial math on independent preservation odds), not a live Groq
+A/B test, because Groq isn't reachable from this sandbox. Adem should
+watch whether the fallback rate actually drops after deploying, same
+verification gap already flagged for the LLM tone-detection and
+translation features.
