@@ -14,5 +14,6 @@ psycopg2-binary
 passlib[bcrypt]
 python-jose[cryptography]
 authlib
+httpx
 itsdangerous
 email-validator
