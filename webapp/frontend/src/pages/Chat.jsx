@@ -6,8 +6,8 @@ import LanguagePicker from '../components/LanguagePicker.jsx';
 import ConversationSidebar from '../components/ConversationSidebar.jsx';
 import LogoutButton from '../components/LogoutButton.jsx';
 import useConversations from '../hooks/useConversations.js';
-import { askQuestion, getAttachmentUrl, isLoggedIn, uploadFile } from '../api.js';
-import { LANGUAGE_NAMES, RTL_LANGUAGES, stringsFor } from '../i18n.js';
+import { askQuestion, getAttachmentUrl, isLoggedIn, transcribeAudio, uploadFile } from '../api.js';
+import { LANGUAGE_NAMES, RTL_LANGUAGES, SPEECH_LANG_TAGS, stringsFor } from '../i18n.js';
 import './chat.css';
 
 function isLowConfidence(data) {
@@ -79,6 +79,38 @@ function AttachmentChip({ attachment, conversationId }) {
   );
 }
 
+function SpeakButton({ text, lang, t }) {
+  const [speaking, setSpeaking] = useState(false);
+
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null;
+
+  function handleToggle() {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const utterance = new window.SpeechSynthesisUtterance(text);
+    utterance.lang = lang;
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+    window.speechSynthesis.cancel(); // only one answer speaks at a time
+    window.speechSynthesis.speak(utterance);
+    setSpeaking(true);
+  }
+
+  return (
+    <button
+      type="button"
+      className="speak-btn"
+      onClick={handleToggle}
+      title={speaking ? t.stopSpeaking : t.speakAnswer}
+    >
+      {speaking ? '⏹' : '🔊'}
+    </button>
+  );
+}
+
 function MessageBubble({ message, index, t, conversationId }) {
   const ref = useRef(null);
   const [showDeterministic, setShowDeterministic] = useState(false);
@@ -119,6 +151,14 @@ function MessageBubble({ message, index, t, conversationId }) {
       className={'msg ' + role + (lowConfidence ? ' low-confidence' : '')}
     >
       {text}
+
+      {role === 'agent' && text && (
+        <SpeakButton
+          text={text}
+          lang={SPEECH_LANG_TAGS[(meta && meta.answerLanguage) || 'en'] || 'en-US'}
+          t={t}
+        />
+      )}
 
       {meta && meta.attachment && (
         <div className="attachment-row">
@@ -190,8 +230,13 @@ export default function Chat() {
   const [pendingAttachment, setPendingAttachment] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
+  const [recording, setRecording] = useState(false);
+  const [transcribing, setTranscribing] = useState(false);
+  const [voiceError, setVoiceError] = useState(null);
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const recordedChunksRef = useRef([]);
 
   const messages = activeConversation ? activeConversation.messages : [];
   const t = stringsFor(uiLanguage);
@@ -231,6 +276,51 @@ export default function Chat() {
       setUploadError(err.message || 'Upload failed');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleMicClick() {
+    if (recording) {
+      mediaRecorderRef.current?.stop();
+      return;
+    }
+
+    setVoiceError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = ['audio/webm', 'audio/mp4', 'audio/ogg'].find(
+        (type) => window.MediaRecorder && window.MediaRecorder.isTypeSupported(type)
+      );
+      const recorder = new window.MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      recordedChunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setRecording(false);
+
+        const blob = new Blob(recordedChunksRef.current, { type: mimeType || 'audio/webm' });
+        if (blob.size === 0) return;
+
+        setTranscribing(true);
+        try {
+          const text = await transcribeAudio(blob);
+          setInput((prev) => (prev ? `${prev} ${text}` : text));
+        } catch {
+          setVoiceError(t.voiceError);
+        } finally {
+          setTranscribing(false);
+        }
+      };
+
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setRecording(true);
+    } catch {
+      setVoiceError(t.voiceError);
     }
   }
 
@@ -416,12 +506,27 @@ export default function Chat() {
                   >
                     {uploading ? '…' : '📎'}
                   </button>
+                  <button
+                    type="button"
+                    className={'mic-btn' + (recording ? ' recording' : '')}
+                    onClick={handleMicClick}
+                    disabled={transcribing || sending}
+                    title={recording ? t.stopRecording : t.recordVoice}
+                  >
+                    {transcribing ? '…' : recording ? '⏹' : '🎤'}
+                  </button>
                 </>
               )}
               <input
                 id="question"
                 type="text"
-                placeholder={canPost ? t.placeholder : 'Read-only - this conversation is shared with you'}
+                placeholder={
+                  !canPost
+                    ? 'Read-only - this conversation is shared with you'
+                    : transcribing
+                    ? t.transcribing
+                    : t.placeholder
+                }
                 autoComplete="off"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -432,6 +537,7 @@ export default function Chat() {
               </button>
             </div>
             {uploadError && <div className="upload-error">{uploadError}</div>}
+            {voiceError && <div className="upload-error">{voiceError}</div>}
           </form>
         </div>
       </div>

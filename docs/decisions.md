@@ -3164,3 +3164,72 @@ pattern already flagged for Groq and the DATABASE_URL fix. Once
 `neon deploy` runs and the four AWS_* env vars are in Render, the
 thing actually worth checking is a real upload -> message -> shared
 colleague fetching a real presigned URL round trip.
+
+**Update, same day**: `neon deploy` ran successfully against the
+`uploads` bucket declared above - Neon confirmed it removed the
+`NEON_AUTH_BASE_URL`/`NEON_AUTH_JWKS_URL` variables that a prior
+attempt with `auth: true` had provisioned, which is exactly the
+"unused Neon Auth service" this entry flagged avoiding. The four
+`AWS_*` variables (plus `DATABASE_URL`/`DATABASE_URL_UNPOOLED`/
+`NEON_BRANCH`, which this app doesn't need) landed in a local `.env` -
+worth noting it wrote to `.env` rather than `.env.local`, which
+`python-dotenv`'s `load_dotenv()` already reads by default, so local
+dev picks these up with no extra config. Adem still needs to copy the
+four AWS_* values into Render's environment for the feature to work
+in production - not yet confirmed done.
+
+## 2026-09-20 - Voice input/output
+
+Scoped the same way as the previous two features - two quick
+clarifying questions rather than assumed: both directions (speak a
+question, hear the answer), and transcription via Groq Whisper rather
+than the fully-in-browser Web Speech API, since the app already has a
+Groq integration and API key wired up for chat (llm/groq_provider.py) -
+reusing it for transcription needs no new account, key, or billing
+relationship. Speech OUTPUT still uses the browser's own
+`SpeechSynthesisUtterance` (free, zero backend involvement) - there
+was no equivalent "already have the infrastructure" argument for a
+paid TTS API, and the quality bar for hearing an answer read back is
+lower than for the transcription accuracy of a spoken legal/procedural
+question about who approves what.
+
+**Design**: `llm/transcribe.py` is a standalone function, not another
+`LLMProvider` - transcription (audio in, text out) isn't a chat
+completion, so it doesn't fit that interface, and forcing it in would
+have meant an `.chat()` method that doesn't send or receive chat
+messages. Mirrors `llm/groq_provider.py`'s existing shape closely on
+purpose (same `requests`-based call, same `LLMUnavailableError` on any
+failure) so `webapp/backend.py`'s error handling doesn't need a second
+pattern. `POST /api/transcribe` requires only being logged in (same as
+`/api/uploads` - no conversation context exists yet at transcription
+time) and returns plain text for the frontend to drop into the
+existing input box; from there it's sent exactly like a typed
+question, so intent detection, grounding, and language handling never
+need to know voice was involved at all.
+
+The composer's mic button uses the browser's `MediaRecorder` API
+(webm/mp4/ogg, whichever the browser supports first) and populates the
+input field with the transcript rather than auto-sending it - a
+misheard word in a legal-authority question ("who approves" vs "who
+disapproves") is exactly the kind of transcription error worth a
+human glance before it goes to the agent. The speak-aloud button on
+each agent message maps the answer's own `answerLanguage` (already
+tracked per-message for the translation feature, 2026-09-03) to a
+BCP-47 tag for `SpeechSynthesisUtterance.lang`, so a French answer is
+actually spoken with a French voice rather than an English one reading
+French text badly.
+
+**Tests**: `tests/test_transcribe.py` mirrors `test_llm.py`'s
+`TestGroqProvider` pattern exactly (mocked `requests.post`, no real
+network call, `LLMUnavailableError` on a missing key/timeout/malformed
+response). `tests/test_transcribe_endpoint.py` covers auth-required,
+the happy path, the 10 MB size cap, and Groq-unavailable surfacing as
+a 503. Full suite: 443 passed, 1 xfailed - no regressions. Frontend
+rebuilt and verified via `vite build`.
+
+**Not yet live-verified**: same caveat as the file-upload and
+DATABASE_URL entries - `llm/transcribe.py` is tested against a mocked
+Groq response, not a real audio clip. The mic button and recording
+flow also can't be exercised by an automated test at all (no headless
+microphone in CI), so the first real check of this feature is Adem
+actually clicking the mic button in a browser.

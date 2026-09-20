@@ -161,6 +161,15 @@ export async function getAttachmentUrl(conversationId, key) {
   return body.url;
 }
 
+export async function transcribeAudio(blob) {
+  const formData = new FormData();
+  formData.append('file', blob, 'clip.webm');
+  const res = await authFetch('/api/transcribe', { method: 'POST', body: formData });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'Transcription failed');
+  return body.text;
+}
+
 export async function login(email, password) {
   const res = await fetch('/api/auth/login', {
     method: 'POST',

@@ -23,6 +23,8 @@ from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
 from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
+from llm.transcribe import transcribe_audio
+from llm.base import LLMUnavailableError
 from webapp.conversations import (
     append_message,
     conversation_has_attachment,
@@ -390,6 +392,39 @@ def get_attachment_url(
     if not conversation_has_attachment(conversation, key):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found in this conversation")
     return {"url": presign_download(key)}
+
+
+MAX_VOICE_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB - a spoken question, not a podcast
+
+
+@app.post("/api/transcribe")
+async def transcribe(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    """
+    Backs the composer's mic button - reuses the same Groq account the
+    chat's "Groq"/"Auto" LLM modes already use (see llm/transcribe.py),
+    so voice input needs no new API key or provider setup, only
+    GROQ_API_KEY already being set. Returns plain transcribed text for
+    the frontend to drop into the input box - it's still sent as a
+    normal typed question from there, so nothing downstream (grounding,
+    intent detection, language handling) needs to know voice was ever
+    involved.
+    """
+    contents = await file.read()
+    if len(contents) > MAX_VOICE_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail=f"Recording is too long - the limit is {MAX_VOICE_UPLOAD_BYTES // (1024 * 1024)} MB.",
+        )
+
+    try:
+        text = transcribe_audio(contents, filename=file.filename or "audio.webm")
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+
+    return {"text": text}
 
 
 @app.get("/api/auth/google/login")

@@ -37,6 +37,18 @@ export const LANGUAGE_OPTIONS = [
 
 export const RTL_LANGUAGES = new Set(['ar']);
 
+// BCP-47 tags for the Web Speech API's SpeechSynthesisUtterance.lang -
+// this app's own codes are the plain 2-letter ones above (matching
+// answer_language from webapp/backend.py's /api/ask), but the browser
+// speech APIs expect a full locale tag to pick a matching voice.
+export const SPEECH_LANG_TAGS = {
+  en: 'en-US',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  pt: 'pt-PT',
+  ar: 'ar-SA',
+};
+
 export const UI_STRINGS = {
   en: {
     subtitle:
@@ -58,6 +70,12 @@ export const UI_STRINGS = {
     showDeterministic: 'Show structured (template) answer',
     hideDeterministic: 'Hide structured (template) answer',
     connectionError: 'Something went wrong reaching the agent. Is the server running?',
+    recordVoice: 'Record a voice question',
+    stopRecording: 'Stop recording',
+    transcribing: 'Transcribing...',
+    voiceError: "Couldn't transcribe that - try again or type your question.",
+    speakAnswer: 'Read this answer aloud',
+    stopSpeaking: 'Stop reading aloud',
   },
   fr: {
     subtitle:
@@ -79,6 +97,12 @@ export const UI_STRINGS = {
     showDeterministic: 'Afficher la réponse structurée (modèle)',
     hideDeterministic: 'Masquer la réponse structurée (modèle)',
     connectionError: "Un problème est survenu en contactant l'agent. Le serveur est-il actif ?",
+    recordVoice: 'Enregistrer une question vocale',
+    stopRecording: "Arrêter l'enregistrement",
+    transcribing: 'Transcription en cours...',
+    voiceError: 'Impossible de transcrire - réessayez ou tapez votre question.',
+    speakAnswer: 'Lire cette réponse à voix haute',
+    stopSpeaking: 'Arrêter la lecture',
   },
   es: {
     subtitle:
@@ -100,6 +124,12 @@ export const UI_STRINGS = {
     showDeterministic: 'Mostrar respuesta estructurada (plantilla)',
     hideDeterministic: 'Ocultar respuesta estructurada (plantilla)',
     connectionError: 'Algo salió mal al contactar al agente. ¿Está el servidor en ejecución?',
+    recordVoice: 'Grabar una pregunta de voz',
+    stopRecording: 'Detener la grabación',
+    transcribing: 'Transcribiendo...',
+    voiceError: 'No se pudo transcribir - intente de nuevo o escriba su pregunta.',
+    speakAnswer: 'Leer esta respuesta en voz alta',
+    stopSpeaking: 'Detener la lectura',
   },
   pt: {
     subtitle:
@@ -121,6 +151,12 @@ export const UI_STRINGS = {
     showDeterministic: 'Mostrar resposta estruturada (modelo)',
     hideDeterministic: 'Ocultar resposta estruturada (modelo)',
     connectionError: 'Algo deu errado ao contatar o agente. O servidor está em execução?',
+    recordVoice: 'Gravar uma pergunta por voz',
+    stopRecording: 'Parar a gravação',
+    transcribing: 'Transcrevendo...',
+    voiceError: 'Não foi possível transcrever - tente novamente ou digite sua pergunta.',
+    speakAnswer: 'Ler esta resposta em voz alta',
+    stopSpeaking: 'Parar a leitura',
   },
   ar: {
     subtitle:
@@ -142,6 +178,12 @@ export const UI_STRINGS = {
     showDeterministic: 'إظهار الإجابة النموذجية',
     hideDeterministic: 'إخفاء الإجابة النموذجية',
     connectionError: 'حدث خطأ أثناء الاتصال بالوكيل. هل الخادم يعمل؟',
+    recordVoice: 'تسجيل سؤال صوتي',
+    stopRecording: 'إيقاف التسجيل',
+    transcribing: 'جارٍ تحويل الصوت إلى نص...',
+    voiceError: 'تعذّر تحويل الصوت إلى نص - حاول مرة أخرى أو اكتب سؤالك.',
+    speakAnswer: 'قراءة هذه الإجابة بصوت عالٍ',
+    stopSpeaking: 'إيقاف القراءة',
   },
 };
 

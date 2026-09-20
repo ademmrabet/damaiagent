@@ -138,6 +138,52 @@
   color: var(--red);
 }
 
+.mic-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  font-size: 16px;
+  padding: 0 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mic-btn:hover {
+  background: var(--gray-border);
+}
+
+.mic-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mic-btn.recording {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--white);
+  animation: mic-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes mic-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.speak-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.speak-btn:hover {
+  opacity: 1;
+}
+
 #chat {
   flex: 1;
   overflow-y: auto;
