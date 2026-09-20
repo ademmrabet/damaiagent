@@ -138,6 +138,38 @@ export async function unshareConversationApi(id, targetUserId) {
   return res.json();
 }
 
+export async function createShareLinkApi(id) {
+  const res = await authFetch(`/api/conversations/${id}/share-link`, { method: 'POST' });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'failed to create share link');
+  return body;
+}
+
+export async function revokeShareLinkApi(id) {
+  const res = await authFetch(`/api/conversations/${id}/share-link`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('failed to revoke share link');
+  return res.json();
+}
+
+export async function claimShareLinkApi(token) {
+  const res = await authFetch(`/api/conversations/shared/${encodeURIComponent(token)}/claim`, {
+    method: 'POST',
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'This share link is invalid or has expired');
+  return body;
+}
+
+// EventSource can't set an Authorization header, so the JWT travels as
+// a query param for this one connection instead (see webapp/backend.py's
+// /api/events docstring). Returns null when logged out so callers can
+// skip subscribing rather than opening a connection that will 401.
+export function openEventSource() {
+  const token = getToken();
+  if (!token) return null;
+  return new EventSource(`/api/events?token=${encodeURIComponent(token)}`);
+}
+
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);

@@ -2,6 +2,18 @@ import { useEffect, useState } from 'react';
 import { getToken, isLoggedIn, login, setToken, signup } from '../api.js';
 import './login.css';
 
+// Only ever redirects back into the app's own /chat page (which is
+// where a "Share via QR code" link points - see Chat.jsx and
+// webapp/backend.py's /api/conversations/shared/{token}/claim) -
+// never an arbitrary URL, so a crafted ?redirect= query param can't
+// be used to bounce a freshly-authenticated user off to another site.
+function getRedirectTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const redirect = params.get('redirect');
+  if (redirect && redirect.startsWith('/chat')) return redirect;
+  return '/chat';
+}
+
 export default function Login() {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -21,7 +33,7 @@ export default function Login() {
     }
 
     if (isLoggedIn() && getToken()) {
-      window.location.replace('/chat');
+      window.location.replace(getRedirectTarget());
     }
   }, []);
 
@@ -32,7 +44,7 @@ export default function Login() {
     try {
       const result = mode === 'login' ? await login(email, password) : await signup(email, password, name);
       setToken(result.access_token);
-      window.location.href = '/chat';
+      window.location.href = getRedirectTarget();
     } catch (err) {
       setError(err.message);
     } finally {

@@ -3233,3 +3233,86 @@ Groq response, not a real audio clip. The mic button and recording
 flow also can't be exercised by an automated test at all (no headless
 microphone in CI), so the first real check of this feature is Adem
 actually clicking the mic button in a browser.
+
+## 2026-09-20 - Real-time conversation sync + QR-code sharing
+
+Prompted by Adem noticing that a conversation shared with a colleague
+only showed up in their sidebar after a manual page refresh. Root
+cause: `useConversations.js` fetched `/api/conversations` exactly once,
+on mount - nothing ever told an already-open tab the list had changed
+server-side. Fixed with two independent mechanisms rather than one,
+per Adem's own framing ("polling and real-time"):
+
+- **Polling**: `useConversations.js` now refetches every 30 seconds
+  regardless of anything else. Dumb, always eventually correct, costs
+  one small request - the backstop for everything below failing.
+- **Real-time**: `GET /api/events` is a Server-Sent Events stream
+  (`webapp/events.py` is a tiny in-memory pub/sub, one `asyncio.Queue`
+  per connected tab, keyed by user id). `share`/`unshare`/`add_message`
+  and the new claim endpoint all call `notify_user`/`notify_users`
+  after the database commit, so the affected colleague's tab refetches
+  within roughly a second instead of thirty. `EventSource` can't set an
+  Authorization header, so the JWT travels as a `?token=` query param
+  for this one connection - noted as a deliberate, scoped exception to
+  "tokens don't go in URLs," not an oversight.
+
+This pub/sub is explicitly per-process - correct for the single Render
+web service instance this app runs on, but would need a shared broker
+(Redis pub/sub or similar) to fan out across multiple instances if
+this is ever scaled horizontally. Documented in `webapp/events.py`
+rather than silently assumed away.
+
+A background refetch could otherwise race an optimistic send (the
+message appears locally, then a poll/SSE-triggered refetch lands
+before the POST response does, briefly showing the conversation
+*without* the message already on screen) - `mergeConversations` in
+`useConversations.js` never lets a background refresh shrink a
+conversation's message list to fix this without needing to coordinate
+the two code paths any more tightly.
+
+**QR-code sharing**: also requested in the same message. Rather than
+forking the authorization model, "share via QR code" reuses the exact
+same `ConversationShare` row an email invite creates - a new
+`ConversationShareLink` (token, 7-day expiry, one active link per
+conversation) is just an anonymous, scannable path to the same grant:
+`claim_share_link` calls the same `_grant_share` helper
+`share_conversation` does. This keeps exactly one place deciding who
+can view a conversation instead of two. The QR image itself is
+generated server-side as an SVG (`webapp/qr.py`, the `qrcode` package,
+`SvgPathImage` for a single-path, ~16KB image rather than one `<rect>`
+per module) and returned as a `data:` URI - no new frontend dependency,
+no file to store or clean up, and the QR just re-encodes a URL the
+backend can already reproduce from the token.
+
+Opening a link while logged out redirects through `/login?redirect=...`
+(restricted to paths starting with `/chat`, so a crafted `redirect`
+can't bounce a freshly-authenticated user off-site) and back once
+signed in - `Chat.jsx` strips `?share_token=...` from the address bar
+immediately after claiming it, both so reloading doesn't re-claim and
+so copying the address bar afterward doesn't accidentally reshare the
+raw token. The OAuth login paths (Google/Microsoft) don't thread this
+redirect through yet - a real, small gap, not fixed here since it
+would need the backend's OAuth callback redirect to carry state too.
+
+**Tests**: `tests/test_events.py` covers the pub/sub in isolation
+(subscribe/notify/unsubscribe, multi-tab fan-out, de-duplication).
+`tests/test_conversations.py` gained coverage for share-link
+create/reuse/claim/expire/revoke, the owner-visiting-their-own-link
+no-op, non-owner rejection, the `/api/events` bad-token 401, and an
+end-to-end check that posting a message actually reaches the
+colleague's real subscriber queue through the live route (not just the
+pub/sub module directly). `tests/test_backend.py` (unmodified) and the
+full existing suite still pass with these changes in place. Frontend
+rebuilt and verified via `vite build` (done in a scratch directory
+outside the OneDrive-synced project folder - `npm install`/`rm -rf
+node_modules` are extremely slow directly on that mount, apparently
+due to per-file cloud-sync overhead; copying source out, building, and
+copying `static/` back was the practical workaround).
+
+**Not yet live-verified**: the SSE connection's behavior on Render
+specifically - free-tier proxies/idle timeouts can behave differently
+from local `TestClient` testing, which is exactly why the 30-second
+poll exists as a backstop rather than relying on SSE alone. First real
+check is Adem sharing a conversation with a second account in two
+actual browser tabs and confirming it appears without a refresh, and
+scanning a generated QR code with a phone.

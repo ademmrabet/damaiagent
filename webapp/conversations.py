@@ -10,12 +10,16 @@ docstring) - a shared-with user can call get_conversation_for_viewing
 but never append_message on a conversation they don't own.
 """
 
+import secrets
+from datetime import datetime, timezone
+
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from webapp.models import Conversation, ConversationShare, User
+from webapp.models import Conversation, ConversationShare, ConversationShareLink, User
 
 MAX_TITLE_LENGTH = 42
+SHARE_LINK_TOKEN_BYTES = 24
 
 
 def _derive_title(text: str) -> str:
@@ -113,13 +117,14 @@ def delete_conversation(db: Session, conversation: Conversation) -> None:
     db.commit()
 
 
-def share_conversation(db: Session, conversation: Conversation, shared_by: User, email: str) -> ConversationShare:
-    target = db.query(User).filter(User.email == email.lower()).first()
-    if target is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No account found for {email!r} - they need to sign up first",
-        )
+def _grant_share(db: Session, conversation: Conversation, shared_by: User, target: User) -> ConversationShare:
+    """
+    Shared by both the email-invite path (share_conversation) and the
+    QR/link-invite path (claim_share_link) - whichever way someone
+    ends up with access, it's the same ConversationShare row, so
+    there's exactly one place that decides who can view a
+    conversation (see models.py's ConversationShareLink docstring).
+    """
     if target.id == conversation.owner_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You already own this conversation")
 
@@ -145,12 +150,97 @@ def share_conversation(db: Session, conversation: Conversation, shared_by: User,
     return share
 
 
+def share_conversation(db: Session, conversation: Conversation, shared_by: User, email: str) -> ConversationShare:
+    target = db.query(User).filter(User.email == email.lower()).first()
+    if target is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No account found for {email!r} - they need to sign up first",
+        )
+    return _grant_share(db, conversation, shared_by, target)
+
+
 def unshare_conversation(db: Session, conversation: Conversation, target_user_id: str) -> None:
     db.query(ConversationShare).filter(
         ConversationShare.conversation_id == conversation.id,
         ConversationShare.shared_with_user_id == target_user_id,
     ).delete()
     db.commit()
+
+
+def get_or_create_share_link(db: Session, conversation: Conversation, created_by: User) -> ConversationShareLink:
+    """
+    Reuses an existing, still-valid link rather than minting a new
+    token every time the owner reopens the "Share via QR code" panel -
+    otherwise a link someone already scanned (or a QR code someone
+    already printed) would silently stop working the next time the
+    owner looked at it.
+    """
+    now = datetime.now(timezone.utc)
+    existing = (
+        db.query(ConversationShareLink)
+        .filter(ConversationShareLink.conversation_id == conversation.id)
+        .order_by(ConversationShareLink.created_at.desc())
+        .first()
+    )
+    if existing is not None and _as_aware(existing.expires_at) > now:
+        return existing
+    if existing is not None:
+        db.delete(existing)
+
+    link = ConversationShareLink(
+        conversation_id=conversation.id,
+        token=secrets.token_urlsafe(SHARE_LINK_TOKEN_BYTES),
+        created_by_user_id=created_by.id,
+    )
+    db.add(link)
+    db.commit()
+    db.refresh(link)
+    return link
+
+
+def revoke_share_link(db: Session, conversation: Conversation) -> None:
+    db.query(ConversationShareLink).filter(
+        ConversationShareLink.conversation_id == conversation.id,
+    ).delete()
+    db.commit()
+
+
+def _as_aware(dt: datetime) -> datetime:
+    """SQLite drops tzinfo on round-trip; Postgres keeps it - normalize to UTC-aware either way."""
+    return dt if dt.tzinfo is not None else dt.replace(tzinfo=timezone.utc)
+
+
+def claim_share_link(db: Session, token: str, user: User) -> Conversation:
+    """
+    Called when a logged-in user opens a "Share via QR code" link -
+    grants them the same read-only access share_conversation would,
+    via the same _grant_share path, keyed by whoever is holding the
+    token rather than a specific email the owner typed in. An expired
+    link is deleted on the way out rather than left to accumulate.
+    """
+    link = db.query(ConversationShareLink).filter(ConversationShareLink.token == token).first()
+    if link is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="This share link doesn't exist")
+
+    if _as_aware(link.expires_at) <= datetime.now(timezone.utc):
+        db.delete(link)
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail="This share link has expired")
+
+    conversation = _get_conversation_or_404(db, link.conversation_id)
+    if conversation.owner_id != user.id:
+        _grant_share(db, conversation, conversation.owner, user)
+    return conversation
+
+
+def serialize_share_link(link: ConversationShareLink, url: str, qr_svg_data_uri: str) -> dict:
+    return {
+        "token": link.token,
+        "url": url,
+        "qr_svg_data_uri": qr_svg_data_uri,
+        "expires_at": link.expires_at.isoformat() if link.expires_at else None,
+    }
 
 
 def conversation_has_attachment(conversation: Conversation, key: str) -> bool:

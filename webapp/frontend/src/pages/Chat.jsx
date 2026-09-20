@@ -6,7 +6,16 @@ import LanguagePicker from '../components/LanguagePicker.jsx';
 import ConversationSidebar from '../components/ConversationSidebar.jsx';
 import LogoutButton from '../components/LogoutButton.jsx';
 import useConversations from '../hooks/useConversations.js';
-import { askQuestion, getAttachmentUrl, isLoggedIn, transcribeAudio, uploadFile } from '../api.js';
+import {
+  askQuestion,
+  claimShareLinkApi,
+  createShareLinkApi,
+  getAttachmentUrl,
+  isLoggedIn,
+  revokeShareLinkApi,
+  transcribeAudio,
+  uploadFile,
+} from '../api.js';
 import { LANGUAGE_NAMES, RTL_LANGUAGES, SPEECH_LANG_TAGS, stringsFor } from '../i18n.js';
 import './chat.css';
 
@@ -209,6 +218,139 @@ function MessageBubble({ message, index, t, conversationId }) {
   );
 }
 
+function ShareModal({ conversationId, onClose, onShareEmail }) {
+  const [email, setEmail] = useState('');
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailError, setEmailError] = useState(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const [link, setLink] = useState(null);
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  async function handleEmailSubmit(e) {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) return;
+    setEmailBusy(true);
+    setEmailError(null);
+    try {
+      await onShareEmail(trimmed);
+      setEmail('');
+      setEmailSent(true);
+    } catch (err) {
+      setEmailError(err.message || 'Could not share this conversation.');
+    } finally {
+      setEmailBusy(false);
+    }
+  }
+
+  async function handleGenerateLink() {
+    setLinkBusy(true);
+    setLinkError(null);
+    try {
+      const created = await createShareLinkApi(conversationId);
+      setLink(created);
+    } catch (err) {
+      setLinkError(err.message || 'Could not create a share link.');
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+
+  async function handleRevokeLink() {
+    setLinkBusy(true);
+    setLinkError(null);
+    try {
+      await revokeShareLinkApi(conversationId);
+      setLink(null);
+    } catch (err) {
+      setLinkError(err.message || 'Could not revoke the share link.');
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+
+  function handleCopy() {
+    if (!link || !navigator.clipboard) return;
+    navigator.clipboard.writeText(link.url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+
+  return (
+    <div className="share-modal-backdrop" onClick={onClose}>
+      <div className="share-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="share-modal-header">
+          <h3>Share this conversation</h3>
+          <button type="button" className="share-modal-close" onClick={onClose} title="Close">
+            &times;
+          </button>
+        </div>
+
+        <form className="share-modal-section" onSubmit={handleEmailSubmit}>
+          <label htmlFor="share-email">Share with a colleague</label>
+          <div className="share-modal-row">
+            <input
+              id="share-email"
+              type="email"
+              placeholder="colleague@company.com"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setEmailSent(false);
+              }}
+              disabled={emailBusy}
+            />
+            <button type="submit" disabled={emailBusy || !email.trim()}>
+              {emailBusy ? '…' : 'Share'}
+            </button>
+          </div>
+          {emailError && <p className="share-modal-error">{emailError}</p>}
+          {emailSent && !emailError && <p className="share-modal-success">Shared.</p>}
+        </form>
+
+        <div className="share-modal-divider" />
+
+        <div className="share-modal-section">
+          <label>Share via QR code</label>
+          {!link ? (
+            <button type="button" onClick={handleGenerateLink} disabled={linkBusy}>
+              {linkBusy ? 'Generating…' : 'Generate QR code'}
+            </button>
+          ) : (
+            <div className="share-qr-block">
+              {/* eslint-disable-next-line jsx-a11y/alt-text -- inline SVG data URI from our own backend */}
+              <img src={link.qr_svg_data_uri} alt="QR code linking to this conversation" className="share-qr-image" />
+              <div className="share-modal-row">
+                <input
+                  type="text"
+                  readOnly
+                  value={link.url}
+                  onFocus={(e) => e.target.select()}
+                />
+                <button type="button" onClick={handleCopy}>
+                  {copied ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <p className="share-link-note">
+                Anyone with this link or QR code can view this conversation (read-only) once they sign in.
+                Expires {new Date(link.expires_at).toLocaleDateString()}.
+              </p>
+              <button type="button" className="share-link-revoke" onClick={handleRevokeLink} disabled={linkBusy}>
+                Revoke link
+              </button>
+            </div>
+          )}
+          {linkError && <p className="share-modal-error">{linkError}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Chat() {
   const {
     conversations,
@@ -220,6 +362,7 @@ export default function Chat() {
     appendMessage,
     shareConversation,
     unshareConversation,
+    refreshConversations,
   } = useConversations();
 
   const [input, setInput] = useState('');
@@ -233,6 +376,8 @@ export default function Chat() {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [voiceError, setVoiceError] = useState(null);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [shareClaimError, setShareClaimError] = useState(null);
   const chatRef = useRef(null);
   const fileInputRef = useRef(null);
   const mediaRecorderRef = useRef(null);
@@ -254,8 +399,39 @@ export default function Chat() {
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      window.location.replace('/login');
+      // Carries the current path (including a ?share_token=... from a
+      // scanned QR code) through to Login.jsx, which sends the user
+      // back here - rather than to the generic /chat - once they've
+      // signed in. See Login.jsx's getRedirectTarget.
+      const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.replace(`/login?redirect=${redirect}`);
     }
+  }, []);
+
+  // Handles landing here via a "Share via QR code" link
+  // (?share_token=... - see ShareModal below and webapp/backend.py's
+  // /api/conversations/shared/{token}/claim). Runs once: claims the
+  // token (grants this account read access, same as an email invite
+  // would), strips the token from the URL so it can't be re-claimed
+  // by reloading or re-shared by copying the address bar, then
+  // refreshes the conversation lists and switches to it.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('share_token');
+    if (!token || !isLoggedIn()) return;
+
+    window.history.replaceState({}, '', '/chat');
+
+    (async () => {
+      try {
+        const conv = await claimShareLinkApi(token);
+        await refreshConversations();
+        selectConversation(conv.id);
+      } catch (err) {
+        setShareClaimError(err.message || 'This share link is invalid or has expired.');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleAttachClick() {
@@ -446,23 +622,28 @@ export default function Chat() {
                 </span>
               )}
               {canPost && (
-                <button
-                  type="button"
-                  className="share-btn"
-                  onClick={async () => {
-                    const email = window.prompt('Share this conversation with (email):');
-                    if (!email) return;
-                    try {
-                      await shareConversation(activeConversation.id, email.trim());
-                    } catch (err) {
-                      window.alert(err.message || 'Could not share this conversation.');
-                    }
-                  }}
-                >
+                <button type="button" className="share-btn" onClick={() => setShareModalOpen(true)}>
                   Share
                 </button>
               )}
             </div>
+          )}
+
+          {shareClaimError && (
+            <div className="upload-error share-claim-error">
+              {shareClaimError}
+              <button type="button" onClick={() => setShareClaimError(null)} title="Dismiss">
+                &times;
+              </button>
+            </div>
+          )}
+
+          {shareModalOpen && activeConversation && (
+            <ShareModal
+              conversationId={activeConversation.id}
+              onClose={() => setShareModalOpen(false)}
+              onShareEmail={(email) => shareConversation(activeConversation.id, email)}
+            />
           )}
 
           <div id="chat" ref={chatRef}>

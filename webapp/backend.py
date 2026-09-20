@@ -1,4 +1,5 @@
 
+import asyncio
 import os
 from pathlib import Path
 from typing import Optional
@@ -6,7 +7,8 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
+from jose import JWTError
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -27,18 +29,24 @@ from llm.transcribe import transcribe_audio
 from llm.base import LLMUnavailableError
 from webapp.conversations import (
     append_message,
+    claim_share_link,
     conversation_has_attachment,
     create_conversation,
     delete_conversation,
     get_conversation_for_viewing,
+    get_or_create_share_link,
     get_owned_conversation,
     list_own_conversations,
     list_shared_with_me,
+    revoke_share_link,
     serialize_conversation,
+    serialize_share_link,
     share_conversation,
     unshare_conversation,
 )
 from webapp.dashboard_data import build_summary
+from webapp.events import notify_user, notify_users, subscribe, unsubscribe
+from webapp.qr import qr_svg_data_uri
 from webapp.storage import presign_download, upload_attachment
 from webapp.db import get_db, init_db
 from webapp.models import Role, User
@@ -46,6 +54,7 @@ from webapp.auth import (
     JWT_SECRET_KEY,
     check_login_rate_limit,
     create_access_token,
+    decode_access_token,
     get_current_user,
     hash_password,
     require_admin,
@@ -317,6 +326,13 @@ def add_message(
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     updated = append_message(db, conversation, payload.dict())
+    # Only the owner can post (see models.py's ConversationShare
+    # docstring), but anyone the conversation is shared with should
+    # see the new message without refreshing - see webapp/events.py.
+    notify_users(
+        [share.shared_with_user_id for share in updated.shares],
+        {"type": "message", "conversation_id": conversation_id},
+    )
     return serialize_conversation(updated, is_owner=True)
 
 
@@ -337,7 +353,8 @@ def share(
     db: Session = Depends(get_db),
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
-    share_conversation(db, conversation, user, payload.email)
+    new_share = share_conversation(db, conversation, user, payload.email)
+    notify_user(new_share.shared_with_user_id, {"type": "shared", "conversation_id": conversation_id})
     return serialize_conversation(conversation, is_owner=True)
 
 
@@ -350,7 +367,98 @@ def unshare(
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     unshare_conversation(db, conversation, target_user_id)
+    notify_user(target_user_id, {"type": "unshared", "conversation_id": conversation_id})
     return serialize_conversation(conversation, is_owner=True)
+
+
+class ShareLinkResponse(BaseModel):
+    token: str
+    url: str
+    qr_svg_data_uri: str
+    expires_at: Optional[str]
+
+
+@app.post("/api/conversations/{conversation_id}/share-link", response_model=ShareLinkResponse)
+def create_share_link(
+    conversation_id: str,
+    request: Request,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    "Share via QR code" - reuses an existing, still-valid link if one
+    was already generated (see get_or_create_share_link), so reopening
+    this panel doesn't invalidate a code someone already scanned.
+    request.base_url (rather than a separately configured env var)
+    builds the link, since the frontend is served from this same
+    FastAPI app at the same origin in every environment this actually
+    runs in (see vite.config.js's multi-page build comment).
+    """
+    conversation = get_owned_conversation(db, conversation_id, user)
+    link = get_or_create_share_link(db, conversation, user)
+    url = f"{str(request.base_url).rstrip('/')}/chat?share_token={link.token}"
+    return serialize_share_link(link, url, qr_svg_data_uri(url))
+
+
+@app.delete("/api/conversations/{conversation_id}/share-link")
+def delete_share_link(
+    conversation_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = get_owned_conversation(db, conversation_id, user)
+    revoke_share_link(db, conversation)
+    return {"revoked": True}
+
+
+@app.post("/api/conversations/shared/{token}/claim")
+def claim_share(
+    token: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = claim_share_link(db, token, user)
+    if conversation.owner_id != user.id:
+        notify_user(conversation.owner_id, {"type": "shared", "conversation_id": conversation.id})
+    return serialize_conversation(conversation, is_owner=conversation.owner_id == user.id)
+
+
+@app.get("/api/events")
+async def events(token: str, db: Session = Depends(get_db)):
+    """
+    Server-Sent Events stream backing the sidebar's real-time refresh
+    (see webapp/events.py and useConversations.js). EventSource can't
+    set an Authorization header, so the token travels as a query
+    param instead - same JWT, same 8-hour expiry, just carried
+    differently for this one connection. A heartbeat comment every 25
+    seconds keeps the connection from being treated as idle and
+    dropped by an intermediate proxy; the frontend's own 30-second
+    poll is the backstop if the stream drops anyway.
+    """
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
+    user = db.get(User, payload.get("sub"))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists")
+
+    user_id = str(user.id)
+
+    async def stream():
+        queue = subscribe(user_id)
+        try:
+            while True:
+                try:
+                    message = await asyncio.wait_for(queue.get(), timeout=25)
+                    yield f"data: {message}\n\n"
+                except asyncio.TimeoutError:
+                    yield ": heartbeat\n\n"
+        finally:
+            unsubscribe(user_id, queue)
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
 
 
 @app.post("/api/uploads")

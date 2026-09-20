@@ -18,7 +18,7 @@ builds that linking flow yet.
 
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKey, JSON, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -89,6 +89,7 @@ class Conversation(Base):
     )
 
     shares = relationship("ConversationShare", cascade="all, delete-orphan", backref="conversation")
+    share_links = relationship("ConversationShareLink", cascade="all, delete-orphan", backref="conversation")
     owner = relationship("User", foreign_keys=[owner_id])
 
 
@@ -121,3 +122,37 @@ class ConversationShare(Base):
 
     shared_with_user = relationship("User", foreign_keys=[shared_with_user_id])
     shared_by_user = relationship("User", foreign_keys=[shared_by_user_id])
+
+
+def _default_share_link_expiry():
+    return datetime.now(timezone.utc) + timedelta(days=7)
+
+
+class ConversationShareLink(Base):
+    """
+    A single "share via QR code / link" invite for a conversation -
+    distinct from ConversationShare above, which is one specific
+    colleague already granted access by email. This is an anonymous,
+    scannable link: anyone who opens it (while logged in) is granted
+    the same read-only access a colleague added by email would get,
+    by way of webapp/conversations.py's claim_share_link creating an
+    ordinary ConversationShare row for whoever visits it. That reuse
+    is deliberate - it keeps exactly one place (ConversationShare)
+    that decides who can view a conversation, rather than forking the
+    authorization check in two directions.
+
+    One active link per conversation (see get_or_create_share_link) -
+    a second "Share via QR" click reuses the same link and the same
+    QR image rather than minting a new token every time, so an
+    already-printed or already-scanned code doesn't quietly stop
+    working.
+    """
+
+    __tablename__ = "conversation_share_links"
+
+    id = Column(_UUID, primary_key=True, default=lambda: str(uuid.uuid4()))
+    conversation_id = Column(_UUID, ForeignKey("conversations.id"), nullable=False, index=True)
+    token = Column(String, unique=True, nullable=False, index=True)
+    created_by_user_id = Column(_UUID, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    expires_at = Column(DateTime, default=_default_share_link_expiry, nullable=False)

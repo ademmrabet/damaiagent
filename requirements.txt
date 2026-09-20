@@ -22,3 +22,6 @@ email-validator
 # File attachments (Neon Object Storage - S3-compatible)
 boto3
 python-multipart
+
+# Conversation share-link QR codes (2026-09-20)
+qrcode
