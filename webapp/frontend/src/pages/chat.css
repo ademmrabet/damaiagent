@@ -428,6 +428,11 @@
   font-weight: 600;
 }
 
+.msg .meta .attachment-answer-badge {
+  color: var(--green-dark);
+  font-weight: 600;
+}
+
 .msg .toggle-deterministic {
   display: block;
   margin-top: 6px;

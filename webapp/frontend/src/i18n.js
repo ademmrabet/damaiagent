@@ -76,6 +76,7 @@ export const UI_STRINGS = {
     voiceError: "Couldn't transcribe that - try again or type your question.",
     speakAnswer: 'Read this answer aloud',
     stopSpeaking: 'Stop reading aloud',
+    answeredFromAttachment: 'answered from your attached file',
   },
   fr: {
     subtitle:
@@ -103,6 +104,7 @@ export const UI_STRINGS = {
     voiceError: 'Impossible de transcrire - réessayez ou tapez votre question.',
     speakAnswer: 'Lire cette réponse à voix haute',
     stopSpeaking: 'Arrêter la lecture',
+    answeredFromAttachment: 'réponse basée sur le fichier joint',
   },
   es: {
     subtitle:
@@ -130,6 +132,7 @@ export const UI_STRINGS = {
     voiceError: 'No se pudo transcribir - intente de nuevo o escriba su pregunta.',
     speakAnswer: 'Leer esta respuesta en voz alta',
     stopSpeaking: 'Detener la lectura',
+    answeredFromAttachment: 'respuesta basada en el archivo adjunto',
   },
   pt: {
     subtitle:
@@ -157,6 +160,7 @@ export const UI_STRINGS = {
     voiceError: 'Não foi possível transcrever - tente novamente ou digite sua pergunta.',
     speakAnswer: 'Ler esta resposta em voz alta',
     stopSpeaking: 'Parar a leitura',
+    answeredFromAttachment: 'resposta baseada no arquivo anexado',
   },
   ar: {
     subtitle:
@@ -184,6 +188,7 @@ export const UI_STRINGS = {
     voiceError: 'تعذّر تحويل الصوت إلى نص - حاول مرة أخرى أو اكتب سؤالك.',
     speakAnswer: 'قراءة هذه الإجابة بصوت عالٍ',
     stopSpeaking: 'إيقاف القراءة',
+    answeredFromAttachment: 'الإجابة استنادًا إلى الملف المرفق',
   },
 };
 

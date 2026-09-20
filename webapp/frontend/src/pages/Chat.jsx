@@ -22,6 +22,7 @@ import './chat.css';
 function isLowConfidence(data) {
   return (
     data.method !== 'smalltalk' &&
+    data.method !== 'attachment' &&
     (!data.node_id || (data.method === 'text_search' && data.score < 0.3))
   );
 }
@@ -177,12 +178,18 @@ function MessageBubble({ message, index, t, conversationId }) {
 
       {showMeta && (
         <div className="meta">
-          {lowConfidence && <span className="flag">&#9888; {t.lowConfidence}</span>}
-          <span>{metaLabel(meta, t)}</span>
+          {meta.attachmentAnswer ? (
+            <span className="attachment-answer-badge">&#128206; {t.answeredFromAttachment}</span>
+          ) : (
+            <>
+              {lowConfidence && <span className="flag">&#9888; {t.lowConfidence}</span>}
+              <span>{metaLabel(meta, t)}</span>
+            </>
+          )}
           {meta.usedLlm && (
             <span className="llm-badge">&#10022; {t.phrasedBy} {meta.llmProvider}</span>
           )}
-          {!meta.usedLlm && meta.llmRequested && meta.llmError && !languageFellBack && (
+          {!meta.usedLlm && meta.llmRequested && meta.llmError && !languageFellBack && !meta.attachmentAnswer && (
             <span className="llm-fallback" title={meta.llmError}>
               &#9888; {t.llmUnavailable}
             </span>
@@ -527,24 +534,26 @@ export default function Chat() {
     setSending(true);
 
     try {
-      const data = await askQuestion(question, llmMode, previousNodeId, uiLanguage);
+      const data = await askQuestion(question, llmMode, previousNodeId, uiLanguage, attachment);
+      const attachmentAnswer = data.source === 'attachment';
       appendMessage(targetId, {
         role: 'agent',
         text: data.answer,
         meta: {
           nodeId: data.node_id,
-          showMeta: !!data.node_id || !!data.translation_error,
+          showMeta: attachmentAnswer || !!data.node_id || !!data.translation_error,
           method: data.method,
           score: data.score,
           lowConfidence: isLowConfidence(data),
           usedLlm: data.used_llm,
           llmProvider: data.llm_provider,
           llmError: data.llm_error,
-          llmRequested: llmMode !== 'off',
+          llmRequested: attachmentAnswer || llmMode !== 'off',
           deterministicAnswer: data.deterministic_answer,
           detectedLanguage: data.detected_language,
           answerLanguage: data.answer_language,
           translationError: data.translation_error,
+          attachmentAnswer,
         },
       });
     } catch {

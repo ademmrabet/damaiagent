@@ -14,6 +14,13 @@ class LLMUnavailableError(Exception):
 class LLMProvider(ABC):
     name: str
 
+    # Whether this provider can answer a question about an image (see
+    # llm/attachments.py). False by default - only GroqProvider
+    # overrides this, since Ollama's vision capability depends on
+    # which model happens to be pulled locally, which this app has no
+    # way to know at request time.
+    supports_vision = False
+
     @abstractmethod
     def chat(self, system, user, temperature=0.2, max_tokens=512):
         """

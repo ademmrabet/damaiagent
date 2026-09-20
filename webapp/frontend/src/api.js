@@ -35,6 +35,31 @@ async function authFetch(url, options = {}) {
   return res;
 }
 
+// 2026-09-20 (see docs/decisions.md): a plain `res.json()` blows up
+// with a cryptic `Unexpected token 'I', "Internal S"... is not valid
+// JSON` whenever the server responds with something that isn't JSON -
+// which is exactly what Starlette's own default error page looks like
+// for any exception that manages to escape as something other than an
+// HTTPException. The backend now has a catch-all handler that always
+// returns JSON (see webapp/backend.py), but this stays anyway as a
+// second line of defense - a proxy timeout page, a cold-start 502, or
+// some future unhandled case further down the stack could still send
+// back HTML or plain text, and this is what turns that into a readable
+// message instead of a JSON-parse stack trace.
+async function parseJsonBody(res, fallbackMessage) {
+  let body = null;
+  try {
+    body = await res.json();
+  } catch {
+    body = null;
+  }
+  if (!res.ok) {
+    const detail = body && body.detail;
+    throw new Error(detail || `${fallbackMessage} (server returned ${res.status})`);
+  }
+  return body;
+}
+
 export async function checkHealth() {
   const res = await fetch('/api/health', { cache: 'no-store' });
   if (!res.ok) throw new Error('unhealthy');
@@ -47,7 +72,7 @@ export async function getLlmConfig() {
   return res.json();
 }
 
-export async function askQuestion(question, llm, previousNodeId, targetLanguage) {
+export async function askQuestion(question, llm, previousNodeId, targetLanguage, attachment) {
   const res = await authFetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -56,9 +81,12 @@ export async function askQuestion(question, llm, previousNodeId, targetLanguage)
       llm,
       previous_node_id: previousNodeId ?? null,
       target_language: targetLanguage ?? 'auto',
+      attachment: attachment
+        ? { key: attachment.key, content_type: attachment.content_type, filename: attachment.filename }
+        : null,
     }),
   });
-  return res.json();
+  return parseJsonBody(res, 'Failed to get an answer');
 }
 
 export async function getDashboardSummary() {
@@ -80,9 +108,7 @@ export async function signup(email, password, name) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password, name: name || null }),
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'Signup failed');
-  return body;
+  return parseJsonBody(res, 'Signup failed');
 }
 
 export async function listConversations() {
@@ -125,9 +151,7 @@ export async function shareConversationApi(id, email) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'failed to share conversation');
-  return body;
+  return parseJsonBody(res, 'Failed to share conversation');
 }
 
 export async function unshareConversationApi(id, targetUserId) {
@@ -140,9 +164,7 @@ export async function unshareConversationApi(id, targetUserId) {
 
 export async function createShareLinkApi(id) {
   const res = await authFetch(`/api/conversations/${id}/share-link`, { method: 'POST' });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'failed to create share link');
-  return body;
+  return parseJsonBody(res, 'Failed to create share link');
 }
 
 export async function revokeShareLinkApi(id) {
@@ -155,9 +177,7 @@ export async function claimShareLinkApi(token) {
   const res = await authFetch(`/api/conversations/shared/${encodeURIComponent(token)}/claim`, {
     method: 'POST',
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'This share link is invalid or has expired');
-  return body;
+  return parseJsonBody(res, 'This share link is invalid or has expired');
 }
 
 // EventSource can't set an Authorization header, so the JWT travels as
@@ -174,9 +194,7 @@ export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);
   const res = await authFetch('/api/uploads', { method: 'POST', body: formData });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'Upload failed');
-  return body;
+  return parseJsonBody(res, 'Upload failed');
 }
 
 export async function getAttachmentUrl(conversationId, key) {
@@ -188,8 +206,7 @@ export async function getAttachmentUrl(conversationId, key) {
   // as the same path.
   const encodedKey = key.split('/').map(encodeURIComponent).join('/');
   const res = await authFetch(`/api/conversations/${conversationId}/attachments/${encodedKey}`);
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'Could not open attachment');
+  const body = await parseJsonBody(res, 'Could not open attachment');
   return body.url;
 }
 
@@ -197,8 +214,7 @@ export async function transcribeAudio(blob) {
   const formData = new FormData();
   formData.append('file', blob, 'clip.webm');
   const res = await authFetch('/api/transcribe', { method: 'POST', body: formData });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'Transcription failed');
+  const body = await parseJsonBody(res, 'Transcription failed');
   return body.text;
 }
 
@@ -208,7 +224,5 @@ export async function login(email, password) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   });
-  const body = await res.json();
-  if (!res.ok) throw new Error(body.detail || 'Login failed');
-  return body;
+  return parseJsonBody(res, 'Login failed');
 }

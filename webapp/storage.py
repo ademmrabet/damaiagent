@@ -62,7 +62,15 @@ def _client():
 
 
 def storage_configured() -> bool:
-    return bool(os.getenv("AWS_ENDPOINT_URL_S3") and os.getenv("AWS_ACCESS_KEY_ID"))
+    # All three, not just two - a deployment missing only
+    # AWS_SECRET_ACCESS_KEY would previously report "configured" here,
+    # then hit a bare KeyError inside _client() (an unhandled exception,
+    # not a clean HTTPException) the moment any upload was attempted.
+    return bool(
+        os.getenv("AWS_ENDPOINT_URL_S3")
+        and os.getenv("AWS_ACCESS_KEY_ID")
+        and os.getenv("AWS_SECRET_ACCESS_KEY")
+    )
 
 
 def upload_attachment(file: UploadFile, uploader_id: str, contents: bytes) -> dict:
@@ -132,3 +140,27 @@ def presign_download(key: str) -> str:
         Params={"Bucket": BUCKET_NAME, "Key": key},
         ExpiresIn=PRESIGNED_URL_EXPIRY_SECONDS,
     )
+
+
+def download_attachment(key: str) -> bytes:
+    """
+    Fetches the actual bytes rather than a URL - used by attachment
+    question-answering (llm/attachments.py via /api/ask), which needs
+    to read the file's content server-side rather than hand the
+    browser a link to open it. Distinct from presign_download for that
+    reason: one produces something for a human to click, this produces
+    something for the LLM pipeline to read.
+    """
+    if not storage_configured():
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File uploads aren't configured yet - the object storage bucket hasn't been set up.",
+        )
+
+    from botocore.exceptions import ClientError
+
+    try:
+        obj = _client().get_object(Bucket=BUCKET_NAME, Key=key)
+        return obj["Body"].read()
+    except ClientError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found") from exc

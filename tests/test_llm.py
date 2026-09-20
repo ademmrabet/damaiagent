@@ -84,6 +84,49 @@ class TestGroqProvider:
             with pytest.raises(LLMUnavailableError):
                 provider.chat("system", "user")
 
+    def test_supports_vision_is_true(self):
+        # OllamaProvider (and LLMProvider's own default) is False - see
+        # llm/base.py and llm/attachments.py's image-answering path,
+        # which uses this to decide whether an image can be answered
+        # at all rather than guessing at Ollama's local model.
+        assert GroqProvider.supports_vision is True
+        assert OllamaProvider.supports_vision is False
+
+    def test_chat_with_image_uses_the_vision_model_and_content_list(self):
+        from llm.groq_provider import VISION_MODEL
+
+        provider = GroqProvider(api_key="fake-key", model="openai/gpt-oss-120b")
+        with patch("llm.groq_provider.requests.post") as post:
+            post.return_value = _ok_response(
+                {"choices": [{"message": {"content": "a diagram of authority codes"}}]}
+            )
+            result = provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+
+        assert result == "a diagram of authority codes"
+        body = post.call_args.kwargs["json"]
+        # Always the vision model, never the text-chat model configured
+        # above - a vision request against a non-vision model would
+        # just fail or silently ignore the image.
+        assert body["model"] == VISION_MODEL
+        assert body["model"] != "openai/gpt-oss-120b"
+        user_content = body["messages"][1]["content"]
+        assert user_content[0] == {"type": "text", "text": "what's this?"}
+        assert user_content[1]["image_url"]["url"] == "data:image/png;base64,Zm9v"
+
+    def test_chat_with_image_without_api_key_raises_unavailable_no_network_call(self, monkeypatch):
+        monkeypatch.delenv("GROQ_API_KEY", raising=False)
+        provider = GroqProvider(api_key=None)
+        with patch("llm.groq_provider.requests.post") as post:
+            with pytest.raises(LLMUnavailableError):
+                provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+        post.assert_not_called()
+
+    def test_chat_with_image_network_failure_raises_unavailable(self):
+        provider = GroqProvider(api_key="fake-key")
+        with patch("llm.groq_provider.requests.post", side_effect=requests.Timeout()):
+            with pytest.raises(LLMUnavailableError):
+                provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+
 
 class TestRouter:
     def test_off_returns_none(self):

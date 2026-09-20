@@ -3316,3 +3316,185 @@ poll exists as a backstop rather than relying on SSE alone. First real
 check is Adem sharing a conversation with a second account in two
 actual browser tabs and confirming it appears without a refresh, and
 scanning a generated QR code with a phone.
+
+## 2026-09-20 - Attachment content Q&A (images, PDF/Word/text)
+
+Reported live on the deployed app: attaching an image and asking
+"what's this?" answered an unrelated DAM lookup (record 2.122) instead
+of describing the image. Root cause traced precisely: `pendingAttachment`
+was only ever stored in `message.meta.attachment` for on-screen display
+- it was never sent to `/api/ask` at all. A subject-less question like
+"what's this?" then fell into the existing context-carryover path and
+reused `previous_node_id`, producing a plausible-looking but completely
+wrong answer with no idea a file was even attached. Scope, confirmed
+with Adem: build real content understanding for both images and PDF/
+text/Word documents (not just one), and when a file is attached but the
+LLM picker is set to Off, switch to Auto automatically rather than
+refusing - an attachment always needs a model to read it, so "Off" for
+this one case behaves as "use whatever's available" instead of "don't."
+
+**Images**: `GroqProvider.chat_with_image` (`llm/groq_provider.py`)
+sends an OpenAI-compatible `image_url` content part to Groq's vision
+model, confirmed live against Groq's own docs at implementation time as
+`qwen/qwen3.8-27b` rather than trusting a remembered model id - this
+project has already shipped one now-deprecated Groq model name once
+(2026-08-06's `llama-3.3-70b-versatile` 404) and wasn't going to risk a
+second. A new `supports_vision` class attribute on the provider ABC
+(`llm/base.py`, default `False`) gates this: `GroqProvider` is the only
+provider that sets it `True`, since there's no generic way to know
+whether a given local Ollama model can see images at all - guessing
+would produce a confusing failure deep inside a request instead of an
+honest "this mode can't do that" up front.
+
+**Documents**: `llm/attachments.py`'s `extract_text` pulls text via
+`pdfplumber` (already a dependency) for PDF and the newly-added
+`python-docx` for `.docx`, with a flat UTF-8 decode for plain text/CSV.
+Legacy `.doc` and Excel formats raise a clear, named
+`UnsupportedAttachmentError` ("reading spreadsheet attachments isn't
+supported yet," etc.) rather than being silently mishandled or crashing
+- deliberately narrower scope than "any file," stated honestly instead
+of quietly failing on the unsupported cases. Extracted text is capped
+at 12,000 characters with a `...[truncated]` marker rather than blowing
+up the prompt on a large document.
+
+`answer_about_attachment` is the single entry point either path goes
+through: an image content-type routes to `chat_with_image` (raising
+`LLMUnavailableError` up front if the resolved provider doesn't support
+vision, before any request is made), anything else routes through
+`extract_text` and then a normal grounded `chat` call instructed to
+answer only from the extracted text and say plainly when the document
+doesn't contain the answer, rather than filling gaps from outside
+knowledge - the same "don't hallucinate past what's grounded" principle
+the DAM-lookup path already follows.
+
+**Auth boundary**: `/api/ask` stays intentionally unauthenticated for
+ordinary DAM questions (a deliberate, existing design choice), but
+reading a specific attachment's actual bytes is a privileged operation
+the base endpoint never had. `_ask_about_attachment` in
+`webapp/backend.py` manually decodes the Bearer token (there's no
+`Depends(get_current_user)` on this route to piggyback on) and checks
+that the requested key starts with `attachments/{user.id}/` - the same
+prefix `storage.upload_attachment` always mints a key under - before
+calling `download_attachment`. A key belonging to someone else is a
+403, not a silent pass-through.
+
+**Frontend**: `api.js`'s `askQuestion` now takes an `attachment` param
+and sends `{key, content_type, filename}` alongside the question.
+`Chat.jsx` marks an attachment-grounded answer with `data.source ===
+'attachment'`, rendering a distinct "📎 answered from your attached
+file" badge (`i18n.js`, all five languages) instead of the normal
+match-method label, and excludes this case from the low-confidence
+warning styling - a correct "I read your file" answer isn't the same
+kind of low-confidence as a shaky DAM text-search match, and shouldn't
+look like one.
+
+**Tests**: `tests/test_llm.py` gained coverage for `chat_with_image`
+(correct vision model always used regardless of the provider's
+configured text model, correct message content-list shape, no-API-key
+and network-failure cases). `tests/test_attachments.py` covers
+`extract_text` per content type (plain text, CSV, PDF via a mocked
+`pdfplumber.open`, PDF with no text layer, real `.docx` bytes built
+with `python-docx`, legacy `.doc`, Excel, unknown type, empty text,
+truncation) and `answer_about_attachment`'s orchestration (correct
+prompts for the text path, language instruction threading, image path
+using vision when supported, and - specifically spec'd to a bare class
+rather than `Mock()` - that an image attachment is correctly refused
+when `supports_vision` is absent entirely, proving the `getattr(...,
+False)` default is what's doing the work rather than `Mock`'s own
+attribute auto-creation silently passing the check). `tests/
+test_ask_attachment.py` (new) exercises the actual `/api/ask` attachment
+branch end-to-end through `TestClient`, mocking `download_attachment`/
+`resolve_provider`/`answer_about_attachment` at the boundary the same
+way `test_transcribe_endpoint.py` mocks `transcribe_audio`: no token is
+a 401, someone else's key is a 403, a text-document happy path, the
+Off-mode-falls-back-to-Auto behavior, no provider available at all is a
+503, `UnsupportedAttachmentError` comes back as a normal 200 answer (not
+a 500), `LLMUnavailableError` surfaces as a 503, and a plain question
+with no attachment is confirmed unaffected by any of this. All 54
+attachment/upload/voice-related tests plus the full existing
+`test_backend.py` (31 tests, unmodified) pass with these changes in
+place.
+
+**Follow-up, now resolved**: Adem's original report also included a
+separate PDF attachment attempt that was refused outright ("it didn't
+let me"), before the image case even got a reply - left unresolved
+above because the exact error text hadn't been captured yet. Adem later
+supplied it: `Unexpected token 'I', "Internal S"... is not valid JSON`.
+That string is the giveaway - it's a browser `JSON.parse` failure, not
+anything the backend meant to say, which meant the real server response
+was never JSON in the first place.
+
+## 2026-09-20 - Fixed: PDF-upload "Internal Server Error" JSON-parse crash
+
+Root cause, traced from that one error string: `api.js`'s `uploadFile`
+(and several sibling functions - `signup`, `login`, `shareConversationApi`,
+`createShareLinkApi`, `claimShareLinkApi`, `getAttachmentUrl`,
+`transcribeAudio`) called `res.json()` unconditionally, before ever
+checking `res.ok`. FastAPI turns a raised `HTTPException` into a clean
+JSON body, but anything that escapes as a *bare* Python exception falls
+through to Starlette's own default handler instead, which returns the
+literal plain-text body `"Internal Server Error"` - not JSON. `res.
+json()` on that body is exactly what throws `Unexpected token 'I',
+"Internal S"...`. So the message the user saw was never the real
+failure - it was the frontend choking on the wrapper around whatever
+the real failure was, which is why grepping `storage.py` for a
+PDF-specific rejection path (already checked, and still comes up empty)
+was never going to find it: the actual crash is some unidentified bare
+exception on the deployed instance, most likely transient (a cold-
+starting or overloaded Neon Object Storage call on Render's free tier,
+given this project's prior Render OOM history - see 2026-08-xx's entry)
+rather than a deterministic code bug, since the same upload endpoint's
+code path is untouched between PDFs and the images that *do* work.
+
+Two fixes, addressing this at both ends rather than chasing the one
+unreproducible crash:
+
+1. **Backend**: a new `@app.exception_handler(Exception)` in `webapp/
+   backend.py` catches anything that isn't already an `HTTPException`,
+   logs the real traceback server-side via `logger.exception` (so it's
+   still visible in Render's logs, unlike before), and returns a
+   generic `{"detail": "Something went wrong on the server. Please try
+   again."}` JSON body instead of Starlette's plain-text page. This
+   doesn't fix whatever the underlying transient fault was - it makes
+   *any* future one, known or not, surface as a readable message
+   instead of a client-side JSON-parse crash, and makes it
+   immediately diagnosable from the server log instead of only from
+   a user's screenshot of a cryptic string.
+2. **Frontend**: added a shared `parseJsonBody(res, fallbackMessage)`
+   helper in `api.js` that tries `res.json()`, falls back to `null` on
+   a parse failure, and only then checks `res.ok` - so a non-JSON error
+   response of any kind (this bug, a proxy timeout page, a future 502)
+   produces a real thrown `Error` with a sensible message instead of an
+   unhandled parse exception. Applied to every function in `api.js`
+   that previously parsed JSON before checking `res.ok`.
+
+**Also fixed while in the area**: `storage.py`'s `storage_configured()`
+checked only `AWS_ENDPOINT_URL_S3` and `AWS_ACCESS_KEY_ID`, not
+`AWS_SECRET_ACCESS_KEY` - a deployment missing just that one var would
+have reported itself "configured," then hit a bare `KeyError` inside
+`_client()` (another bare-exception path the new global handler now
+also catches, but worth closing at the source). Not confirmed as this
+bug's actual cause - all three vars are almost certainly set already,
+since image uploads succeed on the same deployment - but a real gap
+either way.
+
+**Tests**: `tests/test_error_handling.py` (new) registers a route that
+deliberately raises a bare `RuntimeError` and confirms the response is
+valid JSON with a 500 status and a generic `detail` that doesn't leak
+the real exception type or message, plus a control test confirming an
+ordinary `HTTPException` (401 on the attachment branch with no token)
+is completely unaffected. Full regression pass: `test_backend.py`,
+`test_uploads.py`, `test_transcribe_endpoint.py`, `test_ask_attachment.
+py`, `test_attachments.py`, `test_llm.py`, `test_conversations.py`,
+`test_events.py`, and `test_frontend_source.py` - 137 tests total, all
+passing. Frontend rebuilt via the usual `/tmp` scratch-copy workaround
+and verified with `vite build`.
+
+**Still not certain**: without the actual Render log line from the
+moment of that PDF upload, the precise trigger of the original bare
+exception remains unconfirmed - the fix above guarantees any future
+occurrence (this cause or a new one) is now readable and logged, which
+is the practical ceiling without live access to that deploy's logs.
+Next time this happens, the client-visible message will say something
+useful, and the real traceback will be sitting in Render's log for that
+request.

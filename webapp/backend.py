@@ -1,5 +1,6 @@
 
 import asyncio
+import logging
 import os
 from pathlib import Path
 from typing import Optional
@@ -7,7 +8,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
 from jose import JWTError
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.exc import IntegrityError
@@ -27,6 +28,7 @@ from llm.translate import detect_and_translate_to_english, translate_text, looks
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
 from llm.transcribe import transcribe_audio
 from llm.base import LLMUnavailableError
+from llm.attachments import UnsupportedAttachmentError, answer_about_attachment
 from webapp.conversations import (
     append_message,
     claim_share_link,
@@ -47,7 +49,7 @@ from webapp.conversations import (
 from webapp.dashboard_data import build_summary
 from webapp.events import notify_user, notify_users, subscribe, unsubscribe
 from webapp.qr import qr_svg_data_uri
-from webapp.storage import presign_download, upload_attachment
+from webapp.storage import download_attachment, presign_download, upload_attachment
 from webapp.db import get_db, init_db
 from webapp.models import Role, User
 from webapp.auth import (
@@ -73,6 +75,35 @@ app = FastAPI(title="DAM AI Agent")
 
 app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET_KEY)
 
+logger = logging.getLogger("webapp.backend")
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    2026-09-20 (see docs/decisions.md): without this, any bug that
+    escapes as a bare Exception (not an HTTPException) falls through to
+    Starlette's own default handler, which returns the literal plain-
+    text body "Internal Server Error" - not JSON. Every api.js function
+    calls `res.json()` on the response, so that plain-text body used to
+    surface to the user as a cryptic `Unexpected token 'I', "Internal
+    S"... is not valid JSON` instead of any usable message (this is
+    exactly what happened on a PDF upload attempt that hit some
+    still-unidentified server-side fault - see the still-open item in
+    docs/decisions.md). This handler doesn't fix whatever the
+    underlying bug is - it logs the real traceback server-side via
+    logger.exception (so it's still visible in Render's logs) and
+    returns a generic, non-leaking JSON body so the frontend can at
+    least show *something* coherent and so future crashes are
+    immediately diagnosable from the client-visible error instead of
+    only from a log line nobody was watching at the time.
+    """
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"detail": "Something went wrong on the server. Please try again."},
+    )
+
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
 
 state = {}
@@ -96,15 +127,122 @@ def load_dam():
     state["searchable_ids"] = searchable_ids
 
 
+class AttachmentRef(BaseModel):
+    key: str
+    content_type: str
+    filename: str
+
+
 class Question(BaseModel):
     question: str
     llm: Optional[str] = None
     previous_node_id: Optional[str] = None
     target_language: Optional[str] = None
+    attachment: Optional[AttachmentRef] = None
+
+
+def _attachment_answer(
+    answer_text: str, used_llm: bool, provider_name: Optional[str], answer_language: str
+) -> dict:
+    """
+    Every key a normal /api/ask response carries, so Chat.jsx's meta
+    construction (which reads node_id/method/score/etc. unconditionally)
+    doesn't need a second code path for this - it just gets None/neutral
+    values for the fields that only make sense for a DAM lookup, plus
+    `source: "attachment"` so the frontend can render this distinctly
+    per FR13's own requirement that an attachment-grounded answer be
+    "clearly distinguished from answers grounded in the DAM."
+    """
+    return {
+        "answer": answer_text,
+        "source": "attachment",
+        "node_id": None,
+        "method": "attachment",
+        "score": None,
+        "roles": None,
+        "used_llm": used_llm,
+        "llm_provider": provider_name,
+        "llm_error": None,
+        "deterministic_answer": None,
+        "detected_language": "en",
+        "answer_language": answer_language,
+        "translation_error": None,
+        "detected_tone": "neutral",
+    }
+
+
+def _authenticated_user_for_attachment(request: Request, db: Session) -> User:
+    """
+    /api/ask is otherwise unauthenticated (plain DAM lookups are
+    intentionally open), but reading an attachment's actual content
+    is not - this is called only on the attachment branch below, so a
+    normal question never needs a token while asking about a file
+    always does.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+
+    try:
+        payload = decode_access_token(auth_header[len("Bearer ") :])
+    except JWTError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+
+    user = db.get(User, payload.get("sub"))
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists")
+    return user
+
+
+def _ask_about_attachment(payload: Question, request: Request, db: Session) -> dict:
+    user = _authenticated_user_for_attachment(request, db)
+
+    # Keys are always minted as attachments/{uploader_id}/{uuid}-{filename}
+    # (see webapp/storage.py's upload_attachment) - this is what stops
+    # a caller from passing someone else's key and having the server
+    # read it back to them.
+    if not payload.attachment.key.startswith(f"attachments/{user.id}/"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't read this attachment")
+
+    # "Switch to Auto automatically" (2026-09-20, see docs/decisions.md)
+    # - an attached file always needs a model to read it, so a picker
+    # left on Off (or an Auto that resolved to nothing) falls back to
+    # Auto rather than refusing outright. An explicit Groq/Ollama
+    # choice is respected as-is, even if that provider then turns out
+    # not to support the attachment (see answer_about_attachment's
+    # image-without-vision case) - that's a clearer failure than
+    # silently overriding a deliberate choice.
+    provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+    if provider is None:
+        provider = resolve_provider("auto")
+    if provider is None:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="No language model is available right now, so this attachment can't be read.",
+        )
+
+    contents = download_attachment(payload.attachment.key)
+    answer_language = payload.target_language if payload.target_language and payload.target_language != "auto" else "en"
+
+    try:
+        result = answer_about_attachment(
+            payload.question,
+            payload.attachment.content_type,
+            payload.attachment.filename,
+            contents,
+            provider,
+            target_language=payload.target_language,
+        )
+    except UnsupportedAttachmentError as exc:
+        return _attachment_answer(str(exc), used_llm=False, provider_name=None, answer_language=answer_language)
+    except LLMUnavailableError as exc:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+
+    return _attachment_answer(result["text"], used_llm=True, provider_name=result["provider"], answer_language=answer_language)
 
 
 @app.post("/api/ask")
-def ask(payload: Question):
+def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
     """
     Multi-language support (2026-08-06, extended 2026-09-03, see docs/
     decisions.md): the deterministic retrieval pipeline (id matching,
@@ -128,6 +266,9 @@ def ask(payload: Question):
     is what lets someone type an English question with the UI language
     picker set to French and still get a French answer.
     """
+    if payload.attachment is not None:
+        return _ask_about_attachment(payload, request, db)
+
     provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
 
     query_for_pipeline = payload.question
