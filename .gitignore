@@ -26,3 +26,5 @@ webapp/frontend/dist/
 # "build artifact, not source" treatment as webapp/static/ above.
 # Baked into the Docker image at build time instead.
 data/processed/nodes.json
+.neon
+node_modules/

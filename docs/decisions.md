@@ -3058,3 +3058,109 @@ tables, deleted child-before-parent for Postgres FK compatibility.
 Full suite: 422 passed, 1 xfailed - no regressions. Frontend rebuilt
 and verified via `vite build` (no JSX/import errors) and copied into
 `webapp/static`.
+
+## 2026-09-20 - Production DATABASE_URL was never actually set
+
+Adem reported logins suddenly saying "incorrect password" for an
+account he was sure he'd created correctly. Root cause: Render's
+`DATABASE_URL` environment variable had never been set, so
+`webapp/db.py`'s documented fallback silently kicked in - a SQLite
+file on Render's own filesystem, which has no persistent disk on the
+free tier and gets wiped on every redeploy. The `httpx` and `bcrypt`
+fixes earlier this week each triggered a redeploy, and each one would
+have quietly deleted the entire `users` table. Not a code bug - the
+fallback behaved exactly as documented - just a deploy-configuration
+step that was never actually done. Fixed by pointing `DATABASE_URL` at
+a real Neon Postgres project (`lucky-paper-49561604`) via Render's
+Environment tab; verified the connection string's format matched
+Neon's standard pooled (PgBouncer) pattern before it went in.
+
+Worth flagging for anyone reading this later: partway through
+diagnosing this, Adem was given a 7-step CLI recipe (`npm i -g
+neon@latest`, `neon login`, `neon link --project-id ...`, a `neon.ts`
+config, `neon deploy`) by something in his own workflow, described
+only as "asked me to do this." Initial reaction was to refuse it as a
+likely social-engineering attempt (unfamiliar package name, an
+unrecognized project id, `-y` flags skipping every confirmation) -
+reasonable caution given what could be verified at the time, but
+research afterward (once a screenshot showed the project already
+existed under Adem's own Neon account, matching an official "onboard
+your agent" panel in Neon's own console) confirmed the whole recipe
+was legitimate: Neon shipped a real infrastructure-as-code system
+(`neon.ts` + `@neon/config`, `neon deploy`) this year, including
+S3-compatible Object Storage buckets. Recorded here mainly as a
+reminder that "this looks like a scam" and "this turned out to be
+real" are both outcomes worth being ready for - the right move was
+verifying instead of assuming either way.
+
+## 2026-09-20 - Chat message attachments (Neon Object Storage)
+
+Follow-on from the DATABASE_URL incident above: once Neon Object
+Storage was confirmed legitimate, Adem asked for file attachments on
+chat messages, using the bucket that recipe would provision. Scoped
+with two quick questions rather than assumed: attachments are for
+chat messages specifically (not replacing the source DAM PDF or a
+profile picture), and any logged-in user can upload - not admin-only.
+
+**Provisioning**: the actual `neon login`/`neon deploy` steps have to
+run in Adem's own terminal - this sandbox has no outbound network at
+all (couldn't even resolve `google.com`), so I can't reach neon.tech,
+npm, or Render myself. `neon.ts` declares a private `uploads` bucket;
+`neon deploy` provisions it and writes `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3`, and `AWS_REGION` to
+`.env.local`, which then go into Render's environment alongside a
+`NEON_BUCKET_NAME` (matching whatever the bucket is named in
+`neon.ts`) for the app's own code to read.
+
+**Design**: `webapp/storage.py` wraps the bucket with boto3 behind two
+functions - `upload_attachment` (validates a 15 MB size cap and a
+content-type allowlist, uploads under
+`attachments/{uploader_id}/{uuid}-{filename}`, returns only metadata -
+key, filename, content type, size - never raw bytes back to the
+caller) and `presign_download` (a fresh 5-minute signed URL generated
+on demand, never a permanent link, since a shared conversation can be
+reopened long after the attachment was posted - there's no single
+correct moment to mint a URL "for good"). No new database table:
+attachment metadata rides inside a message's existing `meta` JSON
+field, the same way `nodeId`/`usedLlm`/etc. already do, consistent
+with the Conversation model's existing "read/write the whole
+conversation, not one field of it" reasoning.
+
+**Access control was the interesting design question**: uploading
+needs no conversation context (the message that will reference the
+file doesn't exist yet at upload time), so `POST /api/uploads` just
+requires being logged in. Reading it back is different - rather than
+build a separate per-file ACL, `GET
+/api/conversations/{id}/attachments/{key}` reuses the exact same
+owner-or-shared-with check every other read of a conversation already
+goes through, and additionally confirms the requested key is actually
+referenced by a message in that specific conversation before signing
+a URL. That second check matters: without it, a legitimate, logged-in
+user could try a key from a conversation they do own against a
+conversation they don't, fishing for someone else's file. Sharing
+being view-only elsewhere (see `ConversationShare`'s docstring)
+doesn't extend to attachments - a shared-with colleague can still open
+a file that's already part of the history they were shown, that's
+what "read access" means.
+
+**Tests**: `tests/test_storage.py` (unit-level, mocks the boto3 client
+via `unittest.mock.patch.object` - the established pattern in this
+codebase for external services, see the Groq mocking in
+`test_backend.py`) covers the size cap, the content-type allowlist, an
+unconfigured bucket failing closed with a 503 rather than a raw
+`KeyError`, two uploads with the same filename getting different
+keys, and the presigned-URL call shape. `tests/test_uploads.py`
+(endpoint-level) covers auth-required on upload, the conversation-
+scoped permission boundary (owner yes, unrelated user 403, shared-with
+user yes - view access includes attachments), and a key that was never
+actually attached in that conversation 404ing even for the owner.
+Full suite: 435 passed, 1 xfailed - no regressions. Frontend rebuilt
+and verified via `vite build`.
+
+**Not yet live-verified end to end**: the bucket itself hasn't been
+provisioned in Adem's Neon project as of this entry - all of the above
+is tested against a mocked S3 client, the same verification-gap
+pattern already flagged for Groq and the DATABASE_URL fix. Once
+`neon deploy` runs and the four AWS_* env vars are in Render, the
+thing actually worth checking is a real upload -> message -> shared
+colleague fetching a real presigned URL round trip.

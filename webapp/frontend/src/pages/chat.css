@@ -69,6 +69,75 @@
   color: var(--red);
 }
 
+.attachment-row {
+  margin-top: 6px;
+}
+
+.attachment-chip,
+.pending-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--gray-bg);
+  border: 1px solid var(--gray-border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.attachment-chip {
+  cursor: pointer;
+}
+
+.attachment-chip:hover {
+  background: var(--gray-border);
+}
+
+.pending-attachment-chip button {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.pending-attachment-chip button:hover {
+  color: var(--red);
+}
+
+.file-input-hidden {
+  display: none;
+}
+
+.attach-btn {
+  background: var(--white);
+  border: 1px solid var(--gray-border);
+  border-radius: 8px;
+  font-size: 16px;
+  padding: 0 10px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.attach-btn:hover {
+  background: var(--gray-border);
+}
+
+.attach-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.upload-error {
+  max-width: 760px;
+  margin: 6px auto 0;
+  font-size: 12px;
+  color: var(--red);
+}
+
 #chat {
   flex: 1;
   overflow-y: auto;

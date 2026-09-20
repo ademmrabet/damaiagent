@@ -153,6 +153,23 @@ def unshare_conversation(db: Session, conversation: Conversation, target_user_id
     db.commit()
 
 
+def conversation_has_attachment(conversation: Conversation, key: str) -> bool:
+    """
+    Attachment downloads (see webapp/backend.py's get_attachment_url)
+    are gated on this rather than a separate ownership check on the
+    file itself - anyone who can view the conversation can view what
+    was actually attached to a message in it, and nothing else. This
+    also stops one conversation's viewer from using a guessed or
+    leaked key to pull a file that was only ever posted somewhere they
+    don't have access to.
+    """
+    for message in conversation.messages:
+        attachment = (message.get("meta") or {}).get("attachment")
+        if attachment and attachment.get("key") == key:
+            return True
+    return False
+
+
 def serialize_conversation(conversation: Conversation, is_owner: bool) -> dict:
     return {
         "id": conversation.id,

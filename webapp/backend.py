@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, RedirectResponse
 from pydantic import BaseModel, EmailStr
@@ -25,6 +25,7 @@ from llm.translate import detect_and_translate_to_english, translate_text, looks
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
 from webapp.conversations import (
     append_message,
+    conversation_has_attachment,
     create_conversation,
     delete_conversation,
     get_conversation_for_viewing,
@@ -36,6 +37,7 @@ from webapp.conversations import (
     unshare_conversation,
 )
 from webapp.dashboard_data import build_summary
+from webapp.storage import presign_download, upload_attachment
 from webapp.db import get_db, init_db
 from webapp.models import Role, User
 from webapp.auth import (
@@ -347,6 +349,47 @@ def unshare(
     conversation = get_owned_conversation(db, conversation_id, user)
     unshare_conversation(db, conversation, target_user_id)
     return serialize_conversation(conversation, is_owner=True)
+
+
+@app.post("/api/uploads")
+async def upload_file(
+    file: UploadFile = File(...),
+    user: User = Depends(get_current_user),
+):
+    """
+    Any logged-in user can upload - the upload itself isn't tied to a
+    conversation yet (the message that ends up referencing it, via
+    `meta.attachment` on the POST to /messages, hasn't been created at
+    this point). Access control happens on the READ side instead - see
+    get_attachment_url below - which is what actually decides who can
+    fetch this file back.
+    """
+    contents = await file.read()
+    return upload_attachment(file, str(user.id), contents)
+
+
+@app.get("/api/conversations/{conversation_id}/attachments/{key:path}")
+def get_attachment_url(
+    conversation_id: str,
+    key: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Deliberately doesn't hand back a permanent link - see
+    webapp/storage.py's presign_download docstring for why a fresh,
+    short-lived URL is generated on every read instead. Reuses the
+    exact same owner-or-shared-with check every other read of this
+    conversation goes through, then additionally checks the key is
+    really something that was attached to a message in THIS
+    conversation - otherwise a valid, logged-in user could try
+    guessing at other people's attachment keys via a conversation they
+    happen to own.
+    """
+    conversation = get_conversation_for_viewing(db, conversation_id, user)
+    if not conversation_has_attachment(conversation, key):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found in this conversation")
+    return {"url": presign_download(key)}
 
 
 @app.get("/api/auth/google/login")

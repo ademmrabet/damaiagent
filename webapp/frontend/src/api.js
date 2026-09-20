@@ -138,6 +138,29 @@ export async function unshareConversationApi(id, targetUserId) {
   return res.json();
 }
 
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await authFetch('/api/uploads', { method: 'POST', body: formData });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'Upload failed');
+  return body;
+}
+
+export async function getAttachmentUrl(conversationId, key) {
+  // Encode each path segment separately (not the whole key) - the
+  // backend route uses FastAPI's `{key:path}` converter, which matches
+  // literal slashes in the key (attachments/<user id>/<uuid>-<name>).
+  // Encoding the slashes themselves (encodeURIComponent on the whole
+  // string) would turn them into %2F, which the route wouldn't match
+  // as the same path.
+  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+  const res = await authFetch(`/api/conversations/${conversationId}/attachments/${encodedKey}`);
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.detail || 'Could not open attachment');
+  return body.url;
+}
+
 export async function login(email, password) {
   const res = await fetch('/api/auth/login', {
     method: 'POST',

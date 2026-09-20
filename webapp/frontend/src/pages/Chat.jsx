@@ -6,7 +6,7 @@ import LanguagePicker from '../components/LanguagePicker.jsx';
 import ConversationSidebar from '../components/ConversationSidebar.jsx';
 import LogoutButton from '../components/LogoutButton.jsx';
 import useConversations from '../hooks/useConversations.js';
-import { askQuestion, isLoggedIn } from '../api.js';
+import { askQuestion, getAttachmentUrl, isLoggedIn, uploadFile } from '../api.js';
 import { LANGUAGE_NAMES, RTL_LANGUAGES, stringsFor } from '../i18n.js';
 import './chat.css';
 
@@ -57,7 +57,29 @@ function TypingIndicator() {
   );
 }
 
-function MessageBubble({ message, index, t }) {
+function AttachmentChip({ attachment, conversationId }) {
+  const [opening, setOpening] = useState(false);
+
+  async function handleOpen() {
+    setOpening(true);
+    try {
+      const url = await getAttachmentUrl(conversationId, attachment.key);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.alert('Could not open this attachment.');
+    } finally {
+      setOpening(false);
+    }
+  }
+
+  return (
+    <button type="button" className="attachment-chip" onClick={handleOpen} disabled={opening}>
+      &#128206; {attachment.filename}
+    </button>
+  );
+}
+
+function MessageBubble({ message, index, t, conversationId }) {
   const ref = useRef(null);
   const [showDeterministic, setShowDeterministic] = useState(false);
 
@@ -97,6 +119,12 @@ function MessageBubble({ message, index, t }) {
       className={'msg ' + role + (lowConfidence ? ' low-confidence' : '')}
     >
       {text}
+
+      {meta && meta.attachment && (
+        <div className="attachment-row">
+          <AttachmentChip attachment={meta.attachment} conversationId={conversationId} />
+        </div>
+      )}
 
       {showMeta && (
         <div className="meta">
@@ -159,7 +187,11 @@ export default function Chat() {
   const [llmMode, setLlmMode] = useState('auto');
   const [uiLanguage, setUiLanguage] = useState('auto');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingAttachment, setPendingAttachment] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const chatRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const messages = activeConversation ? activeConversation.messages : [];
   const t = stringsFor(uiLanguage);
@@ -181,6 +213,27 @@ export default function Chat() {
     }
   }, []);
 
+  async function handleAttachClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleFileSelected(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // lets picking the same file twice re-fire onChange
+    if (!file) return;
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const result = await uploadFile(file);
+      setPendingAttachment(result);
+    } catch (err) {
+      setUploadError(err.message || 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     const question = input.trim();
@@ -197,8 +250,14 @@ export default function Chat() {
       }
     }
 
-    appendMessage(targetId, { role: 'user', text: question });
+    const attachment = pendingAttachment;
+    appendMessage(targetId, {
+      role: 'user',
+      text: question,
+      ...(attachment ? { meta: { attachment } } : {}),
+    });
     setInput('');
+    setPendingAttachment(null);
     setSending(true);
 
     try {
@@ -320,7 +379,7 @@ export default function Chat() {
             <div className="chat-inner">
               {messages.length === 0 && <div className="empty-state">{t.emptyState}</div>}
               {messages.map((m, i) => (
-                <MessageBubble key={i} message={m} index={i} t={t} />
+                <MessageBubble key={i} message={m} index={i} t={t} conversationId={activeConversation?.id} />
               ))}
               {sending && <TypingIndicator />}
             </div>
@@ -328,6 +387,37 @@ export default function Chat() {
 
           <form id="form" onSubmit={handleSubmit}>
             <div className="form-inner">
+              {canPost && (
+                <>
+                  {pendingAttachment && (
+                    <span className="pending-attachment-chip">
+                      &#128206; {pendingAttachment.filename}
+                      <button
+                        type="button"
+                        onClick={() => setPendingAttachment(null)}
+                        title="Remove attachment"
+                      >
+                        &times;
+                      </button>
+                    </span>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="file-input-hidden"
+                    onChange={handleFileSelected}
+                  />
+                  <button
+                    type="button"
+                    className="attach-btn"
+                    onClick={handleAttachClick}
+                    disabled={uploading || sending}
+                    title="Attach a file"
+                  >
+                    {uploading ? '…' : '📎'}
+                  </button>
+                </>
+              )}
               <input
                 id="question"
                 type="text"
@@ -341,6 +431,7 @@ export default function Chat() {
                 {t.send}
               </button>
             </div>
+            {uploadError && <div className="upload-error">{uploadError}</div>}
           </form>
         </div>
       </div>

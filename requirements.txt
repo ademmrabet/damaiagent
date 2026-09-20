@@ -18,3 +18,7 @@ authlib
 httpx
 itsdangerous
 email-validator
+
+# File attachments (Neon Object Storage - S3-compatible)
+boto3
+python-multipart
