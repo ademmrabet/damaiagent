@@ -1,0 +1,455 @@
+\subsection{Two Stores, Deliberately Separated}
+
+Two kinds of data exist in the system, and almost every design decision in this section
+follows from refusing to mix them.
+
+The knowledge base is immutable. It is a serialised artefact produced by the pipeline of
+Chapter~\ref{ch:pipeline}, shipped with the application, loaded into memory at startup, and
+never written to at runtime. It lives in no database at all. The consequence worth stating
+is that the knowledge base cannot be corrupted by application traffic: there exists no code
+path by which a user action modifies what the system believes the document says. A user can
+create an account, hold a hundred conversations and share every one of them, and the answer
+to ``who approves 2.126'' is bit-for-bit what it was before they arrived.
+
+Application state is the opposite in every respect. Accounts, conversations, and sharing
+grants are mutable by definition, they are written on ordinary user actions, and they must
+survive a process restart. They therefore live in a relational database.
+
+Keeping the two apart is what makes the correctness argument of Chapter~\ref{ch:agent}
+survive contact with a multi-user application. If the extracted matrix lived in the same
+database as the conversations, then every feature added to the platform would become a
+potential vector for altering the facts, and each one would need to be argued against that
+possibility. Because it does not, the argument is made once, structurally, and does not need
+revisiting.
+
+\subsection{Choosing the Persistence Layer}
+
+The database is a managed PostgreSQL instance hosted on Neon, reached through SQLAlchemy as
+an object-relational mapper. Two aspects of that choice were forced rather than preferred,
+and both are worth recording because the reasoning generalises.
+
+The first is why a hosted database at all, rather than a file alongside the application. The
+application is deployed on a platform whose free tier provides no persistent disk. A
+file-based database written next to the running service would therefore be destroyed on
+every redeployment, and the failure would be silent: the service would restart cleanly, the
+schema would be recreated empty, and every registered account would simply be gone with no
+error anywhere to indicate it. That is the same class of defect as the memory failure
+described in Section~\ref{sec:deployment}, an assumption about the persistence of local
+state that the platform does not honour, and it was avoided in advance only because the
+earlier failure had already taught the lesson.
+
+The second aspect is the local-development fallback. Requiring a hosted database to run the
+test suite would make the tests slow, network-dependent, and impossible to run offline, so
+the connection string defaults to a local file-based SQLite database when no environment
+variable is supplied. Production sets that variable and gets PostgreSQL. This yields a
+genuine engineering problem, since the two engines do not offer the same column types, and
+the way it is resolved is described next.
+
+\subsection{Identifiers and Dialect Portability}
+
+Every table uses a randomly generated UUID as its primary key rather than an
+auto-incrementing integer. The reason is not aesthetic. Conversation identifiers appear in
+URLs, and a sequential integer key would make those URLs enumerable: a user holding
+conversation 41 could try 40 and 42 and learn, from the difference between a refusal and a
+not-found, how many conversations exist and roughly when theirs was created. Authorisation
+is still checked on every request, so enumeration would not grant access, but a random
+128-bit identifier removes the information leak entirely rather than relying on the check to
+contain it. Identifiers are generated in the application rather than by the database, which
+also means an object's identity is known before it is persisted.
+
+The portability problem is that PostgreSQL has a native \texttt{UUID} column type and SQLite
+does not. Rather than abandoning the native type in production, or maintaining two model
+definitions, the schema declares the column once with a dialect variant: the type resolves to
+a native \texttt{UUID} when the engine is PostgreSQL and to a 36-character string when it is
+SQLite. One model definition drives both, so the objects exercised by the 375 tests on SQLite
+are the same objects that run against PostgreSQL in production, and a schema change cannot
+be applied to one and forgotten in the other.
+
+\subsection{The Accounts Table}
+
+The \texttt{users} table is where the three sign-in paths converge, and its most important
+property is a column that is allowed to be empty. Table~\ref{tab:usersschema} gives its
+definition.
+
+\begin{longtable}{|p{0.22\textwidth}|p{0.16\textwidth}|p{0.52\textwidth}|}
+\caption{The \texttt{users} table.}\label{tab:usersschema}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Type}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Type}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endhead
+\texttt{id} & UUID & Primary key, generated by the application. \\ \hline
+\texttt{email} & string & Unique and indexed, never null. Normalised to lower case on write so that address casing cannot create two accounts. \\ \hline
+\texttt{name} & string & Display name. Nullable, since a provider may not release it. \\ \hline
+\texttt{hashed\_password} & string & \textbf{Nullable.} The bcrypt digest for accounts that have a password. Null for accounts created through a federated provider. \\ \hline
+\texttt{oauth\_provider} & string & Nullable. Which provider authenticated this account, where one did. \\ \hline
+\texttt{oauth\_sub} & string & Nullable. The provider's own immutable subject identifier for this person. \\ \hline
+\texttt{role} & enum & \texttt{analyst} or \texttt{administrator}. Never null. \\ \hline
+\texttt{created\_at} & timestamp & Account creation, in UTC. \\ \hline
+\multicolumn{3}{|p{0.92\textwidth}|}{\textbf{Constraint} \texttt{uq\_oauth\_identity}: the pair (\texttt{oauth\_provider}, \texttt{oauth\_sub}) is unique, so one provider identity cannot be attached to two local accounts.} \\ \hline
+\end{longtable}
+
+A single table serves all three paths, and a row is distinguished only by which columns carry
+values. A password account populates \texttt{hashed\_password} and leaves the two federated
+columns null. A federated account does the reverse. The schema permits both at once, which is
+what allows a person who signed up with a password to later authenticate through Google and
+arrive at the same account rather than a second one.
+
+The nullable password column is a security property rather than a convenience. An account
+created through Google has no password anywhere in this system, so there is no digest to
+extract from a database disclosure, no credential to reuse against another service, and no
+password to be phished. The login endpoint enforces the corresponding rule explicitly: it
+refuses when \texttt{hashed\_password} is null, so a federated account cannot be attacked
+through the password form at all. Figure~\ref{fig:dbusers} shows the table as deployed, with
+the bcrypt digests visible and the federated columns null for the three accounts registered
+at the time of writing.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/db-users.png}
+\caption{The \texttt{users} table in the deployed instance. Each account carries a bcrypt
+digest beginning \texttt{\$2b\$12\$}, and the federated identity columns are null for
+accounts registered with a password.}
+\label{fig:dbusers}
+\end{figure}
+
+\subsection{The Conversations Table}
+
+A conversation is stored as one row carrying its entire message sequence in a single JSON
+column, rather than as a parent row with one child row per message. This is a deliberate
+denormalisation and it deserves the scrutiny it usually attracts.
+
+The normalised design is the textbook answer and would be correct if messages were ever
+addressed individually. They are not. Every read in this application fetches a whole
+conversation to display it, and every write appends to the end of one. There is no query
+anywhere in the system that asks for a single message, no pagination within a conversation,
+and no aggregate computed across messages. A child table would therefore contribute a join
+on every read and an ordering column to maintain, in exchange for a capability nothing uses.
+
+The second reason is that the provenance metadata attached to each answer, the resolved
+identifier, the resolution method, the confidence score, the model that phrased it and the
+language it was answered in, is a nested structure whose shape changed repeatedly during
+development. In a column-per-field design each of those changes is a schema migration. In a
+JSON column the client and the agent agree on the shape and the database stores what it is
+given. Given that this metadata is only ever read back and rendered, never filtered or
+joined on, the flexibility was worth more than the constraint.
+
+The honest counterpart is stated plainly: this choice forecloses future queries such as
+``how many answers fell back to the template'' without either a scan over the JSON documents
+or a migration to a normalised form. That is an acceptable trade only because no such query
+exists today, and it would need revisiting if the usage analytics discussed in
+Section~\ref{sec:govkpi} were implemented.
+
+Table~\ref{tab:convschema} gives the definition, and Figure~\ref{fig:dbconversations} shows
+it populated.
+
+\begin{longtable}{|p{0.22\textwidth}|p{0.16\textwidth}|p{0.52\textwidth}|}
+\caption{The \texttt{conversations} table.}\label{tab:convschema}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Type}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Type}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endhead
+\texttt{id} & UUID & Primary key. Appears in share URLs, hence random rather than sequential. \\ \hline
+\texttt{owner\_id} & UUID & Foreign key to \texttt{users}, indexed. The account that created the conversation and the only one that may extend it. \\ \hline
+\texttt{title} & string & Display title, defaulting to ``New chat''. \\ \hline
+\texttt{title\_is\_default} & boolean & Whether the title is still the placeholder. \\ \hline
+\texttt{messages} & JSON & The ordered message list, each entry carrying role, text, and provenance metadata. \\ \hline
+\texttt{created\_at} & timestamp & Creation time, UTC. \\ \hline
+\texttt{updated\_at} & timestamp & Maintained automatically on every write; drives sidebar ordering. \\ \hline
+\end{longtable}
+
+The \texttt{title\_is\_default} flag solves a small problem neatly enough to be worth a
+sentence. A conversation should take its title from the first question asked, so that the
+sidebar is navigable, but a user who renames a conversation must not have that title
+overwritten by the next message. Storing the title alone cannot distinguish a placeholder
+from a deliberate choice that happens to resemble one. The boolean records intent rather
+than inferring it: the first message replaces the title only while the flag is set, and any
+explicit rename clears it permanently.
+
+\subsection{The Sharing Tables}
+
+Sharing is carried by two tables that do different jobs, and separating them is what keeps
+authorisation coherent.
+
+\texttt{conversation\_shares} records grants that already exist: one row per pair of
+conversation and recipient. It is the single authority on who may view a conversation,
+and every read path consults it. The pair is constrained unique, which makes re-sharing with
+the same colleague idempotent rather than an error or a duplicate row. Two separate foreign
+keys point at \texttt{users}, one for the recipient and one for the grantor, so the table
+also records who extended the access rather than only that it exists.
+
+\texttt{conversation\_share\_links} records an invitation that has not yet been accepted: a
+random token, the conversation it refers to, who issued it, and when it expires, defaulting
+to seven days. Crucially, a link is not itself a grant. Claiming one creates an ordinary
+row in \texttt{conversation\_shares}, which means the QR-code path and the by-name path
+converge on the same authorisation record, and the question of who may view a conversation
+continues to have exactly one answer in the code. Had the link been treated as a credential
+in its own right, every read path would have needed to check two conditions instead of one,
+and the two would have drifted.
+
+One active link is maintained per conversation. A second request for a QR code returns the
+existing token rather than minting a new one, so a code already printed or already scanned
+does not quietly stop working.
+
+Table~\ref{tab:shareschema} gives both definitions, and Figure~\ref{fig:dbshares} shows a
+live grant.
+
+\begin{longtable}{|p{0.17\textwidth}|p{0.26\textwidth}|p{0.47\textwidth}|}
+\caption{The two sharing tables.}\label{tab:shareschema}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Table}} & \textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Table}} & \textcolor{white}{\textbf{Column}} & \textcolor{white}{\textbf{Purpose and constraints}} \\
+\hline
+\endhead
+\texttt{conversation\_shares} & \texttt{id} & Primary key. \\ \hline
+ & \texttt{conversation\_id} & Foreign key, indexed. \\ \hline
+ & \texttt{shared\_with\_user\_id} & Foreign key, indexed. The account granted read access. \\ \hline
+ & \texttt{shared\_by\_user\_id} & Foreign key. The account that granted it. \\ \hline
+ & \texttt{created\_at} & When access was granted. \\ \hline
+ & \multicolumn{2}{p{0.73\textwidth}|}{\textbf{Constraint} \texttt{uq\_conversation\_share}: (conversation, recipient) unique, making a repeat share idempotent.} \\ \hline
+\texttt{conversation\_share\_links} & \texttt{id} & Primary key. \\ \hline
+ & \texttt{conversation\_id} & Foreign key, indexed. \\ \hline
+ & \texttt{token} & Unique and indexed. The random secret encoded into the QR image. \\ \hline
+ & \texttt{created\_by\_user\_id} & Foreign key. Who issued the link. \\ \hline
+ & \texttt{created\_at} & Issue time. \\ \hline
+ & \texttt{expires\_at} & Expiry, defaulting to seven days after issue. \\ \hline
+\end{longtable}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\textwidth]{figures/db-shares.png}
+\caption{The \texttt{conversation\_shares} table, showing a live grant. The row names the
+conversation, the account granted access, and the account that granted it.}
+\label{fig:dbshares}
+\end{figure}
+
+\subsection{Referential Integrity and Deletion}
+
+Both sharing tables are declared as dependants of the conversation with delete-orphan
+cascade, so removing a conversation removes its grants and its outstanding links in the same
+operation. This matters more than ordinary tidiness. Without the cascade, deleting a
+conversation would leave grant rows pointing at an identifier that no longer resolves, and an
+outstanding share link would remain valid in the sense that its token still existed and had
+not expired. Access-control records that outlive the thing they protect are precisely the
+kind of residue that later produces a security incident, so the lifetime of a grant is bound
+to the lifetime of its conversation at the schema level rather than in application code that
+might be bypassed.
+
+One implementation detail is worth recording because it caused a real error. The share table
+holds two foreign keys into \texttt{users}, and the mapper cannot infer which one a given
+relationship traverses when more than one candidate exists; both relationships therefore
+declare their join column explicitly. The error surfaces at mapper configuration time rather
+than at query time, which is the preferable failure, but it is opaque enough on first
+encounter to be worth naming here.
+
+\section{Access Control}
+
+\subsection{Why Authentication Was Necessary}
+
+The first version of this system had no accounts. Anyone reaching the service could ask
+questions, and conversations lived in the browser's own storage. That was adequate while the
+system did one thing, and it stopped being adequate the moment conversations needed to be
+persisted and shared, for a reason that is structural rather than incidental: sharing
+requires ownership, ownership requires identity, and identity requires authentication. There
+is no way to grant a colleague access to something that belongs to nobody.
+
+A second reason is specific to this subject matter. The analytics layer aggregates the
+delegation structure of the institution, which is organisationally sensitive in a way that a
+single lookup is not, and restricting it requires being able to tell who is asking.
+
+\subsection{Password Storage}
+
+Passwords are never stored in a form from which the original can be recovered. Each account
+holds a bcrypt digest, produced through the passlib library, and verification re-derives a
+digest from the submitted password and compares the two. Bcrypt was chosen over a
+general-purpose cryptographic hash for reasons worth setting out, since the distinction is
+frequently elided.
+
+A hash such as SHA-256 is designed to be fast, which is the correct property for verifying
+file integrity and precisely the wrong one for storing passwords: speed is exactly what an
+attacker holding a stolen database wants, since it lets them test billions of candidate
+passwords per second on commodity hardware. Bcrypt is deliberately slow and, more
+importantly, adjustably slow. Its cost parameter sets the number of key-expansion rounds as a
+power of two, and raising it by one doubles the work required both for a legitimate
+verification and for every guess an attacker makes. The digests in this system carry a cost
+of twelve, meaning $2^{12}$ rounds, which is visible in the \texttt{\$2b\$12\$} prefix of
+every stored value in Figure~\ref{fig:dbusers}. The parameter is stored alongside the digest
+rather than fixed in code, so the cost can be raised as hardware improves and existing
+accounts continue to verify against their original setting until their next successful login.
+
+Bcrypt also salts each password individually and stores the salt in the same field. The
+consequence is that two accounts choosing the same password hold entirely different digests,
+which defeats both precomputed rainbow tables and the simpler attack of noticing that two
+rows share a value and therefore share a password.
+
+The interaction between password storage and federated accounts is the property described
+earlier: an account authenticated through a provider carries no digest at all, and the login
+endpoint refuses it before any comparison is attempted.
+
+\subsection{Token Design}
+
+Authentication is stateless. A successful sign-in returns a signed JSON Web
+Token\citep{rfc7519}, and the client presents it in the \texttt{Authorization} header of
+every subsequent request. Table~\ref{tab:jwtclaims} lists what the token asserts.
+
+\begin{longtable}{|p{0.14\textwidth}|p{0.30\textwidth}|p{0.46\textwidth}|}
+\caption{Claims carried by the access token.}\label{tab:jwtclaims}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Claim}} & \textcolor{white}{\textbf{Value}} & \textcolor{white}{\textbf{Why it is present}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Claim}} & \textcolor{white}{\textbf{Value}} & \textcolor{white}{\textbf{Why it is present}} \\
+\hline
+\endhead
+\texttt{sub} & Account UUID & Identifies the caller. Every ownership check resolves from this. \\ \hline
+\texttt{email} & Address & Lets the interface show the signed-in account without an extra request. \\ \hline
+\texttt{role} & \texttt{analyst} or \texttt{administrator} & Carries the authorisation decision, avoiding a lookup on every request. \\ \hline
+\texttt{iat} & Issue time & Establishes token age. \\ \hline
+\texttt{exp} & Issue time plus eight hours & Bounds the damage a leaked token can do. \\ \hline
+\end{longtable}
+
+The token is signed HS256\citep{rfc7515}, a keyed signature using a secret held only by the
+server. Signing establishes integrity, not confidentiality: the claims are encoded, not
+encrypted, and anyone holding the token can read them. Nothing secret is therefore placed in
+it. What signing guarantees is that a client cannot alter a claim, and the claim that matters
+is \texttt{role}: without a signature, elevating oneself to administrator would be a matter
+of editing a string.
+
+The signing secret is read from the environment with no fallback default, so a deployment
+that has not configured one fails immediately at startup rather than silently signing tokens
+with a value an attacker could guess from the source. Failing loudly at boot is the correct
+behaviour for a misconfiguration of this class.
+
+Expiry is eight hours, chosen to span a working day. The trade-off is explicit: a shorter
+window would force repeated sign-ins during ordinary use, and a longer one would leave a
+usable credential in a browser long after the person had finished. Because verification is
+stateless, a token cannot be revoked before it expires, which is the cost of not consulting
+the database on every request. For this application that cost is acceptable; a system holding
+higher-value operations would need a revocation list and the lookup that comes with it.
+
+On the client the token is held in session storage rather than local storage. Both are
+readable by any script executing on the page, so the distinction is not about resisting
+script access; it is about lifetime. Session storage is cleared when the tab closes, whereas
+local storage persists indefinitely, leaving a valid credential on a shared or unattended
+machine long after the user believed they had finished. The cost is that closing the tab
+requires signing in again, which was judged the right trade for a system holding governance
+information.
+
+\subsection{Federated Sign-In}
+
+Two federated paths exist alongside the password form, through Google and through Microsoft.
+The motivation is institutional rather than technical: staff at an organisation of this kind
+already hold a corporate directory account, and requiring a separate password adds a
+credential to be managed, forgotten, reused, or written down, while removing the ability of
+the institution to revoke access centrally when someone leaves.
+
+Both providers are integrated through OpenID Connect rather than by hand-coded calls to
+provider endpoints. The client is configured with a discovery document URL, and the endpoints,
+signing keys and supported parameters are retrieved from the provider at runtime. This matters
+for durability: a provider rotating its signing keys or relocating an endpoint does not break
+the integration, because nothing about those details is hardcoded. The requested scope is the
+minimum the application needs, namely the identity token plus the address and display name.
+The Microsoft integration additionally accepts a tenant identifier, defaulting to the
+multi-tenant endpoint, so that the same build can be pointed at a single institutional
+directory by configuration alone.
+
+Both providers are registered only when their credentials are present in the environment. An
+instance configured with neither still starts and still serves password sign-in, which keeps
+local development and the test suite free of any dependency on external identity services.
+
+\subsection{Resolving a Federated Identity to an Account}
+
+The step where a provider's response becomes a local account is the most security-sensitive
+part of the flow, and the order of the lookups is the substance of it.
+
+The account is located first by the pair of provider and subject identifier, the provider's
+own immutable handle for that person, and never by email address alone. This ordering is
+deliberate. Email addresses are not stable identifiers: an organisation may reassign a
+departed employee's address to a new hire, and a person may change their own address at the
+provider. A system matching on email alone would hand the new holder of a recycled address
+the previous holder's account and every conversation in it. Matching on the subject
+identifier makes that impossible, because the identifier is never reissued.
+
+Only when no account carries that provider identity does the resolution fall back to email,
+and then only to link the provider identity onto an existing account rather than to
+authenticate against it. This is what lets a user who registered with a password later sign
+in through Google and arrive at the same account rather than a duplicate. The account is
+created fresh only when both lookups fail.
+
+The uniqueness constraint on the provider-and-subject pair enforces the invariant at the
+database level, so a defect in this logic cannot produce two local accounts claiming the same
+provider identity.
+
+\subsection{Roles and Authorisation}
+
+Two roles are defined. An \textbf{analyst} may ask questions, attach documents, and own and
+share conversations. An \textbf{administrator} may additionally open the analytics dashboard.
+The distinction reflects the sensitivity difference described earlier: an individual
+conversation reveals what one person asked, whereas the dashboard aggregates the institution's
+delegation structure.
+
+Authorisation is enforced server-side as a dependency on the protected routes rather than by
+hiding controls in the interface. An analyst who constructs the request by hand is refused
+exactly as one who clicks, which is the only enforcement that means anything; a hidden button
+is a usability affordance, not a control.
+
+The first account created on an empty database becomes an administrator, which solves the
+bootstrap problem of needing an administrator before one can be appointed. This is recorded as
+a deliberate convenience rather than a complete design: promoting a second administrator still
+requires a direct database edit, and a production deployment would want an administrative
+interface for it.
+
+\subsection{Hardening the Sign-In Path}
+
+Three further protections apply specifically to authentication, and
+Table~\ref{tab:threatmodel} sets out what each defends against.
+
+Failed attempts are rate-limited by source address within a rolling five-minute window, which
+raises the cost of credential stuffing from free to impractical without locking out a
+legitimate user who has mistyped a password twice.
+
+A failed sign-in returns one generic message regardless of whether the account exists. The
+temptation to be helpful here, by saying that no account was found, produces an oracle that
+converts a list of institutional email addresses into a list of confirmed users. The
+implementation is careful on a related point: the same generic refusal is returned when an
+account exists but has no password because it is federated, so the response does not
+distinguish that case either.
+
+A minimum password length of eight characters is enforced at registration. This is a weak
+control on its own and is stated as such; it raises the floor without pretending to establish
+password quality.
+
+\begin{longtable}{|p{0.30\textwidth}|p{0.56\textwidth}|}
+\caption{Authentication threats and the corresponding mitigation.}\label{tab:threatmodel}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Threat}} & \textcolor{white}{\textbf{Mitigation in this system}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Threat}} & \textcolor{white}{\textbf{Mitigation in this system}} \\
+\hline
+\endhead
+Database disclosure exposing passwords & Only salted bcrypt digests at cost twelve are stored; federated accounts hold no digest at all. \\ \hline
+Offline brute-force against stolen digests & Bcrypt's cost parameter makes each guess expensive, and the parameter can be raised without a migration. \\ \hline
+Rainbow-table attack & Per-password salts make precomputation useless and hide the fact that two accounts share a password. \\ \hline
+Account enumeration & One generic refusal for unknown account, wrong password, and federated account alike. \\ \hline
+Credential stuffing & Rate limiting per source address over a rolling window. \\ \hline
+Privilege escalation by editing a token & The role claim is covered by the HS256 signature; any alteration invalidates the token. \\ \hline
+Credential left on a shared machine & Tokens held in session storage, discarded when the tab closes, and expiring after eight hours regardless. \\ \hline
+Conversation URL enumeration & Random UUID identifiers rather than sequential integers, with the ownership check retained as well. \\ \hline
+Recycled email address inheriting an account & Federated identities resolved by immutable provider subject identifier before email is ever consulted. \\ \hline
+Stale access after a conversation is deleted & Grants and outstanding links removed by database cascade with the conversation itself. \\ \hline
+Misconfigured deployment signing with a default secret & The signing secret has no default; a deployment without one fails at startup. \\ \hline
+\end{longtable}
+

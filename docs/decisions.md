@@ -3498,3 +3498,42 @@ is the practical ceiling without live access to that deploy's logs.
 Next time this happens, the client-visible message will say something
 useful, and the real traceback will be sitting in Render's log for that
 request.
+
+## 2026-09-28 - Auto UI language now follows what the user types
+
+The Chat page's language picker's "Auto" mode previously only affected
+the DAM *answer* language (server-side, per question) - the static UI
+chrome (header subtitle, placeholders, button labels, empty state)
+stayed in English regardless, a gap `i18n.js` had explicitly flagged as
+a deferred follow-up. Closed that gap: added `detectLanguage(text)` to
+`i18n.js`, a client-side, no-network heuristic that mirrors
+`llm/translate.py`'s `looks_non_english` (same function-word lists,
+same "one whole-word hit is enough" logic) but names which language
+instead of just flagging non-English.
+
+Wired into `Chat.jsx` via a new `autoDetectedLang` state, only active
+when `uiLanguage === 'auto'`: updated live as the user types
+(`handleInputChange`) and after voice transcription, then corrected
+once a real answer comes back and the server's own LLM-based
+`detected_language` overwrites the client guess with a more reliable
+one (`handleSubmit`). `effectiveLanguage` resolves `uiLanguage` to a
+concrete code for every render (`stringsFor`, `RTL_LANGUAGES`), while
+the value actually sent to the backend stays `'auto'` unchanged. The
+detected language is deliberately sticky across a cleared input (no
+flicker back to English between questions), and `LanguagePicker` now
+shows it inline ("Auto · Français") so the effect is visible rather
+than silent.
+
+**Tests**: `test_frontend_source.py` - all 16 pass unchanged (no
+assertions needed updating; the picker, `uiLanguage`, and the i18n
+dictionary's shape are all untouched). Frontend rebuilt via the usual
+`/tmp` scratch-copy workaround (`npm install` in-place still hits the
+OneDrive `ENOTEMPTY` rename issue on this machine) and `vite build`
+succeeded with no errors; output copied into `webapp/static/`. Did not
+run the full backend suite - unrelated to this change (no Python files
+touched) and several of those tests hang on a live DB/network
+dependency not available in this environment, a pre-existing condition.
+
+**Scope note**: detection only runs on the Chat page (where the
+picker lives). Dashboard/Landing/Login stay English-only, same as
+before this change - consistent with the picker's own existing scope.

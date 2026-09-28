@@ -1,0 +1,33 @@
+\chapter*{General Conclusion}
+\addcontentsline{toc}{chapter}{General Conclusion}
+\markboth{General Conclusion}{General Conclusion}
+
+This work started with a document that has a problem with how it answers an important question: it's not a problem with the question itself, it's a problem in its form, and that form makes it difficult to retrieve. The DAM says who is authorized to approve, check, review, initiate, and be informed about all of the Bank's activities, and it is written within wide tables, with sideways headers, and a compact notation which cannot be easily looked up by hand or processed by computer.
+
+What is constructed in response is a system which looks at the question of what facts are, and the question of how to say them. It was successfully parsed into 327 valid records with 1,776 responsibility entries, and converted to a graph of 459 nodes and 2,108 edges, with less than one percent of the responsibility entries not yet resolved. The answers are built from records in that graph; the answers are rewritten, to natural sentences, by a language model under a verification step which does not accept any rewriting that omits or changes a fact; questions are resolved to activities by an exact identifier path and a lexical search layer. Around that core is an authenticated platform with voice input, an explicit trust boundary for document attachment, conversations that can be shared read-only with a colleague and stay live as they are extended, a conversation interface localised into five languages, and an analytics dashboard that reports the structure and extraction quality of the matrix itself.
+
+The following three points seem to be conclusions that can be drawn from this work.
+
+The first is related to the extraction of documents. All of the significant problems that arose during this project yielded seemingly plausible output that would not have been detected by simply verifying that the program ran without error. They were discovered by cross-referencing the extracted information with the pages in which it was found. If the document is visual, then, that comparison is not a nice-to-have for quality assurance, but it is the only way.
+
+The second relates to language models in factual contexts. Asking a model not to make up facts is not a given. It had to be made a property of the system, which involved a mechanical check of the model's output, against the facts it was provided with. It is easy to check, inexpensive, and it is why there is any use for a generative component in a compliance context. It's the same idea as what's been described in Chapter~5 about logging how often that check fires: a safety property that's not measured in production is an assumption; it is not a guarantee.
+
+The third is about refusal. The third is about refusal. The ability of the system to state that an identifier does not exist, or that a question falls outside the document it holds, rather than returning the nearest plausible match, is what makes the rest of its answers worth trusting.
+
+\section*{Limitations}
+
+The DAM was processed from a document of more than two hundred and fifty pages, and each chapter of the DAM is processed. The other chapters follow the same format, but that is yet to be proven.
+
+Footnote handling is inadequate, and the most significant inadequacy. The responsibility numbers are extracted and linked to the footnote, and there are 113 such occurrences of responsibility numbers out of 1,776 of responsibility entries, but the text at the foot of the page is not parsed. The system can thus say that a qualification applies to a responsibility but fail to say what that qualification is. Because some footnotes in this document have conditions attached to them, such as delegation ceilings and prior approval requirements, an answer that names an approver but doesn't state the conditions attached to the approval is accurate but might be misleading. The two related extraction defects 1.116.1 and 1.116.2, the column header labeled as a role, and two footnote digits that are combined are all in the same part of the pipeline.
+
+This was intentionally not started before a question, which the schema itself raises: is it the beginning of each chapter or of each process that footnote numbering starts again? The analysis of the extracted references shows that each reference appears at chapter level, as eleven different footnote numbers are repeated in two or more chapters, and there is no restart of numbers in each chapter. It is still not known for certain from two printed pages, however, which requires a parser to be built upon, something the rest of this project did.
+
+Retrieval is lexical—that is, if the question is strictly in the terminology of the document, it will not be a successful retrieval. The system represents one version of one document and there is no way to determine whether the underlying DAM has been updated, which is more of an operational than theoretical concern in an institutional environment.
+
+\section*{Perspectives}
+
+The most straight-forward continuation is to finish the footnote extraction (which fixes the two known footnote extraction flaws at the same time), and then to process the rest of the chapters, testing that the parsing rules hold up as expected.
+
+In addition, it would be desirable to have a hybrid retrieval layer that integrates the existing lexical matching with a semantic component to better resolve queries that use out-of-vocabulary terms, while maintaining the existing verification step unchanged. If a versioning mechanism can compare a new issue of the DAM with the existing knowledge base, and report on any changes, then a static reference becomes a maintainable one.
+
+The direction of analytics is the most open. The governance indicators in Chapter~5 are indicators of properties of the matrix that no one is currently measuring, and and implementing them requires no data beyond the graph that already exists. Recording consultation activity would open a second direction, since a log of which activities are actually asked about would turn unanswered questions into a prioritised work list for extracting the remaining chapters. If the analysis of the graph could be extended to questions that the printed document cannot readily answer, such as where authority is located, in which roles there are unexpectedly many people in approval paths, or where one point of failure, such as an approval path, has more than one person in a chain of obligations, then it would be a governance instrument, and not merely a lookup gadget.

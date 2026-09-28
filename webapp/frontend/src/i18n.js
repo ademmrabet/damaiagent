@@ -16,6 +16,7 @@
 // a reasonable follow-up, not folded into this pass.
 
 export const LANGUAGE_NAMES = {
+  en: 'English',
   fr: 'French',
   es: 'Spanish',
   pt: 'Portuguese',
@@ -193,10 +194,67 @@ export const UI_STRINGS = {
 };
 
 // uiLanguage is 'auto'/'en'/'fr'/'es'/'pt'/'ar' - the picker's own
-// value. 'auto' has no dedicated dictionary (there's nothing to
-// "detect" for static UI chrome - only actual DAM answers get
-// detected per-question) so it falls back to English chrome, same as
-// picking English explicitly.
+// value. 'auto' has no dedicated dictionary of its own - the caller
+// (Chat.jsx) resolves 'auto' to a concrete code first, via
+// detectLanguage below (as the user types) and the server's own
+// detected_language (once a question has been answered), and passes
+// THAT resolved code in here. Falls back to English chrome if nothing
+// has been detected yet, same as picking English explicitly.
 export function stringsFor(uiLanguage) {
   return UI_STRINGS[uiLanguage] || UI_STRINGS.en;
+}
+
+const ARABIC_SCRIPT = /[؀-ۿ]/;
+const ACCENTED_LATIN = /[àâäéèêëïîôöùûüçñãõ]/i;
+const WORD_RE = /[a-zà-ÿ']+/g;
+
+// Same word lists and "one whole-word hit is enough" logic as
+// llm/translate.py's looks_non_english (see that docstring for why
+// it's safe to be this loose) - duplicated here rather than shared
+// because this one runs client-side, per keystroke, with no network
+// round trip, and needs to name WHICH language, not just "non-
+// English". Best-effort guess, not a real detector. Returns null when
+// there isn't enough text yet or nothing distinctive was found, so
+// the caller can just keep whatever language it last had rather than
+// flicker back to English between words.
+const FUNCTION_WORDS = {
+  fr: new Set([
+    'le', 'la', 'les', 'des', 'une', 'qui', 'que', 'pour', 'dans',
+    'est', 'du', 'avec', 'sont', 'quels', 'quelles',
+  ]),
+  es: new Set([
+    'el', 'los', 'las', 'que', 'es', 'una', 'por', 'para', 'con',
+    'quien', 'quienes', 'cuales', 'cual',
+  ]),
+  pt: new Set([
+    'os', 'que', 'uma', 'por', 'para', 'com', 'quem', 'quais', 'qual',
+  ]),
+};
+
+export function detectLanguage(text) {
+  if (!text || text.trim().length < 3) return null;
+  if (ARABIC_SCRIPT.test(text)) return 'ar';
+
+  const words = new Set((text.toLowerCase().match(WORD_RE) || []));
+  let bestLang = null;
+  let bestCount = 0;
+  for (const lang of Object.keys(FUNCTION_WORDS)) {
+    let count = 0;
+    for (const w of words) {
+      if (FUNCTION_WORDS[lang].has(w)) count += 1;
+    }
+    if (count > bestCount) {
+      bestCount = count;
+      bestLang = lang;
+    }
+  }
+  if (bestLang) return bestLang;
+
+  // Accented Latin with no function-word hit yet (still mid-word, or
+  // a name/code with a stray accent) - likely fr/es/pt but not clear
+  // which; fr is the most common case for this app's users, so it's
+  // the least-bad default until a real word lands the tie-break above.
+  if (ACCENTED_LATIN.test(text)) return 'fr';
+
+  return 'en';
 }

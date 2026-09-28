@@ -1,0 +1,95 @@
+% ===================== ABSTRACT / RÉSUMÉ =====================
+% Both languages are kept on a single page: singlespacing locally (abstracts are
+% conventionally single-spaced even in a 1.5-spaced thesis) plus tightened text.
+
+\thispagestyle{empty}
+\addcontentsline{toc}{chapter}{Abstract}
+\markboth{Abstract}{Abstract}
+\begin{singlespace}
+\setlength{\parskip}{0pt}
+
+\vspace*{0.1cm}
+
+{\noindent\Large\sffamily\bfseries Abstract\par}
+
+\vspace{0.12cm}
+\noindent\textcolor{myblue}{\rule{\textwidth}{1.1pt}}
+
+\vspace{0.2cm}
+
+\noindent The Delegation of Authority Matrix (DAM) of the African Development Bank
+specifies, for every operational activity, which roles may approve, review, verify, or
+initiate it, and which must be informed of it. Consulted as a page-by-page PDF, it is
+easy to misread: authority is encoded in seventeen level-qualified codes across five
+obligations, and near-identical activities can carry different approvers depending on a
+monetary threshold. A misreading is therefore a governance failure, not a mere
+inconvenience, since an approval beyond a role's delegated authority can look entirely
+legitimate to everyone involved.
+
+\vspace{0.15cm}
+
+\noindent This work delivers an agent that answers authority questions over the DAM
+without inventing anything. A deterministic, eight-stage pipeline extracts the matrix
+from the source PDF into a knowledge graph of 327 activity nodes, 1,776 individual
+responsibilities, 131 distinct roles, and 2,108 edges, with an unresolved-role rate of
+0.6\%. Questions are resolved against that graph, by identifier or by TF-IDF lexical
+search with deterministic typo correction, and answers are assembled from graph records
+rather than generated: a language model only rephrases an already-assembled answer, and a
+verification step discards any rephrasing that loses a fact. The agent is delivered as
+an authenticated FastAPI/React platform (conversation persistence, voice input,
+attachment Q\&A, real-time sharing, analytics dashboard), deployed and publicly
+reachable.
+
+\vspace{0.12cm}
+
+\noindent\textbf{Keywords:} Knowledge Graph; Grounded Generation; Retrieval-Augmented
+Generation; Delegation of Authority; Governance and Compliance; Document Information
+Extraction; TF-IDF; Question Answering; Hallucination Mitigation; African Development
+Bank.
+
+\vspace{0.2cm}
+\noindent\textcolor{myblue}{\rule{\textwidth}{1.1pt}}
+\vspace{0.12cm}
+
+\markboth{Résumé}{Résumé}
+
+{\noindent\Large\sffamily\bfseries Résumé\par}
+
+\vspace{0.1cm}
+\noindent\textcolor{myblue}{\rule{\textwidth}{1.1pt}}
+
+\vspace{0.15cm}
+
+\noindent La Matrice de Délégation d'Autorité (DAM) de la Banque africaine de
+développement précise, pour chaque activité opérationnelle, les rôles habilités à
+l'approuver, la réviser, la vérifier ou l'initier, ainsi que ceux devant en être
+informés. Consultée sous forme de PDF, page par page, elle se prête à l'erreur :
+l'autorité est codée sur dix-sept niveaux couvrant cinq obligations distinctes, et des
+activités presque identiques peuvent relever d'approbateurs différents selon un seuil
+monétaire. Une erreur de lecture relève donc de la gouvernance, non d'un simple
+désagrément, une approbation hors délégation pouvant paraître parfaitement légitime à
+l'ensemble des intervenants.
+
+\vspace{0.15cm}
+
+\noindent Ce travail livre un agent répondant aux questions d'autorité sur la DAM sans
+rien inventer. Une chaîne déterministe en huit étapes extrait la matrice en un graphe de
+327 nœuds d'activité, 1 776 responsabilités, 131 rôles et 2 108 arêtes, avec un taux de
+rôles non résolus de 0,6 \%. Les questions sont résolues sur ce graphe, par identifiant ou
+recherche lexicale TF-IDF avec correction orthographique déterministe, et les réponses
+sont assemblées à partir du graphe plutôt que générées : le modèle de langue reformule
+seulement une réponse déjà assemblée, et une vérification écarte toute reformulation
+ayant omis un fait. L'agent est livré comme plateforme authentifiée FastAPI/React
+(persistance des conversations, saisie vocale, pièces jointes, partage en temps réel,
+tableau de bord analytique), déployée et accessible publiquement.
+
+\vspace{0.1cm}
+
+\noindent\textbf{Mots-clés :} Graphe de connaissances ; Génération ancrée ; Génération
+augmentée par récupération ; Délégation d'autorité ; Gouvernance et conformité ;
+Extraction documentaire ; TF-IDF ; Question-réponse ; Réduction des hallucinations ;
+Banque Africaine de Développement.
+
+\end{singlespace}
+
+% ===================== END ABSTRACT =====================

@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { LANGUAGE_OPTIONS } from '../i18n.js';
+import { LANGUAGE_NAMES, LANGUAGE_OPTIONS } from '../i18n.js';
 
-export default function LanguagePicker({ value, onChange }) {
+// detected: the resolved language code while value === 'auto' (see
+// Chat.jsx's autoDetectedLang) - shown next to "Auto" so it's obvious
+// the whole UI just followed what the user typed, not just the answer.
+export default function LanguagePicker({ value, onChange, detected }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
 
@@ -16,6 +19,10 @@ export default function LanguagePicker({ value, onChange }) {
   }, []);
 
   const current = LANGUAGE_OPTIONS.find((o) => o.value === value) || LANGUAGE_OPTIONS[0];
+  const toggleLabel =
+    value === 'auto' && detected && LANGUAGE_NAMES[detected]
+      ? `Auto · ${LANGUAGE_NAMES[detected]}`
+      : current.label;
 
   return (
     <div className="lang-picker" ref={rootRef}>
@@ -28,7 +35,7 @@ export default function LanguagePicker({ value, onChange }) {
         onClick={() => setOpen((o) => !o)}
       >
         <span aria-hidden="true">&#127760;</span>
-        <span>{current.label}</span>
+        <span>{toggleLabel}</span>
         <span className="lang-picker-caret">&#9662;</span>
       </button>
       <ul className="lang-picker-menu" role="listbox" hidden={!open}>

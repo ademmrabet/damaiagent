@@ -16,7 +16,7 @@ import {
   transcribeAudio,
   uploadFile,
 } from '../api.js';
-import { LANGUAGE_NAMES, RTL_LANGUAGES, SPEECH_LANG_TAGS, stringsFor } from '../i18n.js';
+import { LANGUAGE_NAMES, RTL_LANGUAGES, SPEECH_LANG_TAGS, detectLanguage, stringsFor } from '../i18n.js';
 import './chat.css';
 
 function isLowConfidence(data) {
@@ -376,6 +376,15 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [llmMode, setLlmMode] = useState('auto');
   const [uiLanguage, setUiLanguage] = useState('auto');
+  // Only meaningful when uiLanguage === 'auto': the best guess so far
+  // at what language the user is writing in, so the whole UI chrome
+  // (not just DAM answers) can follow along. Refreshed two ways - see
+  // handleInputChange (instant, client-side, as they type) and
+  // handleSubmit (once a question comes back, the server's own
+  // LLM-based detected_language overwrites the guess with the real
+  // answer). Persists across a cleared input so the chrome doesn't
+  // flicker back to English between questions.
+  const [autoDetectedLang, setAutoDetectedLang] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -391,8 +400,12 @@ export default function Chat() {
   const recordedChunksRef = useRef([]);
 
   const messages = activeConversation ? activeConversation.messages : [];
-  const t = stringsFor(uiLanguage);
-  const isRtl = RTL_LANGUAGES.has(uiLanguage);
+  // The picker's own value stays 'auto' (sent to the backend as-is,
+  // which does its own detection per question); this resolves it to a
+  // concrete code for everything the UI actually renders with.
+  const effectiveLanguage = uiLanguage === 'auto' ? (autoDetectedLang || 'en') : uiLanguage;
+  const t = stringsFor(effectiveLanguage);
+  const isRtl = RTL_LANGUAGES.has(effectiveLanguage);
   // Sharing is view-only (see webapp/models.py's ConversationShare
   // docstring) - a conversation someone else shared with us can be
   // read but never posted into.
@@ -440,6 +453,17 @@ export default function Chat() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleInputChange(e) {
+    const value = e.target.value;
+    setInput(value);
+    if (uiLanguage !== 'auto') return;
+    const guess = detectLanguage(value);
+    // null means "not enough signal yet" (too short, or no distinctive
+    // words found mid-word) - keep whatever we last had rather than
+    // flicker the whole UI back to English between words.
+    if (guess) setAutoDetectedLang(guess);
+  }
 
   async function handleAttachClick() {
     fileInputRef.current?.click();
@@ -492,6 +516,10 @@ export default function Chat() {
         try {
           const text = await transcribeAudio(blob);
           setInput((prev) => (prev ? `${prev} ${text}` : text));
+          if (uiLanguage === 'auto') {
+            const guess = detectLanguage(text);
+            if (guess) setAutoDetectedLang(guess);
+          }
         } catch {
           setVoiceError(t.voiceError);
         } finally {
@@ -536,6 +564,12 @@ export default function Chat() {
     try {
       const data = await askQuestion(question, llmMode, previousNodeId, uiLanguage, attachment);
       const attachmentAnswer = data.source === 'attachment';
+      // The server's detection ran a real LLM over the full question,
+      // so it's more reliable than the client-side heuristic guess -
+      // let it correct the chrome's language once a question lands.
+      if (uiLanguage === 'auto' && data.detected_language) {
+        setAutoDetectedLang(data.detected_language);
+      }
       appendMessage(targetId, {
         role: 'agent',
         text: data.answer,
@@ -576,7 +610,7 @@ export default function Chat() {
         navLabel={t.dashboardLink}
         right={
           <>
-            <LanguagePicker value={uiLanguage} onChange={setUiLanguage} />
+            <LanguagePicker value={uiLanguage} onChange={setUiLanguage} detected={autoDetectedLang} />
             <LlmPicker value={llmMode} onChange={setLlmMode} />
             <LogoutButton />
           </>
@@ -719,7 +753,7 @@ export default function Chat() {
                 }
                 autoComplete="off"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={handleInputChange}
                 disabled={!canPost}
               />
               <button id="send" type="submit" disabled={sending || !canPost}>

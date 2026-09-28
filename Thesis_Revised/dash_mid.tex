@@ -1,0 +1,133 @@
+\subsection{How Indicators Were Chosen}
+
+An indicator earns its place on a dashboard by changing what somebody does. That criterion
+is easy to state and routinely ignored, and the usual result is a wall of counts that is
+read once out of curiosity and never again. Each figure reported here was therefore required
+to answer a specific question that somebody actually has, and the indicators fall into three
+groups according to whose question it is.
+
+The first group answers \emph{is the extraction still correct}, and its audience is whoever
+maintains the pipeline. These are regression instruments: they exist because a parser change
+can break a rule silently, producing a node set that is smaller or emptier or differently
+distributed while every individual record still looks plausible. A sampled manual check does
+not catch that. A number that moves does.
+
+The second group answers \emph{what is in this document}, and its audience is a reader
+trying to understand the matrix as an object rather than to look one activity up. A person
+consulting the DAM sees one activity at a time by construction, which makes the shape of the
+whole invisible to them however carefully they read.
+
+The third group answers \emph{what does this document imply about the institution}, and its
+audience is governance and audit. These are the indicators of Section~\ref{sec:govkpi}, and
+they are specified rather than delivered.
+
+The rest of this section takes the delivered indicators in turn and states, for each, what it
+measures, why it was chosen, and what it turned out to show. Table~\ref{tab:dashkpi}
+summarises them first.
+
+\begin{longtable}{|p{0.27\textwidth}|p{0.11\textwidth}|p{0.14\textwidth}|p{0.36\textwidth}|}
+\caption{Indicators computed by the delivered analytics dashboard.}\label{tab:dashkpi}\\
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Value}} & \textcolor{white}{\textbf{Answers}} & \textcolor{white}{\textbf{Why it is reported}} \\
+\hline
+\endfirsthead
+\hline
+\rowcolor{myblue}\textcolor{white}{\textbf{Indicator}} & \textcolor{white}{\textbf{Value}} & \textcolor{white}{\textbf{Answers}} & \textcolor{white}{\textbf{Why it is reported}} \\
+\hline
+\endhead
+DAM nodes & 327 & What is in it & Establishes the size of the extracted corpus and moves immediately if a parsing change drops records. \\ \hline
+Responsibilities extracted & 1{,}776 & What is in it & The real size of the matrix. Activities are containers; obligations are the content. \\ \hline
+Distinct roles & 131 & What is in it & Bounds how many organisational actors the delegation structure involves at all. \\ \hline
+Graph edges & 2{,}108 & What is in it & Confirms the graph is connected rather than a set of isolated records. \\ \hline
+Unresolved role rate & 0.6\% & Is it correct & The single most sensitive regression detector in the project. \\ \hline
+Average responsibilities per node & 5.48 & What is in it & Procedural weight per activity, and a second regression signal. \\ \hline
+Nodes with no direct responsibilities & 29.6\% & What is in it & Quantifies the redirect structure, and justifies a correctness requirement of the agent. \\ \hline
+Node type distribution & --- & What is in it & Separates structural scaffolding from actionable activity. \\ \hline
+Authority code distribution & --- & What is in it & Shows which obligations the institution actually uses, against the seventeen available. \\ \hline
+Top roles by responsibility count & --- & What is in it & Ranks actors by load and exposes concentration. \\ \hline
+\end{longtable}
+
+\subsection{Correctness Indicators}
+
+\paragraph{Unresolved role rate.} This measures the proportion of responsibilities whose
+authority code was located in a cell but whose owning column could not be determined. It
+exists because of how role attribution works: column headers in the source are printed
+rotated through ninety degrees, are not recoverable as table headers, and must be
+reconstructed by clustering header coordinates and matching each code to a column by
+horizontal alignment. That reconstruction is the most fragile step in the pipeline, and when
+it degrades it does so quietly, attaching obligations to no role at all rather than raising
+an error.
+
+It was added as a development instrument rather than as an analytical one. During the
+geometric attribution work it was the number watched after every change, because a
+modification that improved one page's clustering while breaking another's is invisible in a
+sampled check and unmistakable here. Its present value of 0.6\% is the figure against which
+the pipeline's adequacy is argued in Chapter~\ref{ch:pipeline}, and the ten or so
+responsibilities behind that percentage are the residue of genuinely ambiguous layout rather
+than a systematic fault.
+
+\paragraph{Average responsibilities per node.} At 5.48, this serves a similar purpose from
+the opposite direction. The unresolved rate catches codes that lost their role; this catches
+codes that were never found. A parsing change that stops recognising a code in some layout
+leaves every remaining record perfectly valid, so nothing fails, and the only symptom is that
+activities become quietly thinner. Watching a mean rather than a total matters here, because
+a total also moves when the processed scope changes, and a ratio does not.
+
+\subsection{Structural Indicators}
+
+\paragraph{Node and responsibility counts.} The corpus contains 327 records carrying 1,776
+individual responsibilities. Reporting both is deliberate, because the second is the real
+measure of the matrix and the first is routinely mistaken for it. An activity is a container;
+the obligations attached to it are the content, and a document with few activities and many
+obligations each is a very different thing from the reverse.
+
+\paragraph{Node type distribution.} Records are counted by type, which separates the document
+into structural scaffolding and actionable content. Chapters and processes exist to organise;
+tasks, child tasks and threshold variants are what a user actually asks about. The
+distribution is what makes it possible to say honestly how much of a 79-page document is
+answerable material rather than hierarchy, and it also exposes the threshold-variant
+population, which is the mechanism behind the near-identical-activities problem that motivated
+the whole project in Chapter~\ref{ch:context}.
+
+\paragraph{Authority code distribution.} Seventeen level-qualified notations are available in
+the legend. This indicator shows which of them the institution actually uses and how often,
+and the interesting result is the imbalance: the delegation structure leans heavily on a
+small subset, while several codes appear rarely enough that their meaning is unlikely to be
+familiar to most staff. That is an argument for the glossary expansion built into the agent,
+grounded in a measurement rather than an assumption.
+
+\paragraph{Distinct roles and the role ranking.} There are 131 distinct roles, and the top
+fifteen by obligation count are ranked. The count bounds the size of the delegation structure;
+the ranking exposes its shape. A long flat ranking would indicate authority spread evenly, and
+a steep one indicates concentration in a handful of offices. The delivered ranking is visibly
+steep, which is the observation that motivates the authority-concentration indicator specified
+in Section~\ref{sec:govkpi}.
+
+\paragraph{Graph edges.} The 2,108 edges confirm that the extraction produced a connected
+structure rather than a pile of independent records. It is reported because the difference
+between a list and a graph is the entire premise of the approach: if containment and reference
+edges were absent, the cross-reference following of Chapter~\ref{ch:agent} would have nothing
+to traverse.
+
+\subsection{An Indicator That Changed the Design}
+
+\paragraph{Records with no direct responsibilities.} At 29.6\%, this is the figure with the
+largest consequence in the chapter, and it was not anticipated.
+
+It counts responsibility-bearing records that carry no obligation of their own. Encountering
+it for the first time, the natural reading is that something is broken: nearly a third of the
+extracted activities appear empty. Checking those records against the printed pages showed the
+extraction was correct and the document is simply built that way. Roughly three activities in
+ten record nothing themselves and point to another activity instead.
+
+That reframed a feature as a requirement. Cross-reference following had been treated as a
+refinement, worth having for completeness. This measurement showed that a system without it
+dead-ends on close to a third of the matrix, which is not a gap in polish but a failure on
+routine questions. The redirect path described in Chapter~\ref{ch:agent} exists in the form it
+does because this number was measured before the agent was finished.
+
+It is also the clearest demonstration of why the dashboard was worth building. The fact was
+always present in the document and always invisible to a reader, because a reader
+encountering one empty activity concludes that this activity is unusual. Only the aggregate
+reveals that it is the norm.
+
