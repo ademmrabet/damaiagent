@@ -665,7 +665,7 @@ export default function Chat() {
                 </span>
               )}
               {canPost && (
-                <button type="button" className="share-btn" onClick={() => setShareModalOpen(true)}>
+                <button type="button" className="convo-invite-btn" onClick={() => setShareModalOpen(true)}>
                   Share
                 </button>
               )}

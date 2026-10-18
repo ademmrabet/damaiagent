@@ -39,7 +39,7 @@
   gap: 6px;
 }
 
-.share-btn {
+.convo-invite-btn {
   background: var(--white);
   border: 1px solid var(--gray-border);
   color: var(--text);
@@ -51,7 +51,7 @@
   transition: background-color 0.12s ease;
 }
 
-.share-btn:hover {
+.convo-invite-btn:hover {
   background: var(--gray-border);
 }
 
