@@ -9,6 +9,7 @@ requests
 python-dotenv
 
 # Authentication (users table, password hashing, JWTs, OAuth)
+psycopg[binary]>=3.1
 sqlalchemy
 psycopg2-binary
 passlib[bcrypt]
