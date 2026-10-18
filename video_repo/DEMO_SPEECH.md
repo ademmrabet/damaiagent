@@ -1,40 +1,48 @@
-# Demo speech (spoken text, in order)
+# One demo, 5 minutes: spoken text and actions
 
-Flow of the product: the **landing page** shows two cards, **Chat** and **Dashboard**. Clicking either one opens a **login page**, and after signing in you reach that page. The speech follows this flow, so the login is shown as part of the story, not as a delay.
+One continuous run, 5:00 maximum. Say the text in quotes, do the actions in [brackets]. Use a test account, the hosted app already awake, LLM mode Auto.
 
-Say the text in quotes. Stage directions are in [brackets]. Test account only, no real credentials on screen.
+Product flow: the landing page shows two cards, **Chat** and **Dashboard**. Clicking either opens a **login page**, then you reach that page.
+
+Total: about 560 spoken words. The app needs a few seconds to answer each question: keep talking while it loads, or use the pause.
 
 ---
 
-## DEMO 1: landing, login, chat (slide 8, about 90 s)
+## 0:00 to 0:35 Landing and login
 
-[Landing page appears. Let the animation play for two seconds.]
+[Landing page. Let the animation play two seconds.]
 
-"This is the landing page of the application. Two entry points: the Chat, where you ask questions, and the Dashboard, where you see the matrix at a glance."
+"This is the application. The landing page has two entry points: the Chat, where you ask questions, and the Dashboard, where you see the matrix at a glance."
 
 [Click the Chat card. The login page appears.]
 
-"Both are protected. When I click Chat, I am asked to sign in, because this tool is for Bank staff. I can use my email, or Google, or Microsoft."
+"Both are protected, because this tool is for Bank staff. I can sign in with email, or with Google, or Microsoft."
 
 [Sign in. The chat opens.]
 
-"I am in. LLM mode is on Auto, and my conversations are saved to my account. Let's ask a first question."
+"I am in. Conversations are saved to my account, and the LLM mode is on Auto."
+
+## 0:35 to 1:25 Exact question
 
 [Type `who approves 2.126`, press Enter.]
 
-"Who approves task 2.126?"
+"First question: who approves task 2.126?"
 
-[Answer appears. Move the cursor over the approver, then the Check/Verify and informed lines.]
+[Answer appears. Move the cursor over the approver, then over the Check/Verify and informed lines.]
 
-"The agent names the approver. And look: it also tells me who must check and verify, and who must be informed. In the matrix, those steps are mandatory, so the agent shows them every time, even if I only asked about the approver."
+"The agent names the approver. And look: it also tells me who must check and verify, and who must be informed. In the matrix, those steps are mandatory, so the agent shows them every time, even if I only asked about the approver. A new employee is never told half of the obligations."
+
+## 1:25 to 2:00 Natural language
 
 [Type `who needs to be informed for quarterly mission program`.]
 
-"Now I do not give an id. I describe the task in words."
+"Now I do not give any id. I just describe the task."
 
 [Answer appears.]
 
-"Same task, found from its name."
+"Same task, found from its name. The agent understands what I describe, not only the codes I type."
+
+## 2:00 to 2:30 Typos
 
 [Type `who aproves the qaurterly mision program`.]
 
@@ -42,71 +50,52 @@ Say the text in quotes. Stage directions are in [brackets]. Test account only, n
 
 [Answer appears.]
 
-"Same correct answer. The correction is deterministic, so it works even offline."
+"Same correct answer. The correction is deterministic, based on the matrix's own vocabulary, so it works even offline."
 
-[Type the French question. Show the language badge.]
+## 2:30 to 3:05 French
 
-"And in French. The answer comes in French, and the interface follows."
+[Type the French question. Show the language badge and the interface change.]
 
-[Type `what happens with 9.999.999`.]
+"And now in French. The answer comes in French, and the whole interface follows the language I write in. The role names are never translated, because they are official titles."
 
-"One last question, an id that does not exist."
+## 3:05 to 3:50 Follow-up and redirect
 
-[Refusal appears. Pause two seconds.]
+[Type `who approves of Communication with Co-Financiers of projects`. Then, without naming the subject: `and who are the informed parties?`]
 
-"The agent refuses. It does not guess. This refusal is a feature, not a failure: every real answer must come from a real row of the matrix."
+"I ask about another task, and then I ask a follow-up without repeating the subject. The agent remembers what we were talking about, like a person would."
 
-Bridge: "That is the agent. Now let's see the rest of the platform."
+[Type `who initiates 1.117.2`.]
 
----
+"This task contains only a pointer: 'see 2.120'. The agent follows the reference for me, like flipping to another page in the paper matrix."
 
-## DEMO 2: sharing, voice, upload, dashboard (slide 9, about 90 s)
+## 3:50 to 4:10 Honest refusal
 
-[Still in the chat. Open the conversation sidebar.]
+[Type `what happens with 9.999.999`. Pause two seconds on the refusal.]
 
-"Every conversation is saved in the sidebar, so a user can come back to it later."
+"Last question: an id that does not exist. The agent refuses. It does not guess. This refusal is a feature, not a failure: every real answer must come from a real row of the matrix."
 
-[Click Share. The QR code appears.]
+## 4:10 to 4:35 Sharing and voice
 
-"I can share a conversation with a colleague through a QR code. They scan it, and they are notified live."
+[Click Share, show the QR code. Close it. Click the mic, ask a short question, then click speak-aloud on the answer.]
 
-[Close the modal. Click the mic, ask a question aloud, then click speak-aloud on the answer.]
+"The platform is built for a team. I can share a conversation with a colleague through a QR code, and they are notified live. I can also ask by voice and hear the answer."
 
-"I can ask by voice, and have the answer read back to me. This helps staff who are on the move."
+## 4:35 to 5:00 Dashboard
 
-[Attach the test file, ask a question about it.]
+[Go back to the landing page, click the Dashboard card. If login appears again, sign in. Pick a chapter, then click an action bar.]
 
-"And I can upload a document, for example a Word file or a PDF, and ask questions about it."
+"Back to the landing page, now the Dashboard, with the same protection. I filter by chapter, and I click an action code to see which roles perform it most. That is the whole matrix at a glance."
 
-[Go back to the landing page. Click the Dashboard card. If the login page appears, sign in again.]
-
-"Back on the landing page, I now click Dashboard. The same protection applies: access is only for authenticated users."
-
-[Dashboard opens. Pick a chapter in the filter.]
-
-"The dashboard gives a view of the whole matrix. I can filter by chapter, and every card and chart updates."
-
-[Click a bar in the action-code chart. The roles chart changes.]
-
-"If I click an action code, for example Approve, I see which roles approve the most. And these two coverage indicators are real data-quality signals about the extraction: the average responsibilities per task, and the share of tasks with no direct responsibility."
-
-Bridge: "So we have a working product. The next question is: how do I know it is correct? Let's talk about evaluation."
+Bridge: "So we have a working product. How do I know it is correct? Let's look at the evaluation."
 
 ---
 
-## Timing
+## Cutting and safety
 
-- Demo 1: about 90 s. To cut to 60 s, remove the description question and the typos question, keep the French one.
-- Demo 2: about 90 s. To cut to 60 s, remove the voice step.
-- Never cut: the login moment (it shows security), the Check/Verify remark, and the refusal.
-
-## If the login does not appear a second time
-
-The session may still be active when you click the Dashboard card. Say: "I am still signed in, so the dashboard opens directly." Do not apologise, it is normal behaviour.
-
-## If something goes wrong
-
-- **Video fails:** "Let me show it live." Open the live tab, start from the landing page, and follow the same speech.
-- **Slow first load (free tier waking up):** "The hosted version sleeps when unused. This is a free-tier limit, not an architecture limit."
-- **LLM down, plain answer:** "The language model is unavailable, so the agent returns the structured answer. The user still gets a correct answer. That is the design."
-- **Login fails on stage:** use the test account kept in a notes file, and say: "I will use my demo account."
+- Over 5:00? Cut the follow-up and redirect part (3:05 to 3:50), then voice. Never cut: login, the Check/Verify remark, the refusal, the Dashboard.
+- Under 4:30? Add the upload of a short Word file (ask a question about it) after the voice step.
+- Login appears again on the Dashboard click? Sign in. If it does not, say: "I am still signed in, so it opens directly."
+- Video fails: "Let me show it live." Switch to the live tab and follow the same order.
+- Slow first answer (free tier waking): "The hosted version sleeps when unused. This is a free-tier limit, not an architecture limit."
+- LLM down, plain answer: "The language model is unavailable, so the agent returns the structured answer. The user still gets a correct answer. That is the design."
+- Test the French question and any question you have not run before. If an answer differs from what is described, adapt your words to what is on screen.
