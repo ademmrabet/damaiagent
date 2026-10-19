@@ -21,10 +21,6 @@ def test_save_then_load_round_trips_losslessly(tmp_path, live_nodes):
 
 
 def test_computed_fields_are_not_persisted_to_disk(tmp_path, live_nodes):
-    # has_children/actions are @computed_field on Node - real work if
-    # they silently doubled the file size for no reason, since they're
-    # 100% derivable from children/responsibilities and load_nodes()
-    # recomputes them for free the moment each Node is reconstructed.
     import json
 
     cache_path = tmp_path / "nodes.json"

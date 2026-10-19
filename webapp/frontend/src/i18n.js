@@ -1,19 +1,4 @@
-// Static UI-chrome translations for the Chat page (2026-09-03, see
-// docs/decisions.md). Deliberately separate from the LLM-based
-// translation shim in llm/translate.py (Python) - that path exists
-// for arbitrary, dynamic DAM answer text where the exact wording
-// can't be known ahead of time. This file is the opposite case: a
-// small, fixed set of interface strings (button labels, placeholders,
-// meta text) that are the same on every load - translating those with
-// an LLM call would be slower, cost money on every page view, and
-// risk a slightly different phrasing each time for text that should
-// be stable. Hand-translated once, here, like any normal i18n
-// dictionary.
-//
-// Scope: the Chat page only (header subtitle, input area, message
-// meta line, empty state). The conversation sidebar ("+ New chat",
-// timestamps) and the Dashboard page are left in English for now -
-// a reasonable follow-up, not folded into this pass.
+// static ui translations (fixed interface strings, no llm needed)
 
 export const LANGUAGE_NAMES = {
   en: 'English',
@@ -23,10 +8,6 @@ export const LANGUAGE_NAMES = {
   ar: 'Arabic',
 };
 
-// Options shown in the LanguagePicker - kept separate from
-// LANGUAGE_NAMES (used for the small per-message badge, always in
-// English) since these are the picker's own display labels, correctly
-// self-named in each language rather than translated from English.
 export const LANGUAGE_OPTIONS = [
   { value: 'auto', label: 'Auto', sub: 'detect from question' },
   { value: 'en', label: 'English', sub: '' },
@@ -38,10 +19,6 @@ export const LANGUAGE_OPTIONS = [
 
 export const RTL_LANGUAGES = new Set(['ar']);
 
-// BCP-47 tags for the Web Speech API's SpeechSynthesisUtterance.lang -
-// this app's own codes are the plain 2-letter ones above (matching
-// answer_language from webapp/backend.py's /api/ask), but the browser
-// speech APIs expect a full locale tag to pick a matching voice.
 export const SPEECH_LANG_TAGS = {
   en: 'en-US',
   fr: 'fr-FR',
@@ -193,13 +170,6 @@ export const UI_STRINGS = {
   },
 };
 
-// uiLanguage is 'auto'/'en'/'fr'/'es'/'pt'/'ar' - the picker's own
-// value. 'auto' has no dedicated dictionary of its own - the caller
-// (Chat.jsx) resolves 'auto' to a concrete code first, via
-// detectLanguage below (as the user types) and the server's own
-// detected_language (once a question has been answered), and passes
-// THAT resolved code in here. Falls back to English chrome if nothing
-// has been detected yet, same as picking English explicitly.
 export function stringsFor(uiLanguage) {
   return UI_STRINGS[uiLanguage] || UI_STRINGS.en;
 }
@@ -208,15 +178,6 @@ const ARABIC_SCRIPT = /[؀-ۿ]/;
 const ACCENTED_LATIN = /[àâäéèêëïîôöùûüçñãõ]/i;
 const WORD_RE = /[a-zà-ÿ']+/g;
 
-// Same word lists and "one whole-word hit is enough" logic as
-// llm/translate.py's looks_non_english (see that docstring for why
-// it's safe to be this loose) - duplicated here rather than shared
-// because this one runs client-side, per keystroke, with no network
-// round trip, and needs to name WHICH language, not just "non-
-// English". Best-effort guess, not a real detector. Returns null when
-// there isn't enough text yet or nothing distinctive was found, so
-// the caller can just keep whatever language it last had rather than
-// flicker back to English between words.
 const FUNCTION_WORDS = {
   fr: new Set([
     'le', 'la', 'les', 'des', 'une', 'qui', 'que', 'pour', 'dans',
@@ -230,6 +191,7 @@ const FUNCTION_WORDS = {
     'os', 'que', 'uma', 'por', 'para', 'com', 'quem', 'quais', 'qual',
   ]),
 };
+// quick client-side guess of the language while the user types
 
 export function detectLanguage(text) {
   if (!text || text.trim().length < 3) return null;
@@ -250,10 +212,6 @@ export function detectLanguage(text) {
   }
   if (bestLang) return bestLang;
 
-  // Accented Latin with no function-word hit yet (still mid-word, or
-  // a name/code with a stray accent) - likely fr/es/pt but not clear
-  // which; fr is the most common case for this app's users, so it's
-  // the least-bad default until a real word lands the tie-break above.
   if (ACCENTED_LATIN.test(text)) return 'fr';
 
   return 'en';

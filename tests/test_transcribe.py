@@ -16,9 +16,6 @@ def _ok_response(json_body):
 
 
 def test_transcribe_without_api_key_raises_unavailable_no_network_call(monkeypatch):
-    # Same leakage concern test_llm.py's Groq tests document: importing
-    # webapp.backend triggers load_dotenv(), which can pick up a real
-    # local GROQ_API_KEY - clear it explicitly rather than assume absent.
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
     with patch("llm.transcribe.requests.post") as post:
         with pytest.raises(LLMUnavailableError):

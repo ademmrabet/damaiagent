@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import './conversationSidebar.css';
+// list of own and shared conversations
 
 export default function ConversationSidebar({
   conversations,
@@ -14,11 +15,6 @@ export default function ConversationSidebar({
 }) {
   const listRef = useRef(null);
 
-  // Only conversations with at least one message are listed - an
-  // empty "New chat" you're currently composing in doesn't need its
-  // own row (you're already looking at it), and clicking "+ New chat"
-  // repeatedly without sending anything shouldn't pile up empty
-  // entries in the list.
   const visible = conversations.filter(
     (c) => c.messages.length > 0 || c.id === activeId
   );

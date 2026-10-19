@@ -28,7 +28,10 @@ class TestOllamaProvider:
 
     def test_chat_network_failure_raises_unavailable(self):
         provider = OllamaProvider(host="http://fake-ollama:11434")
-        with patch("llm.ollama_provider.requests.post", side_effect=requests.ConnectionError("refused")):
+        with patch(
+            "llm.ollama_provider.requests.post",
+            side_effect=requests.ConnectionError("refused"),
+        ):
             with pytest.raises(LLMUnavailableError):
                 provider.chat("system", "user")
 
@@ -47,19 +50,14 @@ class TestOllamaProvider:
 
     def test_is_available_false_on_connection_error(self):
         provider = OllamaProvider(host="http://fake-ollama:11434")
-        with patch("llm.ollama_provider.requests.get", side_effect=requests.ConnectionError()):
+        with patch(
+            "llm.ollama_provider.requests.get", side_effect=requests.ConnectionError()
+        ):
             assert provider.is_available() is False
 
 
 class TestGroqProvider:
     def test_chat_without_api_key_raises_unavailable_no_network_call(self, monkeypatch):
-        # Explicitly cleared rather than relying on it being absent -
-        # this test previously passed in isolation but failed whenever
-        # run in the same session as test_backend.py, because
-        # importing webapp.backend triggers load_dotenv(), which picks
-        # up a real local GROQ_API_KEY from .env and leaks it in here.
-        # Documented as a known gap in docs/decisions.md (2026-08-06);
-        # fixing it directly now since it kept resurfacing.
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         provider = GroqProvider(api_key=None)
         with patch("llm.groq_provider.requests.post") as post:
@@ -85,10 +83,6 @@ class TestGroqProvider:
                 provider.chat("system", "user")
 
     def test_supports_vision_is_true(self):
-        # OllamaProvider (and LLMProvider's own default) is False - see
-        # llm/base.py and llm/attachments.py's image-answering path,
-        # which uses this to decide whether an image can be answered
-        # at all rather than guessing at Ollama's local model.
         assert GroqProvider.supports_vision is True
         assert OllamaProvider.supports_vision is False
 
@@ -100,32 +94,37 @@ class TestGroqProvider:
             post.return_value = _ok_response(
                 {"choices": [{"message": {"content": "a diagram of authority codes"}}]}
             )
-            result = provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+            result = provider.chat_with_image(
+                "system", "what's this?", "data:image/png;base64,Zm9v"
+            )
 
         assert result == "a diagram of authority codes"
         body = post.call_args.kwargs["json"]
-        # Always the vision model, never the text-chat model configured
-        # above - a vision request against a non-vision model would
-        # just fail or silently ignore the image.
         assert body["model"] == VISION_MODEL
         assert body["model"] != "openai/gpt-oss-120b"
         user_content = body["messages"][1]["content"]
         assert user_content[0] == {"type": "text", "text": "what's this?"}
         assert user_content[1]["image_url"]["url"] == "data:image/png;base64,Zm9v"
 
-    def test_chat_with_image_without_api_key_raises_unavailable_no_network_call(self, monkeypatch):
+    def test_chat_with_image_without_api_key_raises_unavailable_no_network_call(
+        self, monkeypatch
+    ):
         monkeypatch.delenv("GROQ_API_KEY", raising=False)
         provider = GroqProvider(api_key=None)
         with patch("llm.groq_provider.requests.post") as post:
             with pytest.raises(LLMUnavailableError):
-                provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+                provider.chat_with_image(
+                    "system", "what's this?", "data:image/png;base64,Zm9v"
+                )
         post.assert_not_called()
 
     def test_chat_with_image_network_failure_raises_unavailable(self):
         provider = GroqProvider(api_key="fake-key")
         with patch("llm.groq_provider.requests.post", side_effect=requests.Timeout()):
             with pytest.raises(LLMUnavailableError):
-                provider.chat_with_image("system", "what's this?", "data:image/png;base64,Zm9v")
+                provider.chat_with_image(
+                    "system", "what's this?", "data:image/png;base64,Zm9v"
+                )
 
 
 class TestRouter:
@@ -140,11 +139,10 @@ class TestRouter:
         assert isinstance(resolve_provider("groq"), GroqProvider)
 
     def test_auto_prefers_groq_when_key_is_set(self, monkeypatch):
-        # Reversed 2026-08-06 at Adem's request: Auto now prefers the
-        # API first. Ollama being reachable shouldn't matter at all
-        # here - is_available() is never even called on this path.
         monkeypatch.setenv("GROQ_API_KEY", "fake-key")
-        with patch("llm.router.OllamaProvider.is_available", return_value=True) as is_available:
+        with patch(
+            "llm.router.OllamaProvider.is_available", return_value=True
+        ) as is_available:
             provider = resolve_provider("auto")
         assert isinstance(provider, GroqProvider)
         is_available.assert_not_called()

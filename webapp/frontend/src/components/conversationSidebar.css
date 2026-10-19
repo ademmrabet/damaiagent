@@ -114,12 +114,6 @@
   display: none;
 }
 
-/* Below this width the sidebar stops being a permanent column and
-   becomes an off-canvas drawer instead - a fixed 240px column was
-   eating a third of a phone's width just to show conversation titles.
-   Desktop ignores .open entirely (the rule only exists inside this
-   media query), so there's no JS/CSS conflict to reconcile - the same
-   state just means two different things at two widths. */
 @media (max-width: 720px) {
   .conversation-sidebar {
     position: fixed;

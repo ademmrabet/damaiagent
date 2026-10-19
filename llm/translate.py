@@ -15,38 +15,53 @@ _ACCENTED_LATIN = re.compile(r"[àâäéèêëïîôöùûüçñãõ]", re.IGNOR
 _WORD_RE = re.compile(r"[a-zà-ÿ']+")
 _FUNCTION_WORDS = {
     "fr": {
-        "le", "la", "les", "des", "une", "qui", "que", "pour", "dans",
-        "est", "du", "avec", "sont", "quels", "quelles",
+        "le",
+        "la",
+        "les",
+        "des",
+        "une",
+        "qui",
+        "que",
+        "pour",
+        "dans",
+        "est",
+        "du",
+        "avec",
+        "sont",
+        "quels",
+        "quelles",
     },
     "es": {
-        "el", "los", "las", "que", "es", "una", "por", "para", "con",
-        "quien", "quienes", "cuales", "cual",
+        "el",
+        "los",
+        "las",
+        "que",
+        "es",
+        "una",
+        "por",
+        "para",
+        "con",
+        "quien",
+        "quienes",
+        "cuales",
+        "cual",
     },
     "pt": {
-        "os", "que", "uma", "por", "para", "com", "quem", "quais", "qual",
+        "os",
+        "que",
+        "uma",
+        "por",
+        "para",
+        "com",
+        "quem",
+        "quais",
+        "qual",
     },
 }
 
 
+# quick guess whether the text is not english
 def looks_non_english(text):
-    """
-    Best-effort guess, not a real language detector - just cheap
-    enough to gate the expensive path. True if `text` looks like it
-    MIGHT be French/Spanish/Portuguese/Arabic; False if it looks like
-    plain English (or is too ambiguous to tell either way).
-
-    A single whole-word hit is enough - measured directly against a
-    realistic short question ("qui approuve 3.111", the natural French
-    phrasing of "who approves 3.111") that only contains ONE real
-    function word ("qui") once the DAM-specific verb is excluded; a
-    2-hit requirement (an earlier version of this check) missed it
-    entirely. Safe to be this loose specifically because every word
-    list above was first checked for collisions against ordinary
-    English DAM vocabulary and had the risky ones (bare "o", "as")
-    removed - a false positive here only costs one extra, self-
-    correcting translation round trip (the model reports LANGUAGE: en
-    and returns the text unchanged), never a wrong answer.
-    """
     if _ARABIC_SCRIPT.search(text):
         return True
     if _ACCENTED_LATIN.search(text):
@@ -76,17 +91,14 @@ _LANGUAGE_LINE = re.compile(r"^LANGUAGE:\s*([a-z]{2})", re.IGNORECASE | re.MULTI
 _TRANSLATED_LINE = re.compile(r"^TRANSLATED:\s*(.+)$", re.IGNORECASE | re.MULTILINE)
 
 
+# detect the language and translate the question to english
 def detect_and_translate_to_english(text, provider):
-    """
-    Returns {"language": str, "translated_text": str, "used_llm": bool,
-    "error": str|None}. Falls back to treating the text as English
-    unchanged on any failure (provider unavailable, network error,
-    unparseable response) - the caller always has a safe, usable
-    English query to run the deterministic pipeline on, even if
-    translation itself failed outright. Only ever changes retrieval
-    behavior when it actually succeeded.
-    """
-    fallback = {"language": "en", "translated_text": text, "used_llm": False, "error": None}
+    fallback = {
+        "language": "en",
+        "translated_text": text,
+        "used_llm": False,
+        "error": None,
+    }
 
     if provider is None:
         return {**fallback, "error": "No LLM provider available for translation."}
@@ -100,7 +112,10 @@ def detect_and_translate_to_english(text, provider):
     text_match = _TRANSLATED_LINE.search(raw)
 
     if not lang_match or not text_match:
-        return {**fallback, "error": "Translation response was not in the expected format."}
+        return {
+            **fallback,
+            "error": "Translation response was not in the expected format.",
+        }
 
     language = lang_match.group(1).lower()
     translated = text_match.group(1).strip()
@@ -111,21 +126,16 @@ def detect_and_translate_to_english(text, provider):
             "error": f"Unrecognized language code {language!r} in translation response.",
         }
 
-    return {"language": language, "translated_text": translated, "used_llm": True, "error": None}
+    return {
+        "language": language,
+        "translated_text": translated,
+        "used_llm": True,
+        "error": None,
+    }
 
 
+# translate an english answer into the user's language
 def translate_text(text, target_language, provider):
-    """
-    Translates an already-composed English message (a static
-    smalltalk/help/error reply - NOT a grounded DAM fact answer, those
-    go through agent.generate.humanize_answer's own, stricter,
-    grounding-checked path instead, since there are real facts in them
-    worth protecting from fabrication) into `target_language`.
-
-    Returns {"text": str, "used_llm": bool, "error": str|None} -
-    "text" is always safe to show, falling back to the original
-    English message on any failure.
-    """
     if target_language == "en" or target_language not in LANGUAGE_NAMES:
         return {"text": text, "used_llm": False, "error": None}
 
@@ -151,6 +161,10 @@ def translate_text(text, target_language, provider):
         return {"text": text, "used_llm": False, "error": str(exc)}
 
     if not translated:
-        return {"text": text, "used_llm": False, "error": "Translation returned empty output."}
+        return {
+            "text": text,
+            "used_llm": False,
+            "error": "Translation returned empty output.",
+        }
 
     return {"text": translated, "used_llm": True, "error": None}

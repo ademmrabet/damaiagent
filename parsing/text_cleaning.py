@@ -1,7 +1,7 @@
-
 import re
 
 
+# join digits the pdf split apart
 def normalize_split_numbers(text):
     if not text:
         return ""
@@ -9,15 +9,16 @@ def normalize_split_numbers(text):
     return re.sub(r"\b(\d)\s+(\d)\b", r"\1\2", text)
 
 
+# fix words printed letter by letter
 def collapse_spaced_words(text):
     if not text:
         return ""
 
-    pattern = re.compile(r'(?:\b[A-Za-z]\b(?:\s+|$)){2,}')
+    pattern = re.compile(r"(?:\b[A-Za-z]\b(?:\s+|$)){2,}")
 
     def repl(match):
-        letters = re.findall(r'[A-Za-z]', match.group())
-        joined = ''.join(letters)
+        letters = re.findall(r"[A-Za-z]", match.group())
+        joined = "".join(letters)
 
         if set(joined) <= {"I", "C", "R", "A"}:
             return match.group()
@@ -27,6 +28,7 @@ def collapse_spaced_words(text):
     return pattern.sub(repl, text)
 
 
+# collapse repeated spaces
 def normalize_whitespace(text):
     if not text:
         return ""
@@ -34,15 +36,8 @@ def normalize_whitespace(text):
     return " ".join(text.split())
 
 
+# hard-coded fixes for a few known extraction errors
 def fix_known_ocr_errors(text):
-    """
-    KNOWN DEBT: this is a hardcoded list of specific strings seen to
-    be broken in this specific PDF ("Region alPortfolio" -> "Regional
-    Portfolio"), not a general rule. It'll silently do nothing for the
-    next OCR glitch that isn't already on this list. Fine for a 9-day
-    build on a known, bounded set of tables; call it out explicitly
-    in the report as a limitation, don't pretend it's a general fix.
-    """
 
     if not text:
         return ""
@@ -55,8 +50,8 @@ def fix_known_ocr_errors(text):
     return text
 
 
+# run all the cleaning steps in order
 def clean(text):
-    """Runs the full OCR-cleanup pipeline in the order that matters."""
 
     text = normalize_split_numbers(text)
     text = collapse_spaced_words(text)

@@ -1,25 +1,4 @@
-"""
-Database connection and session management for the users table.
-
-Deliberately separate from the DAM knowledge base: nodes/graph are
-immutable, in-memory, and loaded once from data/processed/nodes.json
-(see dashboard_data.py and backend.py's load_dam()). Accounts,
-passwords, and OAuth links are a different kind of data - mutable,
-per-user, and needing to survive process restarts - so they get a
-real database instead.
-
-DATABASE_URL controls where that database lives:
-  - Locally, with no DATABASE_URL set, this falls back to a SQLite
-    file (local_dev.db) so auth can be built and tested without
-    signing up for a hosted database first.
-  - In production, DATABASE_URL should point at a Postgres instance
-    with a persistent disk (Neon, Supabase, or similar) - Render's
-    own free tier has no persistent disk, so a SQLite file there
-    would be wiped on every redeploy, silently deleting every
-    registered user. This mirrors the exact class of problem that
-    forced the nodes-cache change described in Chapter 3/5 (Render
-    OOM-killing a process that assumed local state would persist).
-"""
+# database connection and sessions
 
 import os
 
@@ -36,8 +15,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+# dependency: one database session per request
 def get_db():
-    """FastAPI dependency: yields a session, always closes it after the request."""
     db = SessionLocal()
     try:
         yield db
@@ -45,8 +24,8 @@ def get_db():
         db.close()
 
 
+# create the tables, safe to run on every startup
 def init_db():
-    """Create tables that don't exist yet. Safe to call on every startup."""
     from webapp import models
 
     Base.metadata.create_all(bind=engine)

@@ -1,11 +1,3 @@
-"""
-Unit tests for the SSE pub/sub in webapp/events.py - see its docstring
-and webapp/backend.py's /api/events for how this backs the sidebar's
-real-time refresh (2026-09-20, see docs/decisions.md). Deliberately
-tested in isolation from FastAPI/TestClient here; test_backend.py
-covers the actual /api/events route's auth handling.
-"""
-
 from webapp.events import notify_user, notify_users, subscribe, unsubscribe
 
 
@@ -57,10 +49,6 @@ def test_unsubscribe_stops_further_delivery():
 
 
 def test_notify_user_accepts_non_string_ids_matching_subscribe():
-    # Callers in backend.py sometimes pass a SQLAlchemy UUID column
-    # value straight through rather than str(...)-ing it first (e.g.
-    # ConversationShare.shared_with_user_id) - notify_user normalizes
-    # both sides to str so that still reaches the right queue.
     queue = subscribe("user-4")
     try:
         notify_user("user-4", {"type": "shared"})

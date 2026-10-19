@@ -21,20 +21,23 @@ def test_lookup_term_returns_none_for_unknown_term():
     assert lookup_term("NOTAREALCODE") is None
 
 
-@pytest.mark.parametrize("query", [
-    "what does DDG mean",
-    "what does DDG stand for",
-    "what does DDG stand For?",
-    "what does DDG stands for",  # real query Adem tried live - grammatically
-    "what does DDG stands for?",  # off ("stands" not "stand") but very natural
-    "what does the acronym DDG mean",
-    "define DDG",
-    "what is the meaning of DDG",
-    "what's DDG?",
-    "what's DDG",
-    "whats DDG",
-    "what is DDG",
-])
+@pytest.mark.parametrize(
+    "query",
+    [
+        "what does DDG mean",
+        "what does DDG stand for",
+        "what does DDG stand For?",
+        "what does DDG stands for",
+        "what does DDG stands for?",
+        "what does the acronym DDG mean",
+        "define DDG",
+        "what is the meaning of DDG",
+        "what's DDG?",
+        "what's DDG",
+        "whats DDG",
+        "what is DDG",
+    ],
+)
 def test_glossary_trigger_phrasings_all_detect_the_same_term(query):
     detection = detect_glossary_query(query)
     assert detection is not None
@@ -43,11 +46,6 @@ def test_glossary_trigger_phrasings_all_detect_the_same_term(query):
 
 
 def test_rdng_resolves_via_manual_alias_even_though_its_not_in_the_pdf_list():
-    # Real gap Adem hit live: "RDNG" appears directly in DAM role names
-    # ("RDG / Director RDNG") but the Abbreviations pages (2-7) never
-    # define it as its own entry - only "RDG" is defined there. Added
-    # as a hand-written MANUAL_ALIASES entry (agent/glossary.py) since
-    # it's a real term the DAM uses, not a parsing bug to fix.
     found = lookup_term("RDNG")
     assert found is not None
     assert "Nigeria" in found[1]
@@ -61,18 +59,18 @@ def test_rdng_reachable_through_the_full_detection_and_formatting_path():
     assert "RDNG stands for" in answer
 
 
-@pytest.mark.parametrize("query", [
-    "who approves 2.120",
-    "what is 2.120",
-    "who initiates the mission program",
-    "hello",
-    "what is the mission program",
-    "what's XYZQ",  # bare form + unresolved term: falls through, not an honest "not found"
-])
+@pytest.mark.parametrize(
+    "query",
+    [
+        "who approves 2.120",
+        "what is 2.120",
+        "who initiates the mission program",
+        "hello",
+        "what is the mission program",
+        "what's XYZQ",
+    ],
+)
 def test_ordinary_dam_questions_never_trigger_the_glossary_path(query):
-    # The glossary trigger phrasing is deliberately narrow so it never
-    # intercepts a normal DAM-task question - especially "what is X",
-    # which would otherwise collide with real id lookups.
     assert detect_glossary_query(query) is None
 
 
@@ -165,7 +163,4 @@ def test_role_list_answer_inline_expands_a_known_acronym_role(setup):
         "who approves 1.114.1", nodes, graph, vectorizer, matrix, searchable_ids
     )
 
-    # 1.114.1's real approvers include CODE (Committee on Development
-    # Effectiveness) - confirmed via responsible_roles() before writing
-    # this test.
     assert "CODE (Committee on Development Effectiveness)" in result["answer"]

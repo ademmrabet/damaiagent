@@ -32,8 +32,7 @@ def _blocks_by_id(page_index):
 
 
 @pytest.mark.parametrize(
-    "task_id",
-    [tid for tid, c in CASES.items() if c["status"] == "fixed"]
+    "task_id", [tid for tid, c in CASES.items() if c["status"] == "fixed"]
 )
 def test_title_matches_expected(task_id):
     case = CASES[task_id]
@@ -84,9 +83,6 @@ def test_see_id_references_extracted_from_real_pages(task_id):
 
 @pytest.mark.parametrize("task_id", ["1.114.1", "1.114.2"])
 def test_hyphen_suffixed_digit_survives_title_extraction(task_id):
-    # Real regression: "3-Year Rolling Business Plan" was coming out
-    # as "-Year Rolling Business Plan" - the digit before a hyphen was
-    # being stripped as if it were a footnote number.
     case = CASES[task_id]
     blocks = _blocks_by_id(case["page_index"])
     raw = blocks[task_id]
@@ -108,28 +104,31 @@ def test_threshold_variant_ids_reconstructed():
     assert get_node_type(THRESHOLD_VARIANT_PARENT) == "child_task"
 
 
-@pytest.mark.parametrize("variant_id,expected_title", [
-    ("2.513.3.a", "Up to UA 2,000,000"),
-    ("2.513.3.c", "Over UA 10,000,000"),
-])
+@pytest.mark.parametrize(
+    "variant_id,expected_title",
+    [
+        ("2.513.3.a", "Up to UA 2,000,000"),
+        ("2.513.3.c", "Over UA 10,000,000"),
+    ],
+)
 def test_threshold_variant_titles_are_clean(variant_id, expected_title):
     blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
     raw = blocks[variant_id]
     assert extract_title(raw, variant_id) == expected_title
 
 
-@pytest.mark.xfail(reason=(
-    "NOTE_PATTERN's comma-adjacency fix only catches comma-formatted "
-    "amounts (2,000,000). '2 million' / '10 million' are plain "
-    "space-separated digits with no comma and no other distinguishing "
-    "text signal, so they still get stripped as false footnote "
-    "numbers. This needs real superscript/geometry detection (v1's "
-    "original approach for footnote markers) to fix properly, not "
-    "another text-pattern special case."
-))
+@pytest.mark.xfail(
+    reason=(
+        "NOTE_PATTERN's comma-adjacency fix only catches comma-formatted "
+        "amounts (2,000,000). '2 million' / '10 million' are plain "
+        "space-separated digits with no comma and no other distinguishing "
+        "text signal, so they still get stripped as false footnote "
+        "numbers. This needs real superscript/geometry detection (v1's "
+        "original approach for footnote markers) to fix properly, not "
+        "another text-pattern special case."
+    )
+)
 def test_threshold_variant_2513_3b_needs_geometry():
     blocks = _blocks_by_id(THRESHOLD_VARIANT_PAGE_INDEX)
     raw = blocks["2.513.3.b"]
     assert extract_title(raw, "2.513.3.b") == "Over UA 2 million up to UA 10 million"
-
-

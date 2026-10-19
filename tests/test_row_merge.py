@@ -26,11 +26,11 @@ def page_58_blocks():
     chars = page.chars
     lines = ordered_lines(build_rows(words))
     blocks = build_task_blocks(lines)
-    return {
-        get_identifier(b["text"]): b
-        for b in blocks
-        if get_identifier(b["text"])
-    }, chars, words
+    return (
+        {get_identifier(b["text"]): b for b in blocks if get_identifier(b["text"])},
+        chars,
+        words,
+    )
 
 
 @pytest.mark.parametrize("task_id", list(ROW_SPLIT_EXPECTED.keys()))
@@ -43,9 +43,7 @@ def test_row_split_actions_match_screenshot(page_58_blocks, task_id):
     )
     informed = extract_informed_instances(chars, block["top"], block["bottom"])
 
-    found = sorted(
-        (i["action"], i["level"]) for i in actions + informed
-    )
+    found = sorted((i["action"], i["level"]) for i in actions + informed)
     expected = sorted(ROW_SPLIT_EXPECTED[task_id])
 
     assert found == expected, f"{task_id}: expected {expected}, got {found}"

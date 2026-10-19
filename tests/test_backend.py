@@ -1,4 +1,3 @@
-
 from unittest.mock import patch
 
 import pytest
@@ -23,8 +22,13 @@ def test_health_reports_nodes_loaded(client):
 
 
 def test_ask_by_id_and_by_title_agree(client):
-    by_id = client.post("/api/ask", json={"question": "who are the informed parties for 2.126"})
-    by_title = client.post("/api/ask", json={"question": "who needs to be informed for quarterly mission program"})
+    by_id = client.post(
+        "/api/ask", json={"question": "who are the informed parties for 2.126"}
+    )
+    by_title = client.post(
+        "/api/ask",
+        json={"question": "who needs to be informed for quarterly mission program"},
+    )
 
     assert by_id.status_code == 200
     assert by_title.status_code == 200
@@ -35,7 +39,9 @@ def test_ask_by_id_and_by_title_agree(client):
 def test_ask_pronoun_followup_uses_previous_node_id_from_request(client):
     first = client.post(
         "/api/ask",
-        json={"question": "who approves of Communication with Co-Financiers of projects"},
+        json={
+            "question": "who approves of Communication with Co-Financiers of projects"
+        },
     )
     assert first.json()["node_id"] == "2.118"
 
@@ -58,28 +64,19 @@ def test_ask_without_previous_node_id_defaults_to_normal_resolution(client):
 
 
 def test_ask_french_question_gets_translated_and_answered_in_french(client):
-    # Patches GroqProvider.chat directly (not requests.post) so this
-    # test is deterministic regardless of whether a real GROQ_API_KEY
-    # happens to be set in this environment - chat() raises before
-    # ever reaching requests.post when the key is missing, which would
-    # make an HTTP-layer mock silently never fire. Two calls happen in
-    # sequence here: detect+translate the incoming French question to
-    # English (so the untouched, English-only retrieval pipeline can
-    # resolve it), then phrase the grounded answer back in French.
     from llm.groq_provider import GroqProvider
 
-    # 3.111 also has two recorded informed-party (( i )) entities - the
-    # mandatory-notes feature (see docs/decisions.md, 2026-09-03) folds
-    # those into the grounding-check facts too, alongside the approve
-    # roles, so the canned reply has to preserve all four role names,
-    # not just the two approvers.
-    responses = iter([
-        "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
-        "Pour 3.111, les personnes suivantes approuvent : Origination "
-        "Sector Manager, Supporting Dept. Division Manager. CPO et "
-        "Country Manager DDG doivent également être informés.",
-    ])
-    with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
+    responses = iter(
+        [
+            "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
+            "Pour 3.111, les personnes suivantes approuvent : Origination "
+            "Sector Manager, Supporting Dept. Division Manager. CPO et "
+            "Country Manager DDG doivent également être informés.",
+        ]
+    )
+    with patch.object(
+        GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)
+    ):
         res = client.post(
             "/api/ask",
             json={"question": "qui approuve 3.111", "llm": "groq"},
@@ -94,13 +91,6 @@ def test_ask_french_question_gets_translated_and_answered_in_french(client):
 
 
 def test_ask_explicit_target_language_overrides_detected_language(client):
-    # Language picker feature (2026-09-03, see docs/decisions.md): an
-    # explicit target_language always wins over whatever the question
-    # itself was detected as - this pins the core case, an English
-    # question answered in French because the UI language picker was
-    # set to French. Only one Groq call happens here (unlike the
-    # French-question test above) since the question itself needed no
-    # translation - only the outgoing answer does.
     from llm.groq_provider import GroqProvider
 
     reply = (
@@ -111,7 +101,11 @@ def test_ask_explicit_target_language_overrides_detected_language(client):
     with patch.object(GroqProvider, "chat", return_value=reply):
         res = client.post(
             "/api/ask",
-            json={"question": "who approves 3.111", "llm": "groq", "target_language": "fr"},
+            json={
+                "question": "who approves 3.111",
+                "llm": "groq",
+                "target_language": "fr",
+            },
         )
     body = res.json()
     assert res.status_code == 200
@@ -137,23 +131,26 @@ def test_ask_explicit_target_language_with_llm_off_is_honest_about_the_gap(clien
 
 
 def test_ask_explicit_english_target_overrides_a_french_question(client):
-    # The reverse direction: question is in French (needs translating
-    # IN for retrieval, same as always), but target_language="en"
-    # explicitly forces the answer back to English despite the
-    # question having been detected as French - the two language
-    # concerns really are independent.
     from llm.groq_provider import GroqProvider
 
-    responses = iter([
-        "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
-        "Origination Sector Manager and Supporting Dept. Division "
-        "Manager both need to approve this. CPO and Country Manager "
-        "DDG must also be informed.",
-    ])
-    with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
+    responses = iter(
+        [
+            "LANGUAGE: fr\nTRANSLATED: who approves 3.111",
+            "Origination Sector Manager and Supporting Dept. Division "
+            "Manager both need to approve this. CPO and Country Manager "
+            "DDG must also be informed.",
+        ]
+    )
+    with patch.object(
+        GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)
+    ):
         res = client.post(
             "/api/ask",
-            json={"question": "qui approuve 3.111", "llm": "groq", "target_language": "en"},
+            json={
+                "question": "qui approuve 3.111",
+                "llm": "groq",
+                "target_language": "en",
+            },
         )
     body = res.json()
     assert res.status_code == 200
@@ -164,12 +161,13 @@ def test_ask_explicit_english_target_overrides_a_french_question(client):
 
 
 def test_ask_target_language_auto_keeps_existing_detect_behavior(client):
-    # "auto" is treated the same as omitting the field entirely -
-    # explicit opt-in to the pre-existing auto-detect behavior, not a
-    # fifth language.
     res = client.post(
         "/api/ask",
-        json={"question": "who approves 3.111", "llm": "off", "target_language": "auto"},
+        json={
+            "question": "who approves 3.111",
+            "llm": "off",
+            "target_language": "auto",
+        },
     )
     body = res.json()
     assert body["answer_language"] == "en"
@@ -177,10 +175,6 @@ def test_ask_target_language_auto_keeps_existing_detect_behavior(client):
 
 
 def test_ask_plain_english_question_never_calls_translation(client):
-    # The looks_non_english() pre-filter should skip the extra Groq
-    # round trip entirely for ordinary English questions - confirmed
-    # here by asserting detected_language defaults to "en" without any
-    # translation machinery having run.
     res = client.post("/api/ask", json={"question": "who approves 3.111", "llm": "off"})
     body = res.json()
     assert body["detected_language"] == "en"
@@ -194,49 +188,40 @@ def test_ask_non_english_question_without_llm_gives_honest_translation_error(cli
     )
     body = res.json()
     assert res.status_code == 200
-    assert body["detected_language"] == "en"  # couldn't detect without an LLM
+    assert body["detected_language"] == "en"
     assert body["translation_error"]
     assert "Off" in body["translation_error"] or "LLM" in body["translation_error"]
 
 
 def test_ask_frustrated_grounded_question_gets_an_empathetic_prefix(client):
-    # Tone detection (2026-09-03, see docs/decisions.md), applied to a
-    # real grounded DAM answer: the classify call and the phrasing call
-    # are two separate Groq calls here (tone detection is deliberately
-    # NOT folded into humanize_answer's prompt - see docs/decisions.md
-    # for why), so two canned responses in sequence.
     from llm.groq_provider import GroqProvider
 
-    # humanize_answer() runs BEFORE tone detection in backend.py's
-    # ask() (phrasing first, then the tone-classification call at the
-    # very end) - so the canned replies have to be queued in THAT
-    # order, not the order the two concepts are introduced above.
-    responses = iter([
-        "Origination Sector Manager and Supporting Dept. Division "
-        "Manager both need to approve this.",
-        "frustrated",
-    ])
-    with patch.object(GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)):
+    responses = iter(
+        [
+            "Origination Sector Manager and Supporting Dept. Division "
+            "Manager both need to approve this.",
+            "frustrated",
+        ]
+    )
+    with patch.object(
+        GroqProvider, "chat", side_effect=lambda *a, **k: next(responses)
+    ):
         res = client.post(
             "/api/ask",
-            json={"question": "why does this still not work?? who approves 3.111", "llm": "groq"},
+            json={
+                "question": "why does this still not work?? who approves 3.111",
+                "llm": "groq",
+            },
         )
     body = res.json()
     assert res.status_code == 200
     assert body["detected_tone"] == "frustrated"
     assert body["answer"].startswith("I hear you")
     assert "Origination Sector Manager" in body["answer"]
-    # The prefix is UX warmth, not a fact - deterministic_answer (used
-    # for the "show structured/template answer" toggle) must stay pure.
     assert not body["deterministic_answer"].startswith("I hear you")
 
 
 def test_ask_confused_out_of_scope_question_gets_an_empathetic_prefix(client):
-    # Pins the "every response type" requirement - this message never
-    # reaches humanize_answer at all (out_of_scope has no roles/node_id
-    # to ground on), so the prefix has to be applied as its own,
-    # independent step, not smuggled in through the grounded-answer
-    # path only.
     from llm.groq_provider import GroqProvider
 
     with patch.object(GroqProvider, "chat", return_value="confused"):
@@ -255,14 +240,12 @@ def test_ask_confused_out_of_scope_question_gets_an_empathetic_prefix(client):
 
 
 def test_ask_plain_question_never_calls_tone_detection(client):
-    # looks_emotional() should gate the extra Groq call entirely for an
-    # ordinary, neutrally-worded question - confirmed here by asserting
-    # a mock that would return an obviously-wrong tone is never even
-    # consulted, since the answer would otherwise be corrupted by it.
     from llm.groq_provider import GroqProvider
 
     with patch.object(GroqProvider, "chat", return_value="frustrated") as mock_chat:
-        res = client.post("/api/ask", json={"question": "who approves 3.111", "llm": "off"})
+        res = client.post(
+            "/api/ask", json={"question": "who approves 3.111", "llm": "off"}
+        )
     body = res.json()
     assert body["detected_tone"] == "neutral"
     assert not body["answer"].startswith("I hear you")
@@ -270,10 +253,6 @@ def test_ask_plain_question_never_calls_tone_detection(client):
 
 
 def test_ask_frustrated_question_with_llm_off_stays_neutral(client):
-    # No provider available - tone detection needs an LLM the same way
-    # translation does, so this should silently stay neutral (not
-    # error, not guess) rather than ever fabricate an empathetic prefix
-    # without actually having classified anything.
     res = client.post(
         "/api/ask",
         json={"question": "why does this still not work??", "llm": "off"},
@@ -301,7 +280,9 @@ def test_ask_invalid_code_is_honest(client):
 
 
 def test_ask_unresolvable_free_text_is_honest(client):
-    res = client.post("/api/ask", json={"question": "random unrelated words banana spaceship"})
+    res = client.post(
+        "/api/ask", json={"question": "random unrelated words banana spaceship"}
+    )
     assert res.status_code == 200
     body = res.json()
     assert body["node_id"] is None
@@ -323,8 +304,6 @@ def test_landing_page_served_at_root(client):
     assert res.status_code == 200
     assert "text/html" in res.headers["content-type"]
     assert "DAM AI Agent" in res.text
-    # Confirms the React build actually landed in webapp/static and is
-    # being served, not just that landing.html exists as a shell.
     assert 'type="module"' in res.text
     assert "/assets/" in res.text
 
@@ -366,12 +345,12 @@ def test_ask_llm_off_is_identical_to_omitted(client):
 
 
 def test_ask_llm_ollama_falls_back_when_unreachable(client):
-    # No real Ollama server exists in this environment - this exercises
-    # the actual fallback path (agent.generate.humanize_answer catching
-    # LLMUnavailableError) rather than assuming it works, same principle
-    # as every other "confirmed with real data" check in this project.
-    with patch("llm.ollama_provider.requests.post", side_effect=requests.ConnectionError()):
-        res = client.post("/api/ask", json={"question": "who approves 3.111", "llm": "ollama"})
+    with patch(
+        "llm.ollama_provider.requests.post", side_effect=requests.ConnectionError()
+    ):
+        res = client.post(
+            "/api/ask", json={"question": "who approves 3.111", "llm": "ollama"}
+        )
     body = res.json()
     assert res.status_code == 200
     assert body["used_llm"] is False
@@ -381,24 +360,15 @@ def test_ask_llm_ollama_falls_back_when_unreachable(client):
 
 
 def test_ask_llm_success_path_uses_grounded_phrasing(client):
-    # 2026-09-19 update (see docs/decisions.md): the mandatory
-    # Check/Verify + informed-party notes are no longer part of what
-    # the LLM has to state - agent/generate.py now only asks it to
-    # rephrase the roles the question's intent actually matched (here,
-    # just the two approve roles), then re-attaches 3.111's real
-    # informed-party note ("CPO ..., Country Manager DDG ... must also
-    # be informed.") afterward, verbatim. The mocked reply reflects
-    # what a real model would plausibly say when it's only given those
-    # two facts - it has no grounds to also mention CPO/Country
-    # Manager DDG, since neither is in its facts or reference answer
-    # anymore.
     fake_reply = (
         "Origination Sector Manager and Supporting Dept. Division Manager "
         "both need to sign off on this one."
     )
     with patch("llm.groq_provider.requests.post") as post:
         post.return_value.raise_for_status = lambda: None
-        post.return_value.json = lambda: {"choices": [{"message": {"content": fake_reply}}]}
+        post.return_value.json = lambda: {
+            "choices": [{"message": {"content": fake_reply}}]
+        }
         res = client.post(
             "/api/ask",
             json={"question": "who approves 3.111", "llm": "groq"},
@@ -411,8 +381,6 @@ def test_ask_llm_success_path_uses_grounded_phrasing(client):
         )
         assert body["llm_provider"] == "groq"
     else:
-        # GROQ_API_KEY isn't set in this environment - falls back honestly
-        # instead of pretending to have called a real model.
         assert "GROQ_API_KEY" in body["llm_error"]
 
 
@@ -422,11 +390,6 @@ def test_dashboard_summary_requires_authentication(client):
 
 
 def test_dashboard_summary_reflects_real_graph(client):
-    # The dashboard is administrator-only (Chapter 5) - the first
-    # account ever created becomes an administrator (see
-    # webapp/backend.py's signup()), and tests/conftest.py guarantees
-    # the users table is empty at the start of every test, so this
-    # signup is reliably "first."
     signup = client.post(
         "/api/auth/signup",
         json={"email": "dashboard-test@example.com", "password": "testpassword123"},
@@ -434,7 +397,9 @@ def test_dashboard_summary_reflects_real_graph(client):
     assert signup.json()["role"] == "administrator"
     token = signup.json()["access_token"]
 
-    res = client.get("/api/dashboard/summary", headers={"Authorization": f"Bearer {token}"})
+    res = client.get(
+        "/api/dashboard/summary", headers={"Authorization": f"Bearer {token}"}
+    )
     assert res.status_code == 200
     body = res.json()
     assert body["total_nodes"] == 327
@@ -459,14 +424,3 @@ def test_llm_config_respects_env_overrides(client, monkeypatch):
     body = res.json()
     assert body["ollama_model"] == "mistral"
     assert body["groq_model"] == "llama-3.1-8b-instant"
-
-
-# The status dot / LLM picker / "Auto is default" guarantees used to
-# be checkable by grepping the raw HTML this backend serves, because
-# the old frontend was plain server-rendered markup. Since the React
-# rewrite (2026-08-06), that markup only exists after client-side
-# JavaScript runs - a Python TestClient request never executes it, so
-# asserting on res.text here would either always fail or (worse)
-# silently stop testing anything real. Those same guarantees are now
-# checked at the component-source level in tests/test_frontend_source.py
-# instead - see that file for why, and for the actual assertions.

@@ -17,6 +17,7 @@ _ROMAN_NUMERAL_WORD = re.compile(
 )
 
 
+# drop the page number (roman numeral) glued to the last definition
 def _strip_page_footer_artifact(definition):
     words = definition.split()
     if len(words) >= 2 and _ROMAN_NUMERAL_WORD.match(words[-1]) and words[-1].islower():
@@ -24,21 +25,8 @@ def _strip_page_footer_artifact(definition):
     return definition
 
 
+# group words into rows for one glossary page
 def _rows_from_words(words):
-    """
-    Groups words into visual rows by `top`, merging rows whose `top`
-    values are within TOP_MERGE_TOLERANCE of each other.
-
-    Confirmed against real page data before writing this: on these
-    pages, a term and its definition are sometimes rendered ~1pt apart
-    in `top` (e.g. "APPR" at top=215, its definition "Annual Portfolio
-    Performance Review" at top=214) rather than perfectly aligned -
-    without this tolerance they'd wrongly be treated as two unrelated
-    rows. Genuinely separate lines (a term wrapping onto its own next
-    line, e.g. "Concerned VP" / "/ Manager", 5-11pt apart) stay
-    separate, since normal line spacing on these pages is ~13-17pt,
-    well outside this tolerance.
-    """
     buckets = defaultdict(list)
     for w in words:
         buckets[round(w["top"], 1)].append(w)
@@ -66,34 +54,17 @@ def _rows_from_words(words):
     return rows
 
 
+# true for header/footer text that is not a definition
 def _is_boilerplate(text):
     lowered = text.lower()
     return any(marker in lowered for marker in BOILERPLATE_MARKERS)
 
 
+# read one page of the acronyms list into term and definition pairs
 def extract_abbreviations(page, term_max_x0=TERM_COLUMN_MAX_X0):
-    """
-    Parses one page of the DAM's "Abbreviations and Acronyms" section
-    (a two-column code/definition list, term column on the left) into
-    a list of {"term": str, "definition": str} entries.
-
-    Scoped deliberately to the short-definition Abbreviations section,
-    not the longer-form Glossary a few pages later (page 8 on) - the
-    Glossary's definitions routinely wrap across many lines, which
-    lets its term and definition columns drift out of row-alignment
-    with each other over the course of a page (confirmed by checking:
-    the term-column reading order for the Abbreviations pages stays
-    alphabetical throughout, but the same check on the Glossary pages
-    does not, e.g. "Annual Programming..." reads between "ADF Charter"
-    and "AfDB Charter" instead of after both). Reconstructing a
-    reliably-ordered term sequence for the Glossary would need real
-    column text-flow analysis, not a per-row pairing like this one -
-    deferred, not attempted here, since it isn't what was actually
-    needed (defining acronyms like DDG/RDG/RISM, which live entirely
-    in the Abbreviations section).
-    """
     words = [
-        w for w in page.extract_words(extra_attrs=["size"])
+        w
+        for w in page.extract_words(extra_attrs=["size"])
         if w["size"] < TITLE_FONT_SIZE_MIN
     ]
     rows = _rows_from_words(words)
@@ -136,21 +107,8 @@ def extract_abbreviations(page, term_max_x0=TERM_COLUMN_MAX_X0):
     return [e for e in entries if e["term"] and e["definition"]]
 
 
+# merge the acronym pages into one glossary dict
 def build_abbreviation_glossary(pdf, first_page_index, last_page_index):
-    """
-    Runs extract_abbreviations() across the given inclusive page-index
-    range and merges the results into one {term: definition} dict.
-
-    The source document lists a handful of terms twice across these
-    pages (confirmed: EDCC, ECC, EMT, OCC, PEN, ECGF, PIVP, PINS - real
-    repeats in the DAM's own text, not a parsing artifact), sometimes
-    with slightly different wording between the two listings (e.g.
-    PINS: "NSO and Private Sector Support Department" vs "NSO &
-    Private Sector Support"). Keeps the LONGER of the two definitions
-    per term, on the assumption that the more detailed listing is more
-    useful for a "what does X mean" lookup - both are correct, this is
-    just a tie-break, not a correctness fix.
-    """
     merged = {}
     for i in range(first_page_index, last_page_index + 1):
         for entry in extract_abbreviations(pdf.pages[i]):

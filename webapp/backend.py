@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 import os
@@ -8,7 +7,12 @@ from typing import Optional
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    JSONResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from jose import JWTError
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.exc import IntegrityError
@@ -24,7 +28,11 @@ from agent.generate import humanize_answer
 from llm.router import resolve_provider
 from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
-from llm.translate import detect_and_translate_to_english, translate_text, looks_non_english
+from llm.translate import (
+    detect_and_translate_to_english,
+    translate_text,
+    looks_non_english,
+)
 from llm.tone import looks_emotional, detect_tone, apply_tone_prefix
 from llm.transcribe import transcribe_audio
 from llm.base import LLMUnavailableError
@@ -62,7 +70,12 @@ from webapp.auth import (
     require_admin,
     verify_password,
 )
-from webapp.oauth import GOOGLE_CONFIGURED, MICROSOFT_CONFIGURED, get_or_create_oauth_user, oauth
+from webapp.oauth import (
+    GOOGLE_CONFIGURED,
+    MICROSOFT_CONFIGURED,
+    get_or_create_oauth_user,
+    oauth,
+)
 
 load_dotenv()
 
@@ -78,37 +91,22 @@ app.add_middleware(SessionMiddleware, secret_key=JWT_SECRET_KEY)
 logger = logging.getLogger("webapp.backend")
 
 
+# always answer errors as json so the frontend can show a message
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """
-    2026-09-20 (see docs/decisions.md): without this, any bug that
-    escapes as a bare Exception (not an HTTPException) falls through to
-    Starlette's own default handler, which returns the literal plain-
-    text body "Internal Server Error" - not JSON. Every api.js function
-    calls `res.json()` on the response, so that plain-text body used to
-    surface to the user as a cryptic `Unexpected token 'I', "Internal
-    S"... is not valid JSON` instead of any usable message (this is
-    exactly what happened on a PDF upload attempt that hit some
-    still-unidentified server-side fault - see the still-open item in
-    docs/decisions.md). This handler doesn't fix whatever the
-    underlying bug is - it logs the real traceback server-side via
-    logger.exception (so it's still visible in Render's logs) and
-    returns a generic, non-leaking JSON body so the frontend can at
-    least show *something* coherent and so future crashes are
-    immediately diagnosable from the client-visible error instead of
-    only from a log line nobody was watching at the time.
-    """
     logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Something went wrong on the server. Please try again."},
     )
 
+
 BACKEND_BASE_URL = os.getenv("BACKEND_BASE_URL", "http://localhost:8000")
 
 state = {}
 
 
+# at startup load nodes, build the graph and the search index
 @app.on_event("startup")
 def load_dam():
     if NODES_CACHE_PATH.exists():
@@ -127,12 +125,14 @@ def load_dam():
     state["searchable_ids"] = searchable_ids
 
 
+# pointer to an uploaded file
 class AttachmentRef(BaseModel):
     key: str
     content_type: str
     filename: str
 
 
+# body of the ask request
 class Question(BaseModel):
     question: str
     llm: Optional[str] = None
@@ -141,18 +141,10 @@ class Question(BaseModel):
     attachment: Optional[AttachmentRef] = None
 
 
+# wrap an attachment answer in the same shape as a normal answer
 def _attachment_answer(
     answer_text: str, used_llm: bool, provider_name: Optional[str], answer_language: str
 ) -> dict:
-    """
-    Every key a normal /api/ask response carries, so Chat.jsx's meta
-    construction (which reads node_id/method/score/etc. unconditionally)
-    doesn't need a second code path for this - it just gets None/neutral
-    values for the fields that only make sense for a DAM lookup, plus
-    `source: "attachment"` so the frontend can render this distinctly
-    per FR13's own requirement that an attachment-grounded answer be
-    "clearly distinguished from answers grounded in the DAM."
-    """
     return {
         "answer": answer_text,
         "source": "attachment",
@@ -171,48 +163,42 @@ def _attachment_answer(
     }
 
 
+# attachments need a logged-in user even though asking is open
 def _authenticated_user_for_attachment(request: Request, db: Session) -> User:
-    """
-    /api/ask is otherwise unauthenticated (plain DAM lookups are
-    intentionally open), but reading an attachment's actual content
-    is not - this is called only on the attachment branch below, so a
-    normal question never needs a token while asking about a file
-    always does.
-    """
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+        )
 
     try:
         payload = decode_access_token(auth_header[len("Bearer ") :])
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
 
     user = db.get(User, payload.get("sub"))
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists"
+        )
     return user
 
 
+# answer a question about an uploaded file the user owns
 def _ask_about_attachment(payload: Question, request: Request, db: Session) -> dict:
     user = _authenticated_user_for_attachment(request, db)
 
-    # Keys are always minted as attachments/{uploader_id}/{uuid}-{filename}
-    # (see webapp/storage.py's upload_attachment) - this is what stops
-    # a caller from passing someone else's key and having the server
-    # read it back to them.
     if not payload.attachment.key.startswith(f"attachments/{user.id}/"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You can't read this attachment")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can't read this attachment",
+        )
 
-    # "Switch to Auto automatically" (2026-09-20, see docs/decisions.md)
-    # - an attached file always needs a model to read it, so a picker
-    # left on Off (or an Auto that resolved to nothing) falls back to
-    # Auto rather than refusing outright. An explicit Groq/Ollama
-    # choice is respected as-is, even if that provider then turns out
-    # not to support the attachment (see answer_about_attachment's
-    # image-without-vision case) - that's a clearer failure than
-    # silently overriding a deliberate choice.
-    provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+    provider = (
+        resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+    )
     if provider is None:
         provider = resolve_provider("auto")
     if provider is None:
@@ -222,7 +208,11 @@ def _ask_about_attachment(payload: Question, request: Request, db: Session) -> d
         )
 
     contents = download_attachment(payload.attachment.key)
-    answer_language = payload.target_language if payload.target_language and payload.target_language != "auto" else "en"
+    answer_language = (
+        payload.target_language
+        if payload.target_language and payload.target_language != "auto"
+        else "en"
+    )
 
     try:
         result = answer_about_attachment(
@@ -234,42 +224,34 @@ def _ask_about_attachment(payload: Question, request: Request, db: Session) -> d
             target_language=payload.target_language,
         )
     except UnsupportedAttachmentError as exc:
-        return _attachment_answer(str(exc), used_llm=False, provider_name=None, answer_language=answer_language)
+        return _attachment_answer(
+            str(exc),
+            used_llm=False,
+            provider_name=None,
+            answer_language=answer_language,
+        )
     except LLMUnavailableError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        )
 
-    return _attachment_answer(result["text"], used_llm=True, provider_name=result["provider"], answer_language=answer_language)
+    return _attachment_answer(
+        result["text"],
+        used_llm=True,
+        provider_name=result["provider"],
+        answer_language=answer_language,
+    )
 
 
+# answer a question: retrieval first, then optional translation and llm rephrasing
 @app.post("/api/ask")
 def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
-    """
-    Multi-language support (2026-08-06, extended 2026-09-03, see docs/
-    decisions.md): the deterministic retrieval pipeline (id matching,
-    TF-IDF search, intent detection, typo correction) is built
-    entirely around the DAM's own English vocabulary - there's no
-    realistic way to rebuild all of that per language. Instead, a
-    non-English question is translated to English BEFORE it reaches
-    answer_question() (so retrieval is completely unaffected, still
-    the same tested logic), and the final answer is translated back
-    afterward. looks_non_english() is a cheap, deterministic pre-
-    filter so a plain English question (the overwhelming majority of
-    traffic) never pays for the extra LLM round trips this requires.
-
-    Two independent language concerns, deliberately decoupled: the
-    language the QUESTION needs translating FROM (always detected from
-    the question text itself, always translated TO English for
-    retrieval) versus the language the ANSWER gets phrased IN (an
-    explicit `target_language` picker selection always wins over
-    whatever the question's own language was, falling back to the
-    detected language only when no explicit selection was made). This
-    is what lets someone type an English question with the UI language
-    picker set to French and still get a French answer.
-    """
     if payload.attachment is not None:
         return _ask_about_attachment(payload, request, db)
 
-    provider = resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+    provider = (
+        resolve_provider(payload.llm) if payload.llm and payload.llm != "off" else None
+    )
 
     query_for_pipeline = payload.question
     detected_language = "en"
@@ -318,7 +300,12 @@ def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
                 "error": translated["error"],
             }
         else:
-            generation = {"text": deterministic_answer, "used_llm": False, "provider": None, "error": None}
+            generation = {
+                "text": deterministic_answer,
+                "used_llm": False,
+                "provider": None,
+                "error": None,
+            }
 
         result["answer"] = generation["text"]
         result["used_llm"] = generation["used_llm"]
@@ -340,22 +327,27 @@ def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
         detected_tone = tone_result["tone"]
 
     result["detected_tone"] = detected_tone
-    result["answer"] = apply_tone_prefix(result["answer"], detected_tone, answer_language)
+    result["answer"] = apply_tone_prefix(
+        result["answer"], detected_tone, answer_language
+    )
 
     return result
 
 
+# body of the signup request
 class SignupRequest(BaseModel):
     email: EmailStr
     password: str
     name: Optional[str] = None
 
 
+# body of the login request
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
 
+# what login and signup return
 class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -364,23 +356,25 @@ class AuthResponse(BaseModel):
     role: str
 
 
+# build the token response for a user
 def _auth_response(user: User) -> AuthResponse:
     role = user.role.value if hasattr(user.role, "value") else user.role
-    return AuthResponse(access_token=create_access_token(user), email=user.email, name=user.name, role=role)
+    return AuthResponse(
+        access_token=create_access_token(user),
+        email=user.email,
+        name=user.name,
+        role=role,
+    )
 
 
+# create an account with email and password
 @app.post("/api/auth/signup", response_model=AuthResponse)
 def signup(payload: SignupRequest, db: Session = Depends(get_db)):
-    """
-    Email/password signup. The first account ever created on a fresh
-    database becomes an administrator (so there's a way in without
-    manual database surgery); every account after that defaults to
-    analyst. This is a deliberate bootstrap convenience, not a
-    long-term admin-management story - promoting a second admin
-    still needs a direct database edit for now.
-    """
     if len(payload.password) < 8:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Password must be at least 8 characters")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 8 characters",
+        )
 
     is_first_user = db.query(User).count() == 0
 
@@ -395,19 +389,25 @@ def signup(payload: SignupRequest, db: Session = Depends(get_db)):
         db.commit()
     except IntegrityError:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="An account with this email already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email already exists",
+        )
     db.refresh(user)
 
     return _auth_response(user)
 
 
+# check email and password and return a token
 @app.post("/api/auth/login", response_model=AuthResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     check_login_rate_limit(request.client.host if request.client else "unknown")
 
     user = db.query(User).filter(User.email == payload.email.lower()).first()
 
-    generic_error = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password")
+    generic_error = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password"
+    )
 
     if user is None or user.hashed_password is None:
         raise generic_error
@@ -418,46 +418,65 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     return _auth_response(user)
 
 
+# who is the logged-in user
 @app.get("/api/auth/me")
 def auth_me(user: User = Depends(get_current_user)):
     role = user.role.value if hasattr(user.role, "value") else user.role
     return {"email": user.email, "name": user.name, "role": role}
 
 
+# body of a new chat message
 class NewMessage(BaseModel):
     role: str
     text: str
     meta: Optional[dict] = None
 
 
+# body of the share-by-email request
 class ShareRequest(BaseModel):
     email: EmailStr
 
 
+# my conversations and the ones shared with me
 @app.get("/api/conversations")
-def list_conversations(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def list_conversations(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     return {
-        "own": [serialize_conversation(c, is_owner=True) for c in list_own_conversations(db, user)],
+        "own": [
+            serialize_conversation(c, is_owner=True)
+            for c in list_own_conversations(db, user)
+        ],
         "shared_with_me": [
-            serialize_conversation(c, is_owner=False) for c in list_shared_with_me(db, user)
+            serialize_conversation(c, is_owner=False)
+            for c in list_shared_with_me(db, user)
         ],
     }
 
 
+# create an empty conversation
 @app.post("/api/conversations")
-def new_conversation(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def new_conversation(
+    user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     conversation = create_conversation(db, user)
     return serialize_conversation(conversation, is_owner=True)
 
 
+# open a conversation (owner or shared viewer)
 @app.get("/api/conversations/{conversation_id}")
 def get_conversation(
-    conversation_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    conversation_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     conversation = get_conversation_for_viewing(db, conversation_id, user)
-    return serialize_conversation(conversation, is_owner=conversation.owner_id == user.id)
+    return serialize_conversation(
+        conversation, is_owner=conversation.owner_id == user.id
+    )
 
 
+# save a message and notify people it is shared with
 @app.post("/api/conversations/{conversation_id}/messages")
 def add_message(
     conversation_id: str,
@@ -467,9 +486,6 @@ def add_message(
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     updated = append_message(db, conversation, payload.dict())
-    # Only the owner can post (see models.py's ConversationShare
-    # docstring), but anyone the conversation is shared with should
-    # see the new message without refreshing - see webapp/events.py.
     notify_users(
         [share.shared_with_user_id for share in updated.shares],
         {"type": "message", "conversation_id": conversation_id},
@@ -477,15 +493,19 @@ def add_message(
     return serialize_conversation(updated, is_owner=True)
 
 
+# delete one of my conversations
 @app.delete("/api/conversations/{conversation_id}")
 def remove_conversation(
-    conversation_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+    conversation_id: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     delete_conversation(db, conversation)
     return {"deleted": True}
 
 
+# share a conversation with a colleague by email
 @app.post("/api/conversations/{conversation_id}/share")
 def share(
     conversation_id: str,
@@ -495,10 +515,14 @@ def share(
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     new_share = share_conversation(db, conversation, user, payload.email)
-    notify_user(new_share.shared_with_user_id, {"type": "shared", "conversation_id": conversation_id})
+    notify_user(
+        new_share.shared_with_user_id,
+        {"type": "shared", "conversation_id": conversation_id},
+    )
     return serialize_conversation(conversation, is_owner=True)
 
 
+# stop sharing with one user
 @app.delete("/api/conversations/{conversation_id}/share/{target_user_id}")
 def unshare(
     conversation_id: str,
@@ -508,10 +532,13 @@ def unshare(
 ):
     conversation = get_owned_conversation(db, conversation_id, user)
     unshare_conversation(db, conversation, target_user_id)
-    notify_user(target_user_id, {"type": "unshared", "conversation_id": conversation_id})
+    notify_user(
+        target_user_id, {"type": "unshared", "conversation_id": conversation_id}
+    )
     return serialize_conversation(conversation, is_owner=True)
 
 
+# what the share-link endpoint returns
 class ShareLinkResponse(BaseModel):
     token: str
     url: str
@@ -519,28 +546,23 @@ class ShareLinkResponse(BaseModel):
     expires_at: Optional[str]
 
 
-@app.post("/api/conversations/{conversation_id}/share-link", response_model=ShareLinkResponse)
+# make (or reuse) the qr share link for a conversation
+@app.post(
+    "/api/conversations/{conversation_id}/share-link", response_model=ShareLinkResponse
+)
 def create_share_link(
     conversation_id: str,
     request: Request,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    "Share via QR code" - reuses an existing, still-valid link if one
-    was already generated (see get_or_create_share_link), so reopening
-    this panel doesn't invalidate a code someone already scanned.
-    request.base_url (rather than a separately configured env var)
-    builds the link, since the frontend is served from this same
-    FastAPI app at the same origin in every environment this actually
-    runs in (see vite.config.js's multi-page build comment).
-    """
     conversation = get_owned_conversation(db, conversation_id, user)
     link = get_or_create_share_link(db, conversation, user)
     url = f"{str(request.base_url).rstrip('/')}/chat?share_token={link.token}"
     return serialize_share_link(link, url, qr_svg_data_uri(url))
 
 
+# revoke the qr share link
 @app.delete("/api/conversations/{conversation_id}/share-link")
 def delete_share_link(
     conversation_id: str,
@@ -552,6 +574,7 @@ def delete_share_link(
     return {"revoked": True}
 
 
+# open a shared conversation from its qr token
 @app.post("/api/conversations/shared/{token}/claim")
 def claim_share(
     token: str,
@@ -560,30 +583,30 @@ def claim_share(
 ):
     conversation = claim_share_link(db, token, user)
     if conversation.owner_id != user.id:
-        notify_user(conversation.owner_id, {"type": "shared", "conversation_id": conversation.id})
-    return serialize_conversation(conversation, is_owner=conversation.owner_id == user.id)
+        notify_user(
+            conversation.owner_id,
+            {"type": "shared", "conversation_id": conversation.id},
+        )
+    return serialize_conversation(
+        conversation, is_owner=conversation.owner_id == user.id
+    )
 
 
+# live event stream for the sidebar (server-sent events)
 @app.get("/api/events")
 async def events(token: str, db: Session = Depends(get_db)):
-    """
-    Server-Sent Events stream backing the sidebar's real-time refresh
-    (see webapp/events.py and useConversations.js). EventSource can't
-    set an Authorization header, so the token travels as a query
-    param instead - same JWT, same 8-hour expiry, just carried
-    differently for this one connection. A heartbeat comment every 25
-    seconds keeps the connection from being treated as idle and
-    dropped by an intermediate proxy; the frontend's own 30-second
-    poll is the backstop if the stream drops anyway.
-    """
     try:
         payload = decode_access_token(token)
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token"
+        )
 
     user = db.get(User, payload.get("sub"))
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User no longer exists"
+        )
 
     user_id = str(user.id)
 
@@ -602,23 +625,17 @@ async def events(token: str, db: Session = Depends(get_db)):
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
+# upload an attachment to storage
 @app.post("/api/uploads")
 async def upload_file(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
 ):
-    """
-    Any logged-in user can upload - the upload itself isn't tied to a
-    conversation yet (the message that ends up referencing it, via
-    `meta.attachment` on the POST to /messages, hasn't been created at
-    this point). Access control happens on the READ side instead - see
-    get_attachment_url below - which is what actually decides who can
-    fetch this file back.
-    """
     contents = await file.read()
     return upload_attachment(file, str(user.id), contents)
 
 
+# temporary download link for an attachment, only if it belongs to the conversation
 @app.get("/api/conversations/{conversation_id}/attachments/{key:path}")
 def get_attachment_url(
     conversation_id: str,
@@ -626,41 +643,24 @@ def get_attachment_url(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """
-    Deliberately doesn't hand back a permanent link - see
-    webapp/storage.py's presign_download docstring for why a fresh,
-    short-lived URL is generated on every read instead. Reuses the
-    exact same owner-or-shared-with check every other read of this
-    conversation goes through, then additionally checks the key is
-    really something that was attached to a message in THIS
-    conversation - otherwise a valid, logged-in user could try
-    guessing at other people's attachment keys via a conversation they
-    happen to own.
-    """
     conversation = get_conversation_for_viewing(db, conversation_id, user)
     if not conversation_has_attachment(conversation, key):
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found in this conversation")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found in this conversation",
+        )
     return {"url": presign_download(key)}
 
 
-MAX_VOICE_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB - a spoken question, not a podcast
+MAX_VOICE_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
+# turn the recorded voice clip into text
 @app.post("/api/transcribe")
 async def transcribe(
     file: UploadFile = File(...),
     user: User = Depends(get_current_user),
 ):
-    """
-    Backs the composer's mic button - reuses the same Groq account the
-    chat's "Groq"/"Auto" LLM modes already use (see llm/transcribe.py),
-    so voice input needs no new API key or provider setup, only
-    GROQ_API_KEY already being set. Returns plain transcribed text for
-    the frontend to drop into the input box - it's still sent as a
-    normal typed question from there, so nothing downstream (grounding,
-    intent detection, language handling) needs to know voice was ever
-    involved.
-    """
     contents = await file.read()
     if len(contents) > MAX_VOICE_UPLOAD_BYTES:
         raise HTTPException(
@@ -671,99 +671,119 @@ async def transcribe(
     try:
         text = transcribe_audio(contents, filename=file.filename or "audio.webm")
     except LLMUnavailableError as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        )
 
     return {"text": text}
 
 
+# start the google sign-in
 @app.get("/api/auth/google/login")
 async def google_login(request: Request):
     if not GOOGLE_CONFIGURED:
-        raise HTTPException(status_code=503, detail="Google sign-in is not configured yet")
+        raise HTTPException(
+            status_code=503, detail="Google sign-in is not configured yet"
+        )
     redirect_uri = f"{BACKEND_BASE_URL}/api/auth/google/callback"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
+# google sends the user back here, create or find the account
 @app.get("/api/auth/google/callback")
 async def google_callback(request: Request, db: Session = Depends(get_db)):
     if not GOOGLE_CONFIGURED:
-        raise HTTPException(status_code=503, detail="Google sign-in is not configured yet")
+        raise HTTPException(
+            status_code=503, detail="Google sign-in is not configured yet"
+        )
 
     token = await oauth.google.authorize_access_token(request)
     userinfo = token.get("userinfo") or await oauth.google.userinfo(token=token)
 
     user = get_or_create_oauth_user(
-        db, provider="google", subject=userinfo["sub"], email=userinfo["email"], name=userinfo.get("name")
+        db,
+        provider="google",
+        subject=userinfo["sub"],
+        email=userinfo["email"],
+        name=userinfo.get("name"),
     )
     jwt_token = create_access_token(user)
     return RedirectResponse(f"/login?token={jwt_token}")
 
 
+# start the microsoft sign-in
 @app.get("/api/auth/microsoft/login")
 async def microsoft_login(request: Request):
     if not MICROSOFT_CONFIGURED:
-        raise HTTPException(status_code=503, detail="Microsoft sign-in is not configured yet")
+        raise HTTPException(
+            status_code=503, detail="Microsoft sign-in is not configured yet"
+        )
     redirect_uri = f"{BACKEND_BASE_URL}/api/auth/microsoft/callback"
     return await oauth.microsoft.authorize_redirect(request, redirect_uri)
 
 
+# microsoft sends the user back here, create or find the account
 @app.get("/api/auth/microsoft/callback")
 async def microsoft_callback(request: Request, db: Session = Depends(get_db)):
     if not MICROSOFT_CONFIGURED:
-        raise HTTPException(status_code=503, detail="Microsoft sign-in is not configured yet")
+        raise HTTPException(
+            status_code=503, detail="Microsoft sign-in is not configured yet"
+        )
 
     token = await oauth.microsoft.authorize_access_token(request)
     userinfo = token.get("userinfo") or await oauth.microsoft.userinfo(token=token)
 
     user = get_or_create_oauth_user(
-        db, provider="microsoft", subject=userinfo["sub"], email=userinfo["email"], name=userinfo.get("name")
+        db,
+        provider="microsoft",
+        subject=userinfo["sub"],
+        email=userinfo["email"],
+        name=userinfo.get("name"),
     )
     jwt_token = create_access_token(user)
     return RedirectResponse(f"/login?token={jwt_token}")
 
 
+# numbers for the dashboard (admin only)
 @app.get("/api/dashboard/summary")
 def dashboard_summary(user: User = Depends(require_admin)):
     return build_summary(state["nodes"], state["graph"])
 
 
+# which model each llm mode uses right now
 @app.get("/api/llm/config")
 def llm_config():
-    """
-    The actual model names each mode would use right now - reads them
-    from the same provider classes resolve_provider() itself uses, so
-    this can never drift from reality the way a second, hand-written
-    copy of "llama3.1" / "openai/gpt-oss-120b" in the frontend
-    could. Respects env var overrides (OLLAMA_MODEL, GROQ_MODEL) same
-    as the providers do - if Adem points OLLAMA_MODEL at a different
-    pulled model, the UI reflects that without a code change.
-    """
     return {
         "ollama_model": OllamaProvider().model,
         "groq_model": GroqProvider().model,
     }
 
 
+# quick check that the server is up and nodes are loaded
 @app.get("/api/health")
 def health():
     return {"status": "ok", "nodes_loaded": len(state.get("nodes", {}))}
 
 
+# serve the landing page
 @app.get("/")
 def landing():
     return FileResponse(STATIC_DIR / "landing.html")
 
 
+# serve the chat page
 @app.get("/chat")
 def chat_page():
     return FileResponse(STATIC_DIR / "chat.html")
 
 
+# serve the dashboard page
 @app.get("/dashboard")
 def dashboard_page():
     return FileResponse(STATIC_DIR / "dashboard.html")
 
 
+# serve the login page
 @app.get("/login")
 def login_page():
     return FileResponse(STATIC_DIR / "login.html")

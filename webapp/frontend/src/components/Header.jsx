@@ -1,10 +1,6 @@
 import StatusDot from './StatusDot.jsx';
+// top bar shared by all pages
 
-// onMenuClick is only passed by pages that have an off-canvas sidebar
-// (currently just Chat, for the conversation list) - the hamburger
-// button only renders when there's something for it to toggle, and
-// only becomes visible at all below the mobile breakpoint (see
-// shared.css's .hamburger-btn, hidden by default on desktop).
 export default function Header({ title, subtitle, navHref, navLabel, right, onMenuClick }) {
   return (
     <header className="app-header">

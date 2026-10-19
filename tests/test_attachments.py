@@ -1,12 +1,3 @@
-"""
-Tests for llm/attachments.py - answering a question about an attached
-file (2026-09-20, see docs/decisions.md). webapp/backend.py's own
-attachment branch of /api/ask is covered separately in
-tests/test_backend.py; these tests exercise the extraction and
-provider-orchestration logic in isolation, the same way test_llm.py
-tests each provider without a real network call.
-"""
-
 import io
 from unittest.mock import MagicMock, Mock, patch
 
@@ -51,7 +42,10 @@ class TestExtractText:
         assert "2.126" in text
 
     def test_pdf_extracts_and_joins_pages(self):
-        with patch("pdfplumber.open", return_value=_fake_pdf_context(["Page one text.", "Page two text."])):
+        with patch(
+            "pdfplumber.open",
+            return_value=_fake_pdf_context(["Page one text.", "Page two text."]),
+        ):
             text = extract_text("application/pdf", "doc.pdf", b"%PDF-fake-bytes")
         assert "Page one text." in text
         assert "Page two text." in text
@@ -62,7 +56,9 @@ class TestExtractText:
                 extract_text("application/pdf", "scanned.pdf", b"%PDF-fake-bytes")
 
     def test_docx_extracts_real_paragraph_text(self):
-        contents = _make_docx_bytes(["First paragraph.", "Second paragraph about 3.111."])
+        contents = _make_docx_bytes(
+            ["First paragraph.", "Second paragraph about 3.111."]
+        )
         text = extract_text(
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "memo.docx",
@@ -105,7 +101,11 @@ class TestAnswerAboutAttachment:
         provider.chat = Mock(return_value="Sector Manager approves it.")
 
         result = answer_about_attachment(
-            "who approves this?", "text/plain", "notes.txt", b"2.126 is approved by Sector Manager", provider
+            "who approves this?",
+            "text/plain",
+            "notes.txt",
+            b"2.126 is approved by Sector Manager",
+            provider,
         )
 
         assert result == {"text": "Sector Manager approves it.", "provider": "groq"}
@@ -121,7 +121,12 @@ class TestAnswerAboutAttachment:
         provider.chat = Mock(return_value="reponse")
 
         answer_about_attachment(
-            "question", "text/plain", "notes.txt", b"content", provider, target_language="fr"
+            "question",
+            "text/plain",
+            "notes.txt",
+            b"content",
+            provider,
+            target_language="fr",
         )
 
         system = provider.chat.call_args.args[0]
@@ -130,7 +135,9 @@ class TestAnswerAboutAttachment:
     def test_unsupported_attachment_type_propagates(self):
         provider = Mock()
         with pytest.raises(UnsupportedAttachmentError):
-            answer_about_attachment("question", "application/zip", "f.zip", b"x", provider)
+            answer_about_attachment(
+                "question", "application/zip", "f.zip", b"x", provider
+            )
 
     def test_image_attachment_uses_vision_when_supported(self):
         provider = Mock(name="groq")
@@ -138,7 +145,9 @@ class TestAnswerAboutAttachment:
         provider.supports_vision = True
         provider.chat_with_image = Mock(return_value="A diagram of authority codes.")
 
-        result = answer_about_attachment("what's this?", "image/png", "shot.png", b"\x89PNG...", provider)
+        result = answer_about_attachment(
+            "what's this?", "image/png", "shot.png", b"\x89PNG...", provider
+        )
 
         assert result == {"text": "A diagram of authority codes.", "provider": "groq"}
         system, user_text, image_data_url = provider.chat_with_image.call_args.args
@@ -151,16 +160,15 @@ class TestAnswerAboutAttachment:
         provider.supports_vision = False
 
         with pytest.raises(LLMUnavailableError):
-            answer_about_attachment("what's this?", "image/png", "shot.png", b"\x89PNG...", provider)
+            answer_about_attachment(
+                "what's this?", "image/png", "shot.png", b"\x89PNG...", provider
+            )
 
     def test_image_attachment_defaults_to_no_vision_support_when_unset(self):
-        # A bare Mock() would otherwise auto-create a truthy
-        # `supports_vision` attribute and silently pass this check -
-        # spec'd here to a plain object with no such attribute to make
-        # sure the real getattr(..., False) default is what's doing
-        # the work, not Mock's own attribute-conjuring behaviour.
         class BareProvider:
             name = "ollama"
 
         with pytest.raises(LLMUnavailableError):
-            answer_about_attachment("what's this?", "image/png", "shot.png", b"\x89PNG...", BareProvider())
+            answer_about_attachment(
+                "what's this?", "image/png", "shot.png", b"\x89PNG...", BareProvider()
+            )

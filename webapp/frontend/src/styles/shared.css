@@ -44,10 +44,6 @@ header.app-header p {
   color: var(--text-muted);
 }
 
-/* Hidden by default (desktop) - only shown below the mobile
-   breakpoint, where it toggles the off-canvas conversation sidebar
-   (see conversationSidebar.css). Header only renders this button at
-   all when a page passes onMenuClick (currently just Chat). */
 .hamburger-btn {
   display: none;
   flex-direction: column;

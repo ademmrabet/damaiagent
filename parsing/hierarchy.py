@@ -1,15 +1,10 @@
-
 import re
 
 ID_PATTERN = re.compile(r"^\d+(?:\.\d+)+(?:\.[a-z])?")
 
 
+# pull the leading id like 2.221.1 off a line
 def get_identifier(line):
-    """
-    '2.221 Project Identification' -> '2.221'
-    '2.221.1 E&S Categorisation Memorandum' -> '2.221.1'
-    '2.513.3.a Up to UA 2,000,000' -> '2.513.3.a'
-    """
 
     if not line:
         return None
@@ -19,6 +14,7 @@ def get_identifier(line):
     return match.group() if match else None
 
 
+# chapter is the first part of the id
 def get_chapter(identifier):
     if not identifier:
         return None
@@ -26,16 +22,8 @@ def get_chapter(identifier):
     return identifier.split(".")[0]
 
 
+# chapter, process, task, child task or threshold variant, decided by the id shape
 def get_node_type(identifier):
-    """
-    X         -> chapter (handled by caller before this; identifiers
-                 here always have a dot, see get_identifier)
-    X.YY0     -> process
-    X.YYY     -> task
-    X.YYY.N   -> child_task
-    X.YYY.N.a -> threshold_variant (letter-labeled sub-item of a
-                 child_task, e.g. 2.513.3.a - see schema.py)
-    """
 
     if not identifier:
         return None
@@ -55,13 +43,8 @@ def get_node_type(identifier):
     return None
 
 
+# id of the process a task belongs to, like 2.221 to 2.220
 def get_process_id(identifier):
-    """
-    2.221.1 -> 2.220
-    2.221   -> 2.220
-    2.110   -> 2.110
-    3.683.4 -> 3.680
-    """
 
     if not identifier:
         return None
@@ -78,6 +61,7 @@ def get_process_id(identifier):
     return f"{chapter}.{process_number:03d}"
 
 
+# id of the parent, or none for top-level tasks
 def get_parent_task_id(identifier):
     if not identifier:
         return None
@@ -93,33 +77,8 @@ def get_parent_task_id(identifier):
     return f"{parts[0]}.{parts[1]}"
 
 
+# direct children of an id
 def get_children(task_id, all_ids):
-    """
-    Direct children only, derived from each candidate's OWN parent
-    pointer - not string-prefix guessing.
-
-    Real bug found testing modeling/build_nodes.py against the full
-    document once threshold_variant ids were in the mix: prefix
-    matching ("does this id start with task_id + '.'") is only
-    actually true for child_task->threshold_variant and
-    task->child_task, because those ids are literally longer strings
-    built from their parent's id. It's FALSE for process->task
-    ("2.513" does not start with "2.510." - task ids aren't string
-    extensions of their process id, they're grouped into it by
-    get_process_id()'s round-down-to-10 math) and for chapter->process
-    (a chapter's "children" under prefix matching becomes every
-    descendant at every depth flattened together, not just its
-    processes). Silently wrong in two of four cases, not caught until
-    threshold_variant ids made a task's grandchildren start colliding
-    with its direct children under the same prefix.
-
-    Fix: ask each candidate id what ITS parent actually is (the same
-    get_process_id/get_parent_task_id/get_chapter functions already
-    used to populate the node's own fields) and keep only the ones
-    that point back at task_id. Same information, just read in the
-    correct direction instead of guessed from string shape.
-    """
-
 
     node_type = "chapter" if "." not in task_id else get_node_type(task_id)
     children = []
@@ -140,16 +99,22 @@ def get_children(task_id, all_ids):
                 children.append(identifier)
 
         elif node_type == "task":
-            if candidate_type == "child_task" and get_parent_task_id(identifier) == task_id:
+            if (
+                candidate_type == "child_task"
+                and get_parent_task_id(identifier) == task_id
+            ):
                 children.append(identifier)
 
         elif node_type == "child_task":
-            if candidate_type == "threshold_variant" and get_parent_task_id(identifier) == task_id:
+            if (
+                candidate_type == "threshold_variant"
+                and get_parent_task_id(identifier) == task_id
+            ):
                 children.append(identifier)
-
 
     return sorted(children)
 
 
+# true if any other id sits under this one
 def has_children(task_id, all_ids):
     return len(get_children(task_id, all_ids)) > 0

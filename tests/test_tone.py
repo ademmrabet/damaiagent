@@ -11,26 +11,32 @@ from llm.tone import (
 )
 
 
-@pytest.mark.parametrize("text", [
-    "who approves 2.126",
-    "what does DDG stand for",
-    "who checks the annual budget submission",
-    "hi",
-    "thanks",
-    "and who needs to sign off on this",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "who approves 2.126",
+        "what does DDG stand for",
+        "who checks the annual budget submission",
+        "hi",
+        "thanks",
+        "and who needs to sign off on this",
+    ],
+)
 def test_looks_emotional_is_false_for_plain_questions(text):
     assert looks_emotional(text) is False
 
 
-@pytest.mark.parametrize("text", [
-    "why does this still not work??",
-    "this is USELESS",
-    "ugh, not this again",
-    "I'm so confused about what C1 means",
-    "I don't understand any of this",
-    "seriously, fix this",
-])
+@pytest.mark.parametrize(
+    "text",
+    [
+        "why does this still not work??",
+        "this is USELESS",
+        "ugh, not this again",
+        "I'm so confused about what C1 means",
+        "I don't understand any of this",
+        "seriously, fix this",
+    ],
+)
 def test_looks_emotional_is_true_for_real_examples(text):
     assert looks_emotional(text) is True
 
@@ -57,9 +63,6 @@ class TestDetectTone:
         assert result["tone"] == "neutral"
 
     def test_tolerates_extra_formatting_in_the_response(self):
-        # A model wrapping the single word in punctuation or case
-        # noise ("Frustrated." / "FRUSTRATED") shouldn't be treated as
-        # unparseable - only genuinely unrecognized words should.
         result = detect_tone("ugh", _provider("Frustrated."))
         assert result["tone"] == "frustrated"
 
@@ -86,7 +89,10 @@ class TestDetectTone:
 
 class TestApplyTonePrefix:
     def test_neutral_is_a_no_op(self):
-        assert apply_tone_prefix("For 3.111, X approves.", "neutral") == "For 3.111, X approves."
+        assert (
+            apply_tone_prefix("For 3.111, X approves.", "neutral")
+            == "For 3.111, X approves."
+        )
 
     def test_frustrated_gets_an_english_prefix(self):
         result = apply_tone_prefix("For 3.111, X approves.", "frustrated")

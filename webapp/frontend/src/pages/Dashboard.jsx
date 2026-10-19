@@ -60,6 +60,7 @@ function ChartBox({ title, full, action, children }) {
     </div>
   );
 }
+// admin dashboard with charts from the graph
 
 export default function Dashboard() {
   const [data, setData] = useState(null);

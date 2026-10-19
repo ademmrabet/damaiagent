@@ -23,9 +23,17 @@ def test_3524_title_no_longer_swallows_footnote_section(nodes):
     assert "Regional NSO Lead" not in title
 
 
-@pytest.mark.parametrize("task_id", [
-    "2.115", "2.223.2", "2.222.1", "2.222.2", "3.512", "3.524",
-])
+@pytest.mark.parametrize(
+    "task_id",
+    [
+        "2.115",
+        "2.223.2",
+        "2.222.1",
+        "2.222.2",
+        "3.512",
+        "3.524",
+    ],
+)
 def test_known_corrupted_titles_recovered(nodes, task_id):
     title = nodes[task_id].title
     assert title, f"{task_id} has no title at all"
@@ -38,7 +46,5 @@ def test_2223_2_title_recovers_real_words(nodes):
 
 
 def test_corruption_rate_stays_low(nodes):
-    corrupted = [
-        n.id for n in nodes.values() if looks_word_boundary_corrupted(n.title)
-    ]
+    corrupted = [n.id for n in nodes.values() if looks_word_boundary_corrupted(n.title)]
     assert len(corrupted) <= 2, f"unexpectedly high corruption: {corrupted}"

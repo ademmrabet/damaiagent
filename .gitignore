@@ -5,26 +5,16 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Local dev / test databases (see webapp/db.py and tests/conftest.py) -
-# DATABASE_URL falls back to one of these SQLite files when unset, and
-# neither should ever be committed - they hold real password hashes
-# once anyone actually signs up locally.
+# local databases
 local_dev.db
 tests_auth.db
 
-# webapp/static/ is now a BUILD ARTIFACT (Vite output from
-# webapp/frontend/, see webapp/frontend/vite.config.js's outDir) -
-# webapp/frontend/ is the real source of truth from here on, same as
-# not committing a Python venv or __pycache__. Run `npm run build`
-# inside webapp/frontend/ (or `docker compose up --build`, which does
-# it automatically) to regenerate it.
+# build artifacts
 webapp/static/
 webapp/frontend/node_modules/
 webapp/frontend/dist/
 
-# Derived from data/raw/ via scripts/build_nodes_cache.py - same
-# "build artifact, not source" treatment as webapp/static/ above.
-# Baked into the Docker image at build time instead.
+# generated from data/raw by scripts/build_nodes_cache.py
 data/processed/nodes.json
 .neon
 node_modules/

@@ -1,15 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import './loadingScreen.css';
+// splash screen until the page has its first api response
 
-/**
- * Wraps a page's real content. Shows an animated splash until `ready`
- * flips true (each page passes its own "have I got the first API
- * response back yet" boolean), then GSAP-crossfades from the splash
- * into the real content instead of a hard cut - the same first-load
- * moment that used to be an empty white flash while `fetch()` calls
- * resolved now reads as an intentional loading state.
- */
 export default function LoadingScreen({ ready, label = 'Loading…', children }) {
   const [phase, setPhase] = useState('loading');
   const splashRef = useRef(null);

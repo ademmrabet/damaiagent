@@ -1,13 +1,3 @@
-"""
-Tests for the attachment branch of POST /api/ask (2026-09-20, see
-docs/decisions.md) - the part that makes "what's this?" with a file
-attached actually read the file, instead of falling through to the
-ordinary DAM pipeline with no idea an attachment exists. Mocks
-download_attachment/resolve_provider/answer_about_attachment the same
-way test_uploads.py and test_transcribe_endpoint.py mock their own
-external boundaries, rather than hitting a real bucket or model.
-"""
-
 from unittest.mock import Mock, patch
 
 import pytest
@@ -49,9 +39,6 @@ def _attachment_payload(user_id, question="what's this?", **overrides):
 
 
 def _signup_and_get_id(client, email):
-    """/api/auth/me doesn't return a user id, so decode it straight off
-    the token this endpoint's own auth gate uses - no need to round-trip
-    through some other owned resource just to learn our own id."""
     token = _signup(client, email)
     claims = decode_access_token(token)
     return token, claims["sub"]
@@ -82,7 +69,8 @@ def test_attachment_question_happy_path_text_document(client):
     fake_provider.name = "groq"
 
     with patch("webapp.backend.resolve_provider", return_value=fake_provider), patch(
-        "webapp.backend.download_attachment", return_value=b"2.126 is approved by Sector Manager"
+        "webapp.backend.download_attachment",
+        return_value=b"2.126 is approved by Sector Manager",
     ), patch(
         "webapp.backend.answer_about_attachment",
         return_value={"text": "Sector Manager approves it.", "provider": "groq"},
@@ -105,9 +93,6 @@ def test_attachment_question_happy_path_text_document(client):
 
 
 def test_attachment_question_off_mode_still_gets_answered(client):
-    # "Switch to Auto automatically" (2026-09-20) - an attachment
-    # always needs a model, so llm: "off" (or omitted) shouldn't refuse
-    # outright the way a plain DAM question would.
     token, user_id = _signup_and_get_id(client, "owner@example.com")
     fake_provider = Mock(name="groq")
     fake_provider.name = "groq"
@@ -144,7 +129,9 @@ def test_attachment_question_with_no_provider_available_is_503(client):
     assert res.status_code == 503
 
 
-def test_unsupported_attachment_type_is_returned_as_a_normal_answer_not_an_error(client):
+def test_unsupported_attachment_type_is_returned_as_a_normal_answer_not_an_error(
+    client,
+):
     token, user_id = _signup_and_get_id(client, "owner@example.com")
     fake_provider = Mock(name="groq")
     fake_provider.name = "groq"
@@ -153,7 +140,9 @@ def test_unsupported_attachment_type_is_returned_as_a_normal_answer_not_an_error
         "webapp.backend.download_attachment", return_value=b"binary junk"
     ), patch(
         "webapp.backend.answer_about_attachment",
-        side_effect=UnsupportedAttachmentError("Reading spreadsheet attachments isn't supported yet."),
+        side_effect=UnsupportedAttachmentError(
+            "Reading spreadsheet attachments isn't supported yet."
+        ),
     ):
         res = client.post(
             "/api/ask",
@@ -189,8 +178,6 @@ def test_attachment_question_surfaces_llm_unavailable_as_503(client):
 
 
 def test_plain_question_without_attachment_is_unaffected(client):
-    # /api/ask stays unauthenticated for ordinary DAM questions - the
-    # new auth/ownership gate only applies on the attachment branch.
     res = client.post("/api/ask", json={"question": "who approves 2.126?"})
     assert res.status_code == 200
     assert res.json().get("source") != "attachment"

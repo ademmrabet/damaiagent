@@ -14,6 +14,7 @@ const LABELS = {
   groq: 'Groq (API)',
   auto: 'Auto (API first, local fallback)',
 };
+// switch between groq, ollama or no llm
 
 export default function LlmPicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
@@ -24,8 +25,6 @@ export default function LlmPicker({ value, onChange }) {
     getLlmConfig()
       .then(setModels)
       .catch(() => {
-        // Backend unreachable at load time - the option rows just
-        // show no model name, no need to break the picker over it.
       });
   }, []);
 

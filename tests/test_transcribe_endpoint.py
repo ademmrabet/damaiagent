@@ -25,14 +25,19 @@ def _auth(token):
 
 
 def test_transcribe_requires_authentication(client):
-    res = client.post("/api/transcribe", files={"file": ("clip.webm", io.BytesIO(b"audio"), "audio/webm")})
+    res = client.post(
+        "/api/transcribe",
+        files={"file": ("clip.webm", io.BytesIO(b"audio"), "audio/webm")},
+    )
     assert res.status_code == 401
 
 
 def test_transcribe_happy_path(client):
     token = _signup(client, "owner@example.com")
 
-    with patch("webapp.backend.transcribe_audio", return_value="who approves 2.126") as mock_transcribe:
+    with patch(
+        "webapp.backend.transcribe_audio", return_value="who approves 2.126"
+    ) as mock_transcribe:
         res = client.post(
             "/api/transcribe",
             files={"file": ("clip.webm", io.BytesIO(b"audio"), "audio/webm")},
@@ -61,7 +66,10 @@ def test_transcribe_rejects_oversized_recordings(client):
 def test_transcribe_surfaces_groq_unavailable_as_503(client):
     token = _signup(client, "owner@example.com")
 
-    with patch("webapp.backend.transcribe_audio", side_effect=LLMUnavailableError("GROQ_API_KEY is not set")):
+    with patch(
+        "webapp.backend.transcribe_audio",
+        side_effect=LLMUnavailableError("GROQ_API_KEY is not set"),
+    ):
         res = client.post(
             "/api/transcribe",
             files={"file": ("clip.webm", io.BytesIO(b"audio"), "audio/webm")},

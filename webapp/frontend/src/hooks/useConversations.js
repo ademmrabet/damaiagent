@@ -55,14 +55,6 @@ function deriveTitle(question) {
   return trimmed.length > 42 ? trimmed.slice(0, 40) + '…' : trimmed;
 }
 
-// A background refetch (polling or an SSE nudge - see below) always
-// wins for everything except the message list itself, where it could
-// otherwise race an optimistic send: appendMessage shows the user's
-// message immediately, then posts it to the server, and if a refetch
-// lands in between it would briefly show the conversation WITHOUT the
-// message that's already on screen. Never shrinking the message list
-// on a background refresh avoids that flash without needing to
-// coordinate the two paths any more tightly than this.
 function mergeConversations(prevList, freshList) {
   const prevById = new Map(prevList.map((c) => [c.id, c]));
   return freshList.map((fresh) => {
@@ -74,37 +66,7 @@ function mergeConversations(prevList, freshList) {
   });
 }
 
-/**
- * Conversations used to live only in this browser's localStorage (see
- * docs/decisions.md, 2026-09-19) - fine for one person on one device,
- * but there was never a copy anywhere a colleague could reach, so
- * sharing wasn't possible. This now talks to the /api/conversations*
- * backend instead; the hook's own exposed shape is kept as close to
- * the old one as possible so Chat.jsx and ConversationSidebar.jsx
- * needed minimal changes.
- *
- * Originally this fetched the list exactly once, on mount - fine for
- * your OWN conversations (every change to those goes through this
- * same tab), but a conversation someone else shares with you, or a
- * new message on one already shared, was invisible until you
- * manually refreshed the page (2026-09-20, see docs/decisions.md).
- * Two mechanisms now keep the lists current without that: a 30-second
- * poll (dumb, always correct eventually, costs one small request) and
- * an SSE subscription (webapp/events.py) that nudges an immediate
- * refetch the moment something changes server-side. Either one alone
- * would be enough; running both means a dropped SSE connection (an
- * idle-timing-out proxy, a Render restart) only ever costs up to
- * POLL_INTERVAL_MS of staleness instead of silence until next reload.
- *
- * Every mutation still updates local state optimistically first (the
- * UI should never feel like it's waiting on a network round trip to
- * show your own message), then reconciles with whatever the server
- * actually persisted. If the initial load fails outright (backend
- * unreachable), this falls open into a single local-only conversation
- * (id prefixed "local-") that never touches the network again - same
- * "storage problem degrades gracefully" philosophy the old
- * localStorage version had for a quota/private-browsing failure.
- */
+// conversations live on the server; polling + sse keep the lists fresh
 export default function useConversations() {
   const [ownConversations, setOwnConversations] = useState([]);
   const [sharedConversations, setSharedConversations] = useState([]);
@@ -172,8 +134,6 @@ export default function useConversations() {
     };
   }, []);
 
-  // Polling safety net - see this module's docstring for why this
-  // runs alongside, not instead of, the SSE subscription below.
   useEffect(() => {
     const interval = setInterval(() => {
       refreshConversations();
@@ -181,10 +141,6 @@ export default function useConversations() {
     return () => clearInterval(interval);
   }, [refreshConversations]);
 
-  // Real-time nudge: any share/unshare/new-message event server-side
-  // triggers an immediate refetch instead of waiting for the next
-  // poll tick. EventSource reconnects on its own per spec if the
-  // connection drops; the poll above covers the gap either way.
   useEffect(() => {
     const source = openEventSource();
     if (!source) return undefined;
@@ -196,8 +152,6 @@ export default function useConversations() {
     return () => source.close();
   }, [refreshConversations]);
 
-  // Keeps activeId valid no matter how the lists change - after a
-  // delete removes whichever conversation was active.
   useEffect(() => {
     if (loading) return;
     const stillExists =
@@ -221,8 +175,6 @@ export default function useConversations() {
       setActiveId(conv.id);
       return conv.id;
     } catch {
-      // Fail open (see this module's docstring) rather than leaving
-      // "+ New chat" looking like it did nothing.
       const conv = makeLocalConversation();
       setOwnConversations((prev) => [conv, ...prev].slice(0, MAX_CONVERSATIONS));
       setActiveId(conv.id);
@@ -239,8 +191,6 @@ export default function useConversations() {
       try {
         await deleteConversationApi(id);
       } catch {
-        // Leave local state untouched if the backend couldn't delete
-        // it - better a stale row than one that silently reappears.
         return;
       }
     }
@@ -278,10 +228,6 @@ export default function useConversations() {
         setOwnConversations((prev) => prev.map((c) => (c.id === targetId ? conv : c)));
       })
       .catch((err) => {
-        // The optimistic message stays visible either way - this is a
-        // persistence failure, not a chat failure. Surfacing every
-        // transient network hiccup as a UI error would be noisier than
-        // useful for a message that's already showing on screen.
         console.error('Failed to save message to conversation', targetId, err);
       });
   }, []);

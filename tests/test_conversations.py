@@ -44,9 +44,6 @@ def test_created_conversation_appears_in_own_list(client):
 
 
 def test_appending_a_message_derives_the_title_from_the_first_user_message(client):
-    # Mirrors the frontend's own deriveTitle (see useConversations.js) -
-    # a real fact worth pinning since this moved server-side with the
-    # sharing feature (2026-09-19).
     token = _signup(client, "owner@example.com")
     conv = client.post("/api/conversations", headers=_auth(token)).json()
 
@@ -61,7 +58,6 @@ def test_appending_a_message_derives_the_title_from_the_first_user_message(clien
     assert body["title_is_default"] is False
     assert len(body["messages"]) == 1
 
-    # A second user message should NOT re-derive the title again.
     res2 = client.post(
         f"/api/conversations/{conv['id']}/messages",
         json={"role": "agent", "text": "Some answer.", "meta": {"nodeId": "2.126"}},
@@ -83,8 +79,6 @@ def test_long_first_message_gets_truncated_title(client):
         headers=_auth(token),
     )
     title = res.json()["title"]
-    # _derive_title keeps MAX_TITLE_LENGTH - 2 chars plus the ellipsis
-    # character itself, so the total is one shorter than MAX_TITLE_LENGTH.
     assert len(title) == 41
     assert title.endswith("…")
 
@@ -129,7 +123,9 @@ def test_sharing_with_a_registered_email_grants_read_access(client):
     assert share_res.status_code == 200
     assert share_res.json()["shared_with"][0]["email"] == "colleague@example.com"
 
-    view_res = client.get(f"/api/conversations/{conv['id']}", headers=_auth(colleague_token))
+    view_res = client.get(
+        f"/api/conversations/{conv['id']}", headers=_auth(colleague_token)
+    )
     assert view_res.status_code == 200
     assert view_res.json()["is_owner"] is False
     assert len(view_res.json()["messages"]) == 1
@@ -139,8 +135,6 @@ def test_sharing_with_a_registered_email_grants_read_access(client):
 
 
 def test_shared_with_user_still_cannot_post_messages(client):
-    # View-only sharing (see models.py's ConversationShare docstring) -
-    # access to read is not access to write.
     owner_token = _signup(client, "owner@example.com")
     colleague_token = _signup(client, "colleague@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
@@ -211,11 +205,11 @@ def test_unsharing_revokes_access(client):
         headers=_auth(owner_token),
     )
 
-    view_before = client.get(f"/api/conversations/{conv['id']}", headers=_auth(colleague_token))
+    view_before = client.get(
+        f"/api/conversations/{conv['id']}", headers=_auth(colleague_token)
+    )
     assert view_before.status_code == 200
 
-    # Re-sharing (a no-op, per test_sharing_twice_with_the_same_person_does_not_duplicate)
-    # is a convenient way to read back the target user's id for the unshare call.
     share_list = client.post(
         f"/api/conversations/{conv['id']}/share",
         json={"email": "colleague@example.com"},
@@ -224,12 +218,15 @@ def test_unsharing_revokes_access(client):
     target_user_id = share_list[0]["user_id"]
 
     unshare_res = client.delete(
-        f"/api/conversations/{conv['id']}/share/{target_user_id}", headers=_auth(owner_token)
+        f"/api/conversations/{conv['id']}/share/{target_user_id}",
+        headers=_auth(owner_token),
     )
     assert unshare_res.status_code == 200
     assert unshare_res.json()["shared_with"] == []
 
-    view_after = client.get(f"/api/conversations/{conv['id']}", headers=_auth(colleague_token))
+    view_after = client.get(
+        f"/api/conversations/{conv['id']}", headers=_auth(colleague_token)
+    )
     assert view_after.status_code == 403
 
 
@@ -267,14 +264,13 @@ def test_getting_a_nonexistent_conversation_is_404(client):
     assert res.status_code == 404
 
 
-# --- Share via QR code / link (2026-09-20, see docs/decisions.md) ----------
-
-
 def test_owner_can_create_a_share_link_with_qr_code(client):
     token = _signup(client, "owner@example.com")
     conv = client.post("/api/conversations", headers=_auth(token)).json()
 
-    res = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(token))
+    res = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(token)
+    )
     assert res.status_code == 200
     body = res.json()
     assert body["token"]
@@ -287,8 +283,12 @@ def test_creating_a_share_link_twice_reuses_the_same_token(client):
     token = _signup(client, "owner@example.com")
     conv = client.post("/api/conversations", headers=_auth(token)).json()
 
-    first = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(token)).json()
-    second = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(token)).json()
+    first = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(token)
+    ).json()
+    second = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(token)
+    ).json()
     assert first["token"] == second["token"]
 
 
@@ -301,14 +301,20 @@ def test_claiming_a_share_link_grants_read_access(client):
         json={"role": "user", "text": "who approves 3.111"},
         headers=_auth(owner_token),
     )
-    link = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)).json()
+    link = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    ).json()
 
-    claim_res = client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token))
+    claim_res = client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token)
+    )
     assert claim_res.status_code == 200
     assert claim_res.json()["is_owner"] is False
     assert len(claim_res.json()["messages"]) == 1
 
-    view_res = client.get(f"/api/conversations/{conv['id']}", headers=_auth(visitor_token))
+    view_res = client.get(
+        f"/api/conversations/{conv['id']}", headers=_auth(visitor_token)
+    )
     assert view_res.status_code == 200
 
     list_res = client.get("/api/conversations", headers=_auth(visitor_token))
@@ -319,31 +325,43 @@ def test_claiming_the_same_link_twice_does_not_duplicate_access(client):
     owner_token = _signup(client, "owner@example.com")
     visitor_token = _signup(client, "visitor@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
-    link = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)).json()
+    link = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    ).json()
 
-    client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token))
-    second = client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token))
+    client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token)
+    )
+    second = client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token)
+    )
     assert second.status_code == 200
 
     owner_view = client.post(
         f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
-    )  # idempotent GET-ish - just checking nothing errors
+    )
     assert owner_view.status_code == 200
 
 
 def test_owner_visiting_their_own_share_link_is_a_no_op(client):
     owner_token = _signup(client, "owner@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
-    link = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)).json()
+    link = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    ).json()
 
-    res = client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(owner_token))
+    res = client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(owner_token)
+    )
     assert res.status_code == 200
     assert res.json()["is_owner"] is True
 
 
 def test_claiming_an_unknown_token_is_404(client):
     token = _signup(client, "visitor@example.com")
-    res = client.post("/api/conversations/shared/not-a-real-token/claim", headers=_auth(token))
+    res = client.post(
+        "/api/conversations/shared/not-a-real-token/claim", headers=_auth(token)
+    )
     assert res.status_code == 404
 
 
@@ -353,7 +371,9 @@ def test_claiming_an_expired_link_is_410(client, monkeypatch):
     owner_token = _signup(client, "owner@example.com")
     visitor_token = _signup(client, "visitor@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
-    link = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)).json()
+    link = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    ).json()
 
     from webapp.conversations import _as_aware
     from webapp.db import SessionLocal
@@ -361,13 +381,19 @@ def test_claiming_an_expired_link_is_410(client, monkeypatch):
 
     db = SessionLocal()
     try:
-        row = db.query(ConversationShareLink).filter(ConversationShareLink.token == link["token"]).first()
+        row = (
+            db.query(ConversationShareLink)
+            .filter(ConversationShareLink.token == link["token"])
+            .first()
+        )
         row.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
         db.commit()
     finally:
         db.close()
 
-    res = client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token))
+    res = client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token)
+    )
     assert res.status_code == 410
 
 
@@ -375,12 +401,18 @@ def test_revoking_a_share_link_invalidates_it(client):
     owner_token = _signup(client, "owner@example.com")
     visitor_token = _signup(client, "visitor@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
-    link = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)).json()
+    link = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    ).json()
 
-    revoke_res = client.delete(f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token))
+    revoke_res = client.delete(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(owner_token)
+    )
     assert revoke_res.status_code == 200
 
-    claim_res = client.post(f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token))
+    claim_res = client.post(
+        f"/api/conversations/shared/{link['token']}/claim", headers=_auth(visitor_token)
+    )
     assert claim_res.status_code == 404
 
 
@@ -389,14 +421,15 @@ def test_non_owner_cannot_create_or_revoke_a_share_link(client):
     other_token = _signup(client, "other@example.com")
     conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
 
-    create_res = client.post(f"/api/conversations/{conv['id']}/share-link", headers=_auth(other_token))
+    create_res = client.post(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(other_token)
+    )
     assert create_res.status_code == 403
 
-    revoke_res = client.delete(f"/api/conversations/{conv['id']}/share-link", headers=_auth(other_token))
+    revoke_res = client.delete(
+        f"/api/conversations/{conv['id']}/share-link", headers=_auth(other_token)
+    )
     assert revoke_res.status_code == 403
-
-
-# --- Real-time refresh: GET /api/events (2026-09-20) ------------------------
 
 
 def test_events_stream_rejects_a_bad_token(client):
@@ -405,11 +438,6 @@ def test_events_stream_rejects_a_bad_token(client):
 
 
 def test_sharing_notifies_the_target_users_event_queue():
-    # Exercises the real /api/conversations/{id}/share route end to end
-    # against webapp/events.py's actual subscriber registry, rather
-    # than re-testing notify_user in isolation (see test_events.py) -
-    # this is the thing that actually has to be true for the sidebar's
-    # real-time refresh to work.
     from fastapi.testclient import TestClient
 
     from webapp.backend import app
@@ -419,9 +447,6 @@ def test_sharing_notifies_the_target_users_event_queue():
         owner_token = _signup(client, "owner@example.com")
         _signup(client, "colleague@example.com")
 
-        # /api/auth/me doesn't return a user id, so look it up the same
-        # way test_unsharing_revokes_access does: share once and read
-        # the id back out of shared_with.
         conv = client.post("/api/conversations", headers=_auth(owner_token)).json()
         share_body = client.post(
             f"/api/conversations/{conv['id']}/share",

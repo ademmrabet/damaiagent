@@ -56,18 +56,16 @@ def test_unrelated_query_returns_no_matches(index):
 
     result = resolve_query(
         "random unrelated words banana spaceship",
-        nodes, vectorizer, matrix, searchable_ids
+        nodes,
+        vectorizer,
+        matrix,
+        searchable_ids,
     )
 
     assert result["matches"] == []
 
 
 def test_id_shaped_but_nonexistent_code_does_not_fall_through_to_text_search(index):
-    # The core bug this guards: "9.999.999" is shaped like a DAM id but
-    # isn't one. Before this fix, resolve_query would silently treat
-    # the whole query as free text and could confidently return some
-    # UNRELATED real task by shared vocabulary. It must instead say
-    # the code doesn't exist, never guess at a different task.
     nodes, vectorizer, matrix, searchable_ids = index
 
     result = resolve_query(
@@ -82,8 +80,6 @@ def test_id_shaped_but_nonexistent_code_does_not_fall_through_to_text_search(ind
 def test_invalid_code_in_a_real_chapter_suggests_siblings(index):
     nodes, vectorizer, matrix, searchable_ids = index
 
-    # 3.999 doesn't exist, but chapter 3 (NSO) very much does - the
-    # suggestions should come from real chapter-3 tasks/processes.
     result = resolve_query(
         "who approves 3.999", nodes, vectorizer, matrix, searchable_ids
     )
@@ -100,12 +96,12 @@ def test_invalid_code_in_a_nonexistent_chapter_falls_back_to_text_suggestions(in
 
     result = resolve_query(
         "who approves the quarterly mission program 9.999",
-        nodes, vectorizer, matrix, searchable_ids
+        nodes,
+        vectorizer,
+        matrix,
+        searchable_ids,
     )
 
     assert result["method"] == "invalid_id"
     assert result["invalid_id"] == "9.999"
-    # chapter 9 doesn't exist, so suggestions must come from the
-    # leftover descriptive words instead - "quarterly mission program"
-    # should surface 2.126 even though the code itself was bogus.
     assert any(s["id"] == "2.126" for s in result["suggestions"])

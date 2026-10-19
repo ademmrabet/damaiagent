@@ -8,6 +8,7 @@ DEFAULT_HOST = "http://localhost:11434"
 DEFAULT_MODEL = "llama3.1"
 
 
+# local llm through ollama
 class OllamaProvider(LLMProvider):
     name = "ollama"
 
@@ -16,6 +17,7 @@ class OllamaProvider(LLMProvider):
         self.model = model or os.environ.get("OLLAMA_MODEL") or DEFAULT_MODEL
         self.timeout = timeout
 
+    # check if the ollama server answers
     def is_available(self):
         try:
             resp = requests.get(f"{self.host}/api/tags", timeout=2)
@@ -23,6 +25,7 @@ class OllamaProvider(LLMProvider):
         except requests.RequestException:
             return False
 
+    # send a text prompt to ollama and return the reply
     def chat(self, system, user, temperature=0.2, max_tokens=512):
         try:
             resp = requests.post(
@@ -51,4 +54,6 @@ class OllamaProvider(LLMProvider):
         try:
             return body["message"]["content"]
         except (KeyError, TypeError) as exc:
-            raise LLMUnavailableError(f"Unexpected Ollama response shape: {body!r}") from exc
+            raise LLMUnavailableError(
+                f"Unexpected Ollama response shape: {body!r}"
+            ) from exc

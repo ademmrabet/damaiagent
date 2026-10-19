@@ -1,8 +1,5 @@
 .chat-page {
   height: 100vh;
-  /* dvh accounts for mobile browser chrome (address bar) - falls back
-     to the vh above on browsers that don't support it, since an
-     unsupported value is ignored rather than clearing the prior one. */
   height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -359,10 +356,6 @@
   background: var(--gray-bg);
 }
 
-/* Centers the conversation instead of letting it stretch edge to
-   edge on a wide screen - previously the whole browser width was the
-   flex container, leaving one huge dead gap in the middle on anything
-   wider than a laptop. */
 .chat-inner {
   max-width: 760px;
   margin: 0 auto;

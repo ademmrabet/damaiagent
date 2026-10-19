@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { LANGUAGE_NAMES, LANGUAGE_OPTIONS } from '../i18n.js';
+// language dropdown (auto + 5 languages)
 
-// detected: the resolved language code while value === 'auto' (see
-// Chat.jsx's autoDetectedLang) - shown next to "Auto" so it's obvious
-// the whole UI just followed what the user typed, not just the answer.
 export default function LanguagePicker({ value, onChange, detected }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);

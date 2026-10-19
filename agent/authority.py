@@ -5,8 +5,14 @@ INTENTS = [
         "name": "informed",
         "verb_phrase": "must be informed",
         "keywords": [
-            "informed", "notify", "notified", "notification",
-            "aware", "awareness", "keep in the loop", "kept informed",
+            "informed",
+            "notify",
+            "notified",
+            "notification",
+            "aware",
+            "awareness",
+            "keep in the loop",
+            "kept informed",
         ],
         "matches": lambda action, level: action == "( i )",
     },
@@ -14,9 +20,18 @@ INTENTS = [
         "name": "approve",
         "verb_phrase": "approve(s)",
         "keywords": [
-            "approve", "approves", "approval", "endorse", "endorses",
-            "endorsement", "sign off", "signs off", "signature",
-            "authorize", "authorizes", "authorization",
+            "approve",
+            "approves",
+            "approval",
+            "endorse",
+            "endorses",
+            "endorsement",
+            "sign off",
+            "signs off",
+            "signature",
+            "authorize",
+            "authorizes",
+            "authorization",
         ],
         "matches": lambda action, level: action.startswith("A"),
     },
@@ -24,7 +39,10 @@ INTENTS = [
         "name": "review",
         "verb_phrase": "review(s) / recommend(s)",
         "keywords": [
-            "review", "reviews", "recommend", "recommends",
+            "review",
+            "reviews",
+            "recommend",
+            "recommends",
             "recommendation",
         ],
         "matches": lambda action, level: action.startswith("R"),
@@ -33,8 +51,14 @@ INTENTS = [
         "name": "initiate",
         "verb_phrase": "initiate(s)",
         "keywords": [
-            "initiate", "initiates", "originate", "originates",
-            "launch", "launches", "starts", "kicks off",
+            "initiate",
+            "initiates",
+            "originate",
+            "originates",
+            "launch",
+            "launches",
+            "starts",
+            "kicks off",
         ],
         "matches": lambda action, level: action.startswith("I"),
     },
@@ -70,23 +94,15 @@ _ACTION_DISPLAY_NAMES = {
 }
 
 
+# readable name for an action code
 def action_label(action):
-    """
-    Human-readable name for a bare action code ("I", "C1", "A2",
-    "( i )", ...). Reuses INTENTS' own `matches` predicates rather than
-    a second, parallel code->name table, so this can never drift out
-    of sync with what "who approves"/"who checks"/... actually match
-    against. Falls back to the raw code itself for anything none of
-    INTENTS recognizes - shouldn't happen given the DAM's fixed code
-    set, but silently hiding an unexpected code behind a formatting
-    helper would be worse than just showing it unlabeled.
-    """
     for intent in INTENTS:
         if intent["matches"](action, None):
             return _ACTION_DISPLAY_NAMES[intent["name"]]
     return action
 
 
+# first intent whose keyword appears in the question
 def _match_intent(lowered):
     for intent in INTENTS:
         if any(keyword in lowered for keyword in intent["keywords"]):
@@ -94,26 +110,8 @@ def _match_intent(lowered):
     return None
 
 
+# what the user wants to know (approve, check, inform...), tolerating typos
 def detect_intent(query):
-    """
-    Returns the first matching intent dict, or None if the question
-    doesn't name a specific authority action - callers should fall
-    back to showing every responsibility on the resolved task rather
-    than guessing which one was meant.
-
-    Tries the query exactly as typed first (the common case, and the
-    fast path - no correction needed). Only if that finds nothing does
-    it retry against a typo-corrected version - "aproves" / "chek" /
-    "intiates" now resolve to the same intent "approves" / "check" /
-    "initiates" would, instead of silently matching no intent at all
-    and falling back to showing every responsibility on the task
-    (still correct, just far less targeted than what was actually
-    asked). Correction only ever changes WHICH intent gets selected -
-    it never touches the actual action-code matching rules just below
-    (the A/A1/A2, C vs C1/C2 vs C3/C4 precision work), so it can't
-    reopen the "bare C" / "consult vs check" ambiguity that was
-    already carefully fixed.
-    """
 
     lowered = query.lower()
 

@@ -71,9 +71,11 @@ def test_multi_digit_footnote_fully_stripped():
     for page_index in [52, 53, 75]:
         headers = extract_column_headers(extract_characters(pdf.pages[page_index]))
         for h in headers:
-            assert not h["role"].rstrip() or not h["role"].rstrip()[-1].isdigit() or "." in h["role"], (
-                f"page {page_index}: {h['role']!r} still ends in an unstripped digit"
-            )
+            assert (
+                not h["role"].rstrip()
+                or not h["role"].rstrip()[-1].isdigit()
+                or "." in h["role"]
+            ), f"page {page_index}: {h['role']!r} still ends in an unstripped digit"
 
 
 def test_department_codes_with_periods_not_stripped():

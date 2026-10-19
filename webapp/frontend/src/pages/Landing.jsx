@@ -22,9 +22,6 @@ function LandingContent() {
         )
         .fromTo('.landing-footnote', { opacity: 0 }, { opacity: 1, duration: 0.5 }, '-=0.2');
 
-      // Slow-drifting background accents - the only continuous
-      // animation on the page, kept subtle (low opacity, long
-      // duration) so it reads as ambient motion, not distraction.
       gsap.to('.landing-blob-green', {
         x: 30,
         y: -20,
@@ -111,16 +108,12 @@ function LandingContent() {
     </div>
   );
 }
+// landing page with the chat and dashboard cards
 
 export default function Landing() {
   const [bootChecked, setBootChecked] = useState(false);
 
   useEffect(() => {
-    // Gated on a real signal (the first backend health probe), not a
-    // fake timer - the splash means something ("is the DAM agent
-    // actually reachable") instead of just padding out the load for
-    // effect. Resolves either way (up or down); StatusDot keeps
-    // polling and reflects the live state afterwards regardless.
     checkHealth()
       .catch(() => {})
       .finally(() => setBootChecked(true));

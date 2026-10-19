@@ -1,4 +1,3 @@
-
 import re
 
 from parsing.metadata import ACTION_PATTERN, NOTE_PATTERN
@@ -11,17 +10,8 @@ IDENTIFIER_PATTERN = re.compile(r"^\d+(?:\.\d+)+$")
 LETTER_LABEL_PATTERN = re.compile(r"^\(([a-h]|[j-z])\)$")
 
 
+# group the lines into one block per task id
 def build_task_blocks(lines):
-    """
-    `lines`: output of parsing.rows.ordered_lines() - a top-to-bottom
-    list of {"text", "top", "bottom"}.
-
-    Returns a list of {"text", "top", "bottom"} blocks, one per
-    task/child_task. Process/chapter boundary rows and footnote
-    sections are consumed to close the current block, not emitted as
-    blocks themselves - build_hierarchy_skeleton (next stage) is what
-    captures process/chapter identifiers.
-    """
 
     blocks = []
     current_task = None
@@ -75,38 +65,34 @@ def build_task_blocks(lines):
             close_task()
 
             letter = identifier[1]
-            rest = line[len(identifier):].strip()
+            rest = line[len(identifier) :].strip()
             constructed_id = f"{last_child_task_id}.{letter}"
 
             current_task = {
                 "text": f"{constructed_id} {rest}".rstrip(),
                 "top": row["top"],
-                "bottom": row["bottom"]
+                "bottom": row["bottom"],
             }
             continue
 
         if not IDENTIFIER_PATTERN.fullmatch(identifier):
 
-            task_ends_with_period = (
-                current_task is not None
-                and current_task["text"].rstrip().endswith(".")
-            )
+            task_ends_with_period = current_task is not None and current_task[
+                "text"
+            ].rstrip().endswith(".")
 
             first_action = ACTION_PATTERN.search(line)
 
             line_leads_with_prose_then_actions = (
-                first_action is not None
-                and line[:first_action.start()].strip() != ""
+                first_action is not None and line[: first_action.start()].strip() != ""
             )
 
-            current_already_has_actions = (
-                current_task is not None
-                and bool(ACTION_PATTERN.search(current_task["text"]))
+            current_already_has_actions = current_task is not None and bool(
+                ACTION_PATTERN.search(current_task["text"])
             )
 
-            task_looks_finished = (
-                task_ends_with_period
-                or (line_leads_with_prose_then_actions and current_already_has_actions)
+            task_looks_finished = task_ends_with_period or (
+                line_leads_with_prose_then_actions and current_already_has_actions
             )
 
             if current_task and not task_looks_finished:
@@ -120,7 +106,7 @@ def build_task_blocks(lines):
             next_is_title_split = False
 
             if next_tokens and IDENTIFIER_PATTERN.fullmatch(next_tokens[0]):
-                remainder = next_line[len(next_tokens[0]):]
+                remainder = next_line[len(next_tokens[0]) :]
                 remainder = ACTION_PATTERN.sub("", remainder)
                 remainder = NOTE_PATTERN.sub("", remainder)
 
@@ -134,7 +120,6 @@ def build_task_blocks(lines):
 
             if current_task:
                 attach(line, row)
-
 
             continue
 

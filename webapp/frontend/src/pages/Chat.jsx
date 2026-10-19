@@ -357,6 +357,7 @@ function ShareModal({ conversationId, onClose, onShareEmail }) {
     </div>
   );
 }
+// main chat page: messages, sharing, voice and attachments
 
 export default function Chat() {
   const {
@@ -376,14 +377,6 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [llmMode, setLlmMode] = useState('auto');
   const [uiLanguage, setUiLanguage] = useState('auto');
-  // Only meaningful when uiLanguage === 'auto': the best guess so far
-  // at what language the user is writing in, so the whole UI chrome
-  // (not just DAM answers) can follow along. Refreshed two ways - see
-  // handleInputChange (instant, client-side, as they type) and
-  // handleSubmit (once a question comes back, the server's own
-  // LLM-based detected_language overwrites the guess with the real
-  // answer). Persists across a cleared input so the chrome doesn't
-  // flicker back to English between questions.
   const [autoDetectedLang, setAutoDetectedLang] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingAttachment, setPendingAttachment] = useState(null);
@@ -400,15 +393,9 @@ export default function Chat() {
   const recordedChunksRef = useRef([]);
 
   const messages = activeConversation ? activeConversation.messages : [];
-  // The picker's own value stays 'auto' (sent to the backend as-is,
-  // which does its own detection per question); this resolves it to a
-  // concrete code for everything the UI actually renders with.
   const effectiveLanguage = uiLanguage === 'auto' ? (autoDetectedLang || 'en') : uiLanguage;
   const t = stringsFor(effectiveLanguage);
   const isRtl = RTL_LANGUAGES.has(effectiveLanguage);
-  // Sharing is view-only (see webapp/models.py's ConversationShare
-  // docstring) - a conversation someone else shared with us can be
-  // read but never posted into.
   const canPost = !activeConversation || activeConversation.isOwner;
 
   useEffect(() => {
@@ -419,22 +406,11 @@ export default function Chat() {
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      // Carries the current path (including a ?share_token=... from a
-      // scanned QR code) through to Login.jsx, which sends the user
-      // back here - rather than to the generic /chat - once they've
-      // signed in. See Login.jsx's getRedirectTarget.
       const redirect = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.replace(`/login?redirect=${redirect}`);
     }
   }, []);
 
-  // Handles landing here via a "Share via QR code" link
-  // (?share_token=... - see ShareModal below and webapp/backend.py's
-  // /api/conversations/shared/{token}/claim). Runs once: claims the
-  // token (grants this account read access, same as an email invite
-  // would), strips the token from the URL so it can't be re-claimed
-  // by reloading or re-shared by copying the address bar, then
-  // refreshes the conversation lists and switches to it.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get('share_token');
@@ -459,9 +435,6 @@ export default function Chat() {
     setInput(value);
     if (uiLanguage !== 'auto') return;
     const guess = detectLanguage(value);
-    // null means "not enough signal yet" (too short, or no distinctive
-    // words found mid-word) - keep whatever we last had rather than
-    // flicker the whole UI back to English between words.
     if (guess) setAutoDetectedLang(guess);
   }
 
@@ -564,9 +537,6 @@ export default function Chat() {
     try {
       const data = await askQuestion(question, llmMode, previousNodeId, uiLanguage, attachment);
       const attachmentAnswer = data.source === 'attachment';
-      // The server's detection ran a real LLM over the full question,
-      // so it's more reliable than the client-side heuristic guess -
-      // let it correct the chrome's language once a question lands.
       if (uiLanguage === 'auto' && data.detected_language) {
         setAutoDetectedLang(data.detected_language);
       }

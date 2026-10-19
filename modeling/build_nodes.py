@@ -1,4 +1,3 @@
-
 import re
 
 import pdfplumber
@@ -15,54 +14,28 @@ from parsing.hierarchy import (
     get_children,
     has_children,
 )
-from parsing.metadata import extract_title, extract_references, looks_word_boundary_corrupted
+from parsing.metadata import (
+    extract_title,
+    extract_references,
+    looks_word_boundary_corrupted,
+)
 from parsing.action_geometry import extract_action_instances, extract_informed_instances
 from parsing.column_roles import extract_column_headers, nearest_role
 from schema.schema import Node, Responsibility
 
 
+# read a process title straight from its raw pdf line
 def _process_title_from_line(line_text, identifier):
-    """
-    task_blocks.py deliberately discards process boundary rows (e.g.
-    "2.220 LOAN / GRANT PROCESSING") without emitting a block, so their
-    titles have to be read directly off the raw line here instead -
-    this is the only place they're captured.
-    """
 
-    return " ".join(line_text[len(identifier):].split())
+    return " ".join(line_text[len(identifier) :].split())
 
 
 _LONG_DIGIT_RUN = re.compile(r"(?<!\d)\d{4,}(?!\d)")
 _STRAY_PERIOD = re.compile(r"(?<!\w)\.(?!\w)")
 
 
+# rebuild the block text from characters when word extraction is garbled
 def _reconstruct_clean_block_text(chars, top, bottom, pad=1.0):
-    """
-    Character-level fallback for a block whose word-based text looks
-    corrupted (see parsing.metadata.looks_word_boundary_corrupted and
-    parsing.rows.build_char_rows - real bug found via agent output:
-    pdfplumber's OWN word extraction can merge two close-together
-    lines' characters into garbled words before this project's code
-    ever sees them). Re-derives the block's text directly from raw
-    characters within its known top/bottom span instead of trusting
-    the word list.
-
-    Trade-off found testing this: character concatenation is exactly
-    right for real prose (real spaces are already literal characters
-    in the stream), but the ACTIONS/footnote row within the same
-    block has no such spacing between adjacent footnote digits from
-    different columns - they land glued together as long runs like
-    "13131316" that NOTE_PATTERN (`\\b\\d{1,3}\\b`) can't split (no
-    word-boundary exists INSIDE an unbroken digit run). Rather than
-    reimplementing action/footnote-column separation at the character
-    level - task_blocks.py and action_geometry.py already do that job
-    well from words/geometry - just strip what's clearly leftover
-    contamination: digit runs of 4+ (longer than any real footnote
-    number in this DAM) and stray standalone periods (footnote
-    numbering markers like "1." with the digit already stripped
-    elsewhere). Known trade-off, not a complete character-level
-    parser - documented in docs/decisions.md.
-    """
 
     band_chars = [c for c in chars if top - pad <= c["top"] <= bottom + pad]
     lines = char_lines(build_char_rows(band_chars))
@@ -74,11 +47,8 @@ def _reconstruct_clean_block_text(chars, top, bottom, pad=1.0):
     return " ".join(text.split())
 
 
+# parse the whole pdf into a dict of nodes keyed by id
 def build_nodes(pdf_path):
-    """
-    Returns {id: schema.Node}, covering every chapter, process, task,
-    child_task, and threshold_variant found in the document.
-    """
 
     pdf = pdfplumber.open(pdf_path)
 
@@ -96,7 +66,9 @@ def build_nodes(pdf_path):
         for line in lines:
             identifier = get_identifier(line["text"])
             if identifier and get_node_type(identifier) == "process":
-                process_titles[identifier] = _process_title_from_line(line["text"], identifier)
+                process_titles[identifier] = _process_title_from_line(
+                    line["text"], identifier
+                )
 
         headers = extract_column_headers(chars)
         if headers:
@@ -135,12 +107,14 @@ def build_nodes(pdf_path):
             responsibilities = []
             for inst in action_instances + informed_instances:
                 role = nearest_role(page_headers, inst["x0"])
-                responsibilities.append(Responsibility(
-                    role=role if role else "unresolved",
-                    action=inst["action"],
-                    level=inst["level"],
-                    footnote_refs=inst["footnote_refs"]
-                ))
+                responsibilities.append(
+                    Responsibility(
+                        role=role if role else "unresolved",
+                        action=inst["action"],
+                        level=inst["level"],
+                        footnote_refs=inst["footnote_refs"],
+                    )
+                )
 
             enriched[identifier] = {
                 "id": identifier,

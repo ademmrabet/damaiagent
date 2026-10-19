@@ -1,7 +1,12 @@
 import pytest
 
 from modeling.build_nodes import build_nodes
-from modeling.graph import build_graph, responsible_roles, tasks_for_role, UNRESOLVED_ROLE_ID
+from modeling.graph import (
+    build_graph,
+    responsible_roles,
+    tasks_for_role,
+    UNRESOLVED_ROLE_ID,
+)
 from tests.fixtures.known_cases import PDF_PATH
 
 
@@ -15,9 +20,7 @@ def graph_and_nodes():
 def test_node_count_matches_dam_nodes_plus_roles(graph_and_nodes):
     graph, nodes, _ = graph_and_nodes
 
-    role_strings = {
-        r.role for n in nodes.values() for r in n.responsibilities
-    }
+    role_strings = {r.role for n in nodes.values() for r in n.responsibilities}
 
     assert graph.number_of_nodes() == len(nodes) + len(role_strings)
 
@@ -47,7 +50,8 @@ def test_contains_edges_are_direct_children_only(graph_and_nodes):
     graph, _, _ = graph_and_nodes
 
     children = [
-        target for _, target, data in graph.out_edges("2.513", data=True)
+        target
+        for _, target, data in graph.out_edges("2.513", data=True)
         if data.get("edge_type") == "contains"
     ]
     assert sorted(children) == ["2.513.1", "2.513.2", "2.513.3"]
@@ -60,7 +64,8 @@ def test_out_of_scope_references_are_skipped_not_wired(graph_and_nodes):
     assert ("2.312.2", "16.100") in skipped_refs
 
     out_edges = [
-        target for _, target, data in graph.out_edges("2.312.2", data=True)
+        target
+        for _, target, data in graph.out_edges("2.312.2", data=True)
         if data.get("edge_type") == "references"
     ]
     assert "16.100" not in out_edges
@@ -70,9 +75,7 @@ def test_unresolved_responsibilities_stay_visible_not_dropped(graph_and_nodes):
     graph, nodes, _ = graph_and_nodes
 
     has_unresolved = any(
-        r.role == "unresolved"
-        for n in nodes.values()
-        for r in n.responsibilities
+        r.role == "unresolved" for n in nodes.values() for r in n.responsibilities
     )
 
     if has_unresolved:

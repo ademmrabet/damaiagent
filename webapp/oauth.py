@@ -1,17 +1,4 @@
-"""
-Google and Microsoft sign-in via Authlib's Starlette OAuth client.
-
-Both providers share one goal once the redirect dance is done:
-resolve to a User row and hand back exactly the same kind of JWT the
-email/password path issues (webapp/auth.py's create_access_token) -
-the rest of the app never needs to know which of the three login
-paths a request's token came from.
-
-Registered lazily, and only if credentials are actually present
-(GOOGLE_CLIENT_ID/SECRET, MICROSOFT_CLIENT_ID/SECRET) - the app still
-starts, and email/password login still works, before either OAuth app
-has been set up. See docs/oauth_setup.md for how to register them.
-"""
+# google and microsoft sign-in
 
 import os
 
@@ -52,18 +39,15 @@ if MICROSOFT_CONFIGURED:
     )
 
 
-def get_or_create_oauth_user(db: Session, provider: str, subject: str, email: str, name) -> User:
-    """
-    Looked up by (provider, subject) first - the provider's own
-    stable identifier - never by email alone, since email addresses
-    can be reassigned or changed on the provider's side in ways a
-    subject id isn't. Falls back to linking onto an existing
-    password account with the same email (so signing up with a
-    password and later using Google with that same address doesn't
-    silently create a second, separate account) before creating a
-    brand new row.
-    """
-    user = db.query(User).filter(User.oauth_provider == provider, User.oauth_sub == subject).first()
+# find the user by provider id, or create the account
+def get_or_create_oauth_user(
+    db: Session, provider: str, subject: str, email: str, name
+) -> User:
+    user = (
+        db.query(User)
+        .filter(User.oauth_provider == provider, User.oauth_sub == subject)
+        .first()
+    )
     if user:
         return user
 

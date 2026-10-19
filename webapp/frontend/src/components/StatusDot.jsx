@@ -3,6 +3,7 @@ import gsap from 'gsap';
 import { checkHealth } from '../api.js';
 
 const POLL_INTERVAL_MS = 8000;
+// green/red dot showing if the backend is reachable
 
 export default function StatusDot() {
   const [online, setOnline] = useState(null);
@@ -30,10 +31,6 @@ export default function StatusDot() {
 
   useEffect(() => {
     if (online === null || !dotRef.current) return;
-    // A quick pop whenever the status actually changes - draws the
-    // eye to the one piece of UI that tells you whether the demo is
-    // about to work or not, without being a distracting animation
-    // that plays on every poll.
     gsap.fromTo(
       dotRef.current,
       { scale: 0.4 },

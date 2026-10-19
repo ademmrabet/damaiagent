@@ -23,19 +23,14 @@ _GENERIC_QUERY_WORDS = ENGLISH_STOP_WORDS | _INTENT_VOCAB | _EXTRA_GENERIC_WORDS
 _WORD_RE = re.compile(r"[a-z']+")
 
 
+# count meaningful words, ignoring stop words and generic ones
 def _content_word_count(query):
     words = _WORD_RE.findall(query.lower())
     return sum(1 for w in words if len(w) >= 3 and w not in _GENERIC_QUERY_WORDS)
 
 
+# true when the match is too vague or too close to trust
 def _needs_clarification(query, matches):
-    """
-    True when resolve_query technically returned a top match, but
-    there isn't enough real signal to trust it silently - either the
-    query itself is too under-specified (too few real content words),
-    or multiple candidates are close enough that picking just the top
-    one would be a guess dressed up as an answer.
-    """
     too_vague = _content_word_count(query) <= 1
     top_score = matches[0]["score"]
 
@@ -48,19 +43,24 @@ def _needs_clarification(query, matches):
     )
 
 
+# ask the user which of the top matches they meant
 def _format_clarification_answer(matches, nodes):
-    suggestions = ", ".join(f"{m['id']} ({nodes[m['id']].title!r})" for m in matches[:3])
+    suggestions = ", ".join(
+        f"{m['id']} ({nodes[m['id']].title!r})" for m in matches[:3]
+    )
     return (
         "That's a bit broad for me to pin down to one task. Did you mean "
         f"one of these: {suggestions}? Or try describing the specific "
         'activity, e.g. "who approves the quarterly mission program".'
     )
 
+
 CONTEXT_OVERRIDE_MAX_SCORE = 0.5
 
 _HAS_DIGIT = re.compile(r"\d")
 
 
+# result dict for answers that are not tied to a node
 def _empty_result(answer, method, score=None):
     return {
         "answer": answer,
@@ -77,6 +77,7 @@ def _empty_result(answer, method, score=None):
     }
 
 
+# tell the user the id does not exist and suggest close ones
 def _format_invalid_id_answer(invalid_id, suggestions):
     if suggestions:
         listed = ", ".join(f"{s['id']} ({s['title']!r})" for s in suggestions)
@@ -92,6 +93,7 @@ def _format_invalid_id_answer(invalid_id, suggestions):
     )
 
 
+# join role names, adding footnote numbers and expanded acronyms
 def _format_role_list(roles):
     by_role = {}
     for r in roles:
@@ -111,6 +113,7 @@ def _format_role_list(roles):
     return parts
 
 
+# short list of the child tasks under a process
 def _children_list_text(node, nodes):
     if not node.children:
         return None
@@ -125,6 +128,7 @@ def _children_list_text(node, nodes):
     return listed + more
 
 
+# explain that this node has no roles and list its activities
 def _format_children_pointer(node, nodes):
     children_text = _children_list_text(node, nodes)
     if children_text is None:
@@ -136,36 +140,23 @@ def _format_children_pointer(node, nodes):
     )
 
 
+# roles whose action fits the asked intent
 def _matching_roles(roles, intent):
     return [r for r in roles if intent["matches"](r["action"], r["level"])]
 
 
+# roles with a check/verify action
 def _check_verify_roles(roles):
     return [r for r in roles if r["action"] in ("C", "C1", "C2")]
 
 
+# roles that only need to be informed
 def _informed_roles(roles):
     return [r for r in roles if r["action"] == "( i )"]
 
 
+# always mention check/verify roles and who must be informed
 def _format_mandatory_notes(roles, intent_name):
-    """
-    Domain rule from Adem (2026-09-03, see docs/decisions.md): when a
-    task has a recorded Check/Verify (C/C1/C2) entity in the DAM, that
-    step is mandatory - not optional context, a real part of the
-    process - so it belongs on ANY narrow answer about that task ("who
-    approves", "who initiates", ...), not only when someone happens to
-    ask "who checks this." Same always-surface treatment extended to
-    the informed-party (( i )) entity, for consistency (also Adem's
-    explicit call, over the alternative of gating it behind some vaguer
-    "when it feels needed" heuristic that couldn't be built reliably
-    without either an LLM judgment call or an undertested guess).
-
-    Skipped when the intent actually asked about IS that same action -
-    "who checks 3.111" already answers with the check/verify roles as
-    its main sentence; repeating them as a trailing note would be a
-    redundant echo, not new information.
-    """
     notes = []
 
     if intent_name != "check":
@@ -173,7 +164,9 @@ def _format_mandatory_notes(roles, intent_name):
         if check_roles:
             role_list = _format_role_list(check_roles)
             notes.append(
-                "This task must also be checked/verified by " + ", ".join(role_list) + "."
+                "This task must also be checked/verified by "
+                + ", ".join(role_list)
+                + "."
             )
 
     if intent_name != "informed":
@@ -185,27 +178,8 @@ def _format_mandatory_notes(roles, intent_name):
     return " ".join(notes)
 
 
+# for nodes that only say 'see X', answer with the referenced node
 def _format_reference_pointer(node, nodes, graph, intent=None):
-    """
-    For a node that carries no responsibilities of its own but DOES
-    point somewhere else in the DAM (e.g. 1.117.2's real text is "See
-    2.120: Organization of mission" - a redirect to a whole process,
-    not a specific activity's own row). Tries each reference in order;
-    if the referenced node itself has responsibilities, surfaces those
-    (filtered by intent if one was given); if it has none of its own
-    but has children, points to those instead - the same "don't dead-
-    end" pattern _format_children_pointer already uses, just reached
-    through a reference hop instead of a parent/child edge.
-
-    Some references point entirely outside this document's ~79-page
-    scope (e.g. 2.312.2's "See DAM 16.100, 16.200, 16.300, and
-    16.400" - chapter 16 isn't part of this DAM export at all, see
-    schema.py's own documented caution and the 2026-07-28 graph-
-    building entry). Those are real, correct answers from the DAM's
-    own text - "this is governed elsewhere" - not the same as "nothing
-    is recorded", so they get their own message instead of silently
-    falling through to the generic dead-end one.
-    """
     out_of_scope = []
 
     for ref_id in node.references:
@@ -251,19 +225,8 @@ def _format_reference_pointer(node, nodes, graph, intent=None):
     return None
 
 
+# answer for one specific intent, like only the approvers
 def _format_intent_answer(node, intent, roles, matching, nodes, graph):
-    """
-    Returns (base_answer, notes) rather than a single combined string -
-    callers that just want the display text join them the same way
-    this function used to internally (f"{base} {notes}" if notes else
-    base); answer_question also keeps `base_answer` and `notes`
-    separate so agent/generate.py can ask an LLM to rephrase only
-    `base_answer` and re-attach `notes` afterward untouched, instead of
-    requiring every mandatory-note role name to also survive the
-    rephrase verbatim (see docs/decisions.md, 2026-09-19 - that
-    inflated fact count was the single biggest driver of grounding-
-    check fallbacks).
-    """
     if not matching:
         if not roles:
             pointer = _format_children_pointer(node, nodes)
@@ -279,13 +242,15 @@ def _format_intent_answer(node, intent, roles, matching, nodes, graph):
         role_list = _format_role_list(matching)
         base = (
             f"For {node.id} ({node.title!r}), the following {intent['verb_phrase']}: "
-            + ", ".join(role_list) + "."
+            + ", ".join(role_list)
+            + "."
         )
 
     notes = _format_mandatory_notes(roles, intent["name"])
     return base, notes
 
 
+# full answer when no specific intent was asked
 def _format_full_answer(node, roles, nodes, graph):
     if not roles:
         pointer = _format_children_pointer(node, nodes)
@@ -319,27 +284,10 @@ def _format_full_answer(node, roles, nodes, graph):
     return "\n".join(lines)
 
 
-def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, previous_node_id=None):
-    """
-    Returns {"answer": str, "node_id": str|None, "method": str|None,
-    "score": float|None, "roles": list|None, "node_title": str|None,
-    "node_type": str|None, "intent": str|None}. "answer" is always the
-    trusted, deterministic prose - the rest is the evidence behind it
-    (which node was resolved, how, how confidently, and the exact raw
-    facts "answer" was built from) so a caller can show that evidence
-    directly, or hand "roles" to something else (e.g. an LLM phrasing
-    layer) as verified ground truth instead of re-deriving it.
-
-    `previous_node_id`: the node_id this same conversation last
-    resolved to, if any (the caller - webapp/backend.py - gets this
-    from the frontend, which tracks it per chat thread). Used only as
-    a fallback anchor when a fresh resolution of `query` alone is weak
-    or absent (see CONTEXT_OVERRIDE_MAX_SCORE above) - an explicit id
-    in `query`, or a fresh text match that clears the bar on its own
-    merits, always takes priority. resolve_query still runs first
-    either way; this only decides which result to trust once both are
-    known.
-    """
+# main entry: question in, structured answer out
+def answer_question(
+    query, nodes, graph, vectorizer, matrix, searchable_ids, previous_node_id=None
+):
 
     smalltalk_reply = detect_smalltalk(query)
     if smalltalk_reply:
@@ -359,13 +307,12 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
     resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
 
     context_available = (
-        previous_node_id
-        and previous_node_id in nodes
-        and not _HAS_DIGIT.search(query)
+        previous_node_id and previous_node_id in nodes and not _HAS_DIGIT.search(query)
     )
 
     resolution_is_weak = resolution["method"] == "text_search" and (
-        not resolution["matches"] or resolution["matches"][0]["score"] < CONTEXT_OVERRIDE_MAX_SCORE
+        not resolution["matches"]
+        or resolution["matches"][0]["score"] < CONTEXT_OVERRIDE_MAX_SCORE
     )
 
     if context_available and resolution_is_weak:
@@ -374,7 +321,9 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         score = None
     else:
         if resolution["method"] == "invalid_id":
-            answer = _format_invalid_id_answer(resolution["invalid_id"], resolution["suggestions"])
+            answer = _format_invalid_id_answer(
+                resolution["invalid_id"], resolution["suggestions"]
+            )
             return _empty_result(answer, "invalid_id")
 
         if not resolution["matches"]:
@@ -405,9 +354,13 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
                 score=top["score"],
             )
 
-        if resolution["method"] == "text_search" and top["score"] < MIN_TEXT_SEARCH_SCORE:
+        if (
+            resolution["method"] == "text_search"
+            and top["score"] < MIN_TEXT_SEARCH_SCORE
+        ):
             suggestions = ", ".join(
-                f"{m['id']} ({nodes[m['id']].title!r})" for m in resolution["matches"][:3]
+                f"{m['id']} ({nodes[m['id']].title!r})"
+                for m in resolution["matches"][:3]
             )
             return _empty_result(
                 f"I'm not confident which task that refers to. Closest matches: {suggestions}.",
@@ -429,7 +382,11 @@ def answer_question(query, nodes, graph, vectorizer, matrix, searchable_ids, pre
         base_answer, mandatory_notes_text = _format_intent_answer(
             node, intent, roles, matching, nodes, graph
         )
-        answer = f"{base_answer} {mandatory_notes_text}" if mandatory_notes_text else base_answer
+        answer = (
+            f"{base_answer} {mandatory_notes_text}"
+            if mandatory_notes_text
+            else base_answer
+        )
         facts = list(matching)
         if intent["name"] != "check":
             facts.extend(_check_verify_roles(roles))

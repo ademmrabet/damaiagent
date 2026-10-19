@@ -1,44 +1,32 @@
-
 import re
 
 from parsing.text_cleaning import clean
 
-ACTION_PATTERN = re.compile(
-    r"\(\s*i\s*\)"
-    r"|\bI\b"
-    r"|\b[CRA]\d*\b"
-)
+ACTION_PATTERN = re.compile(r"\(\s*i\s*\)" r"|\bI\b" r"|\b[CRA]\d*\b")
 
 NOTE_PATTERN = re.compile(r"(?<![,-])\b\d{1,3}\b(?![,-])")
 
-REFERENCE_PATTERN = re.compile(
-    r"See\s+DAM\s+([\d.,\sand]+)",
-    re.IGNORECASE
-)
+REFERENCE_PATTERN = re.compile(r"See\s+DAM\s+([\d.,\sand]+)", re.IGNORECASE)
 
 RANGE_REFERENCE_PATTERN = re.compile(
     r"Refer\s+to\s+Activit(?:y|ies)\s+"
     r"(\d+(?:\.\d+)+)"
     r"(?:\s*[-–]\s*(\d+(?:\.\d+)+))?"
     r"\s+in\s+Section\s+\d+\.?",
-    re.IGNORECASE
+    re.IGNORECASE,
 )
 
-SEE_ID_COLON_PATTERN = re.compile(
-    r"\bSee\s+(\d+(?:\.\d+)+)\s*:",
-    re.IGNORECASE
-)
+SEE_ID_COLON_PATTERN = re.compile(r"\bSee\s+(\d+(?:\.\d+)+)\s*:", re.IGNORECASE)
 
 SEE_ID_SLASH_PATTERN = re.compile(
-    r"\(\s*See\s+(\d+(?:\.\d+)+)\s*/\s*(\d+(?:\.\d+)+)\s*\)",
-    re.IGNORECASE
+    r"\(\s*See\s+(\d+(?:\.\d+)+)\s*/\s*(\d+(?:\.\d+)+)\s*\)", re.IGNORECASE
 )
 
 REFERENCE_ID_PATTERN = re.compile(r"\d+(?:\.\d+)+")
 
 
+# turn a range like 2.114 to 2.117 into every id in it
 def _expand_id_range(start_id, end_id):
-    """2.114, 2.117 -> ['2.114', '2.115', '2.116', '2.117']"""
 
     start_parts = start_id.split(".")
     end_parts = end_id.split(".")
@@ -56,38 +44,38 @@ def _expand_id_range(start_id, end_id):
 
     return [f"{prefix}.{n}" for n in range(start_n, end_n + 1)]
 
+
 VALID_ACTIONS = {
-    "I", "I1", "I2", "I3",
-    "C", "C1", "C2", "C3", "C4",
-    "R", "R1", "R2",
-    "A", "A1", "A2", "A3",
-    "( i )"
+    "I",
+    "I1",
+    "I2",
+    "I3",
+    "C",
+    "C1",
+    "C2",
+    "C3",
+    "C4",
+    "R",
+    "R1",
+    "R2",
+    "A",
+    "A1",
+    "A2",
+    "A3",
+    "( i )",
 }
 
 
+# remove the id from the start of the text
 def strip_identifier(text, identifier):
     if identifier and text.startswith(identifier):
-        return text[len(identifier):]
+        return text[len(identifier) :]
 
     return re.sub(r"^\d+(?:\.\d+)+", "", text)
 
 
+# ids mentioned after 'see', including lists and ranges
 def extract_references(text):
-    """
-    'Signature ... for See DAM 16.100, 16.200, 16.300, and 16.400
-    technical cooperation' -> ['16.100', '16.200', '16.300', '16.400']
-
-    'Communication to Government Refer to Activities 2.114 - 2.117 in
-    Section 2.' -> ['2.114', '2.115', '2.116', '2.117']
-
-    'CSP / RISP Dialogue Mission (during CSP / See 2.120: Organization
-    of mission RISP preparation)' -> ['2.120'] (the "See <id>:" form -
-    a redirect to a whole process rather than a specific activity)
-
-    'Interim CSP/RISP... (See 1.114.1 / 1.114.2)' -> ['1.114.1',
-    '1.114.2'] (the parenthetical "See <id> / <id>" form, pointing to
-    two alternative activities rather than a range)
-    """
 
     if not text:
         return []
@@ -121,14 +109,8 @@ def extract_references(text):
     return references
 
 
+# cut out 'see 2.120' style phrases
 def remove_references(text):
-    """The one place reference phrases get stripped - 'See DAM ...',
-    'Refer to Activities ... in Section ...', 'See <id>:', and
-    '(See <id> / <id>)'. Everything downstream (title, note-hunting)
-    calls this first, so a reference phrase can never be mistaken for
-    footnote-number noise - the exact corruption these last two
-    patterns were added to fix (their ids were being silently eaten,
-    digit by digit, by the footnote-digit stripper instead)."""
 
     if not text:
         return ""
@@ -141,6 +123,7 @@ def remove_references(text):
     return text
 
 
+# find the action codes (A, C, R, I...) in the text
 def extract_actions(text):
     if not text:
         return []
@@ -161,6 +144,7 @@ def extract_actions(text):
     return clean_actions
 
 
+# remove action codes from the text
 def remove_actions(text):
     if not text:
         return ""
@@ -168,6 +152,7 @@ def remove_actions(text):
     return ACTION_PATTERN.sub("", text)
 
 
+# find footnote numbers in the text
 def extract_note_references(text, identifier=None):
     if not text:
         return []
@@ -199,6 +184,7 @@ def extract_note_references(text, identifier=None):
     return unique_notes
 
 
+# remove footnote numbers from the text
 def remove_note_references(text):
     if not text:
         return ""
@@ -209,10 +195,12 @@ def remove_note_references(text):
 WORD_BOUNDARY_CORRUPTION_PATTERN = re.compile(r"[a-z][A-Z]")
 
 
+# true when spacing in the text looks broken by the pdf extraction
 def looks_word_boundary_corrupted(text):
     return bool(text) and bool(WORD_BOUNDARY_CORRUPTION_PATTERN.search(text))
 
 
+# what is left of the text once id, actions and notes are removed
 def extract_title(text, identifier=None):
     if not text:
         return ""

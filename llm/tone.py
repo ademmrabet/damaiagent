@@ -2,7 +2,6 @@ import re
 
 from llm.base import LLMUnavailableError
 
-
 TONES = ("frustrated", "confused", "neutral")
 
 _REPEATED_PUNCTUATION = re.compile(r"[!?]{2,}")
@@ -24,15 +23,8 @@ _CONFUSION_PATTERNS = re.compile(
 )
 
 
+# cheap check for signs of frustration or confusion
 def looks_emotional(text):
-    """
-    Cheap, deterministic pre-filter - decides whether it's even worth
-    ATTEMPTING the Groq tone classification below, never trusted for
-    the actual tone itself. True if `text` shows any surface signal of
-    frustration or confusion (repeated punctuation, shouted words,
-    or one of the phrase patterns above); False for ordinary, plainly-
-    worded questions - the large majority of real traffic.
-    """
     if _REPEATED_PUNCTUATION.search(text):
         return True
     if _ALL_CAPS_WORD.search(text):
@@ -56,29 +48,26 @@ _TONE_SYSTEM_PROMPT = (
 )
 
 
+# ask the llm which tone the user is in
 def detect_tone(text, provider):
-    """
-    Returns {"tone": "frustrated"|"confused"|"neutral", "used_llm":
-    bool, "error": str|None}. Always defaults to "neutral" (i.e. no
-    behavior change) on any failure - no provider, a network error, or
-    an unparseable response - same "never guess wrong, fall back
-    safely" principle as llm/translate.py's detect_and_translate_to_
-    english(). Callers are expected to have already checked
-    looks_emotional(text) before spending this call.
-    """
     fallback = {"tone": "neutral", "used_llm": False, "error": None}
 
     if provider is None:
         return {**fallback, "error": "No LLM provider available for tone detection."}
 
     try:
-        raw = provider.chat(_TONE_SYSTEM_PROMPT, text, temperature=0.0, max_tokens=8).strip()
+        raw = provider.chat(
+            _TONE_SYSTEM_PROMPT, text, temperature=0.0, max_tokens=8
+        ).strip()
     except LLMUnavailableError as exc:
         return {**fallback, "error": str(exc)}
 
     tone = raw.lower().strip(" .!\"'")
     if tone not in TONES:
-        return {**fallback, "error": f"Unrecognized tone {raw!r} in classification response."}
+        return {
+            **fallback,
+            "error": f"Unrecognized tone {raw!r} in classification response.",
+        }
 
     return {"tone": tone, "used_llm": True, "error": None}
 
@@ -107,15 +96,8 @@ EMPATHY_PREFIXES = {
 }
 
 
+# add a short empathetic opening to the answer
 def apply_tone_prefix(answer, tone, language="en"):
-    """
-    Prepends a short, tone-appropriate opener to `answer` when `tone`
-    is "frustrated" or "confused" - a no-op for "neutral" (the default,
-    overwhelming majority case) or an unrecognized language. Kept
-    entirely separate from `deterministic_answer` in the caller
-    (webapp/backend.py) - this is a warmth/UX layer on top of the
-    facts, never part of the trusted facts themselves.
-    """
     prefixes = EMPATHY_PREFIXES.get(language, EMPATHY_PREFIXES["en"])
     prefix = prefixes.get(tone)
     if not prefix:

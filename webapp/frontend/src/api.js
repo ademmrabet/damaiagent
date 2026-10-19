@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'dam_token';
+// jwt kept in localStorage; helpers below read and clear it
 
 export function getToken() {
   return sessionStorage.getItem(TOKEN_KEY);
@@ -35,17 +36,6 @@ async function authFetch(url, options = {}) {
   return res;
 }
 
-// 2026-09-20 (see docs/decisions.md): a plain `res.json()` blows up
-// with a cryptic `Unexpected token 'I', "Internal S"... is not valid
-// JSON` whenever the server responds with something that isn't JSON -
-// which is exactly what Starlette's own default error page looks like
-// for any exception that manages to escape as something other than an
-// HTTPException. The backend now has a catch-all handler that always
-// returns JSON (see webapp/backend.py), but this stays anyway as a
-// second line of defense - a proxy timeout page, a cold-start 502, or
-// some future unhandled case further down the stack could still send
-// back HTML or plain text, and this is what turns that into a readable
-// message instead of a JSON-parse stack trace.
 async function parseJsonBody(res, fallbackMessage) {
   let body = null;
   try {
@@ -59,6 +49,7 @@ async function parseJsonBody(res, fallbackMessage) {
   }
   return body;
 }
+// calls to the backend, one small function per endpoint
 
 export async function checkHealth() {
   const res = await fetch('/api/health', { cache: 'no-store' });
@@ -179,11 +170,8 @@ export async function claimShareLinkApi(token) {
   });
   return parseJsonBody(res, 'This share link is invalid or has expired');
 }
+// sse can't send headers, so the token goes in the query string
 
-// EventSource can't set an Authorization header, so the JWT travels as
-// a query param for this one connection instead (see webapp/backend.py's
-// /api/events docstring). Returns null when logged out so callers can
-// skip subscribing rather than opening a connection that will 401.
 export function openEventSource() {
   const token = getToken();
   if (!token) return null;
@@ -196,14 +184,9 @@ export async function uploadFile(file) {
   const res = await authFetch('/api/uploads', { method: 'POST', body: formData });
   return parseJsonBody(res, 'Upload failed');
 }
+// encode each path segment but keep the slashes
 
 export async function getAttachmentUrl(conversationId, key) {
-  // Encode each path segment separately (not the whole key) - the
-  // backend route uses FastAPI's `{key:path}` converter, which matches
-  // literal slashes in the key (attachments/<user id>/<uuid>-<name>).
-  // Encoding the slashes themselves (encodeURIComponent on the whole
-  // string) would turn them into %2F, which the route wouldn't match
-  // as the same path.
   const encodedKey = key.split('/').map(encodeURIComponent).join('/');
   const res = await authFetch(`/api/conversations/${conversationId}/attachments/${encodedKey}`);
   const body = await parseJsonBody(res, 'Could not open attachment');

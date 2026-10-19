@@ -1,22 +1,15 @@
-
 import networkx as nx
 
 UNRESOLVED_ROLE_ID = "role::__unresolved__"
 
 
+# graph id for a role vertex
 def _role_node_id(role_name):
     return f"role::{role_name}"
 
 
+# build the networkx graph of nodes, roles and their links
 def build_graph(nodes):
-    """
-    `nodes`: {id: schema.Node} - the output of
-    modeling.build_nodes.build_nodes().
-
-    Returns a networkx.MultiDiGraph with every DAM node, every
-    distinct role, and the contains/references/responsible_for edges
-    connecting them.
-    """
 
     graph = nx.MultiDiGraph()
 
@@ -76,15 +69,8 @@ def build_graph(nodes):
     return graph, skipped_references
 
 
+# roles linked to a task, optionally only for one action
 def responsible_roles(graph, task_id, action=None):
-    """
-    Every role connected to `task_id` by a responsible_for edge,
-    optionally filtered to a specific action (e.g. "A" for approvers,
-    "( i )" for informed parties) - this is the direct answer to both
-    founding example questions for this project ("who approves task
-    X" / "who needs to be informed for task X"), since both are just
-    this same lookup with a different action filter.
-    """
 
     results = []
 
@@ -93,18 +79,20 @@ def responsible_roles(graph, task_id, action=None):
             continue
         if action is not None and data.get("action") != action:
             continue
-        results.append({
-            "role": graph.nodes[role_id]["label"],
-            "action": data.get("action"),
-            "level": data.get("level"),
-            "footnote_refs": data.get("footnote_refs", []),
-        })
+        results.append(
+            {
+                "role": graph.nodes[role_id]["label"],
+                "action": data.get("action"),
+                "level": data.get("level"),
+                "footnote_refs": data.get("footnote_refs", []),
+            }
+        )
 
     return results
 
 
+# all nodes a role has a responsibility on
 def tasks_for_role(graph, role_name):
-    """Every DAM node a given role has any responsibility on."""
 
     role_id = _role_node_id(role_name)
 
@@ -116,10 +104,12 @@ def tasks_for_role(graph, role_name):
     for _, task_id, data in graph.out_edges(role_id, data=True):
         if data.get("edge_type") != "responsible_for":
             continue
-        results.append({
-            "task_id": task_id,
-            "title": graph.nodes[task_id].get("title", ""),
-            "action": data.get("action"),
-        })
+        results.append(
+            {
+                "task_id": task_id,
+                "title": graph.nodes[task_id].get("title", ""),
+                "action": data.get("action"),
+            }
+        )
 
     return results

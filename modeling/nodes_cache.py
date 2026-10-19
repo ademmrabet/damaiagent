@@ -6,10 +6,8 @@ from schema.schema import Node
 _COMPUTED_FIELDS = {"has_children", "actions"}
 
 
+# write the nodes to a json cache file
 def save_nodes(nodes, cache_path):
-    """
-    Serializes {id: Node} to a single JSON file at cache_path.
-    """
     cache_path = Path(cache_path)
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     data = {
@@ -19,7 +17,7 @@ def save_nodes(nodes, cache_path):
     cache_path.write_text(json.dumps(data))
 
 
+# read the nodes back from the json cache
 def load_nodes(cache_path):
-    """Reconstructs {id: Node} from a file written by save_nodes()."""
     data = json.loads(Path(cache_path).read_text())
     return {node_id: Node(**node_data) for node_id, node_data in data.items()}

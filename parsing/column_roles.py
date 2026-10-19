@@ -1,4 +1,3 @@
-
 TIGHT_CLUSTER_GAP = 3.0
 COLUMN_MERGE_GAP = 14.0
 
@@ -8,32 +7,10 @@ SUBGROUP_MIN_GAP = 1.5
 FOOTNOTE_DIGIT_MAX_SIZE = 4.0
 
 
+# drop a footnote digit stuck to the end of a role name
 def _strip_trailing_footnote_digit(ordered_chars):
-    """
-    If the LAST character in a run is a small (shrunk) digit, treat it
-    as a footnote reference and drop it - returns the chars list
-    without it, or unchanged if there's nothing to strip.
 
-    Checked against real counter-examples before using size alone:
-    "Manager PGCL.1" / "Manager FIFC.4" / "Manager FITR.2" also end in
-    a digit, but it's part of a formal department code (e.g. "FIFC.4"
-    is one code, not "FIFC." plus a footnote), not a footnote
-    reference - excluded by requiring the character BEFORE the digit
-    not be a literal ".". Every confirmed real footnote-digit case
-    (see module comment above) is preceded by a letter or a closing
-    paren, never a period.
-
-    Also found while checking this: the exact same code ("FIFC.4")
-    renders its digit at NORMAL size on pages 33/48 but at the SHRUNK
-    footnote size on page 49 - huge sample of one, and rebuilds on
-    render inconsistency it can't decide alone, which is exactly why
-    the period-exclusion matters as a second, independent check rather
-    than relying on size in isolation.
-    """
-
-    non_space_indices = [
-        i for i, c in enumerate(ordered_chars) if c["text"].strip()
-    ]
+    non_space_indices = [i for i, c in enumerate(ordered_chars) if c["text"].strip()]
 
     if not non_space_indices:
         return ordered_chars
@@ -53,7 +30,7 @@ def _strip_trailing_footnote_digit(ordered_chars):
     if strip_from is None:
         return ordered_chars
 
-    remaining = non_space_indices[:pos + 1]
+    remaining = non_space_indices[: pos + 1]
 
     if remaining and ordered_chars[remaining[-1]]["text"] == ".":
         return ordered_chars
@@ -61,6 +38,7 @@ def _strip_trailing_footnote_digit(ordered_chars):
     return ordered_chars[:strip_from]
 
 
+# group characters into columns by their left position
 def _cluster_by_x0(chars, gap):
 
     if not chars:
@@ -78,16 +56,8 @@ def _cluster_by_x0(chars, gap):
     return clusters
 
 
+# split a column group that is really two columns mixed together
 def _split_if_interleaved(cluster):
-    """
-    A tight x0-cluster can actually be TWO different columns' runs
-    merged together (see module comment above). Detects this by
-    checking whether the cluster's x0 values split cleanly into two
-    or more sub-groups, each with multiple repeated members, separated
-    by a real gap - not just a single stray outlier character. Returns
-    a list of sub-clusters: either the original cluster unchanged (one
-    element), or its genuine sub-runs split apart.
-    """
 
     sub_groups = _cluster_by_x0(cluster, SUBGROUP_TOLERANCE)
 
@@ -107,13 +77,8 @@ def _split_if_interleaved(cluster):
     return sub_groups
 
 
+# read the rotated role names printed at the top of the columns
 def extract_column_headers(chars):
-    """
-    Returns [{"role": str, "x0": float}, ...] sorted left to right,
-    from whichever rotated (upright=False) text is on the page - the
-    DAM prints one header row per page's table, valid for every task
-    on that page.
-    """
 
     rotated = [c for c in chars if not c["upright"]]
 
@@ -154,30 +119,19 @@ def extract_column_headers(chars):
         else:
             role = " ".join(group_text.split())
             if role:
-                headers.append({
-                    "role": role,
-                    "x0": sum(group_x0s) / len(group_x0s)
-                })
+                headers.append({"role": role, "x0": sum(group_x0s) / len(group_x0s)})
             group_text = text
             group_x0s = [x0]
 
     role = " ".join(group_text.split())
     if role:
-        headers.append({
-            "role": role,
-            "x0": sum(group_x0s) / len(group_x0s)
-        })
+        headers.append({"role": role, "x0": sum(group_x0s) / len(group_x0s)})
 
     return headers
 
 
+# role header closest to the action's horizontal position
 def nearest_role(headers, action_x0, max_distance=20.0):
-    """
-    The header whose x0 is closest to `action_x0`. Returns None if
-    there are no headers or the closest one is implausibly far away
-    (bad match is worse than no match - a null role is honest, a
-    wrong one is a silent bug).
-    """
 
     if not headers:
         return None

@@ -39,7 +39,14 @@ def test_chapter_process_task_hierarchy_is_internally_consistent(nodes):
 
 
 def test_process_children_are_not_empty(nodes):
-    assert nodes["2.510"].children == ["2.511", "2.512", "2.513", "2.514", "2.515", "2.516"]
+    assert nodes["2.510"].children == [
+        "2.511",
+        "2.512",
+        "2.513",
+        "2.514",
+        "2.515",
+        "2.516",
+    ]
 
 
 def test_chapter_children_are_processes_only(nodes):

@@ -4,7 +4,9 @@ from pathlib import Path
 
 from knowledge.typo_correct import correct_words
 
-GLOSSARY_PATH = Path(__file__).resolve().parent.parent / "data" / "reference" / "abbreviations.json"
+GLOSSARY_PATH = (
+    Path(__file__).resolve().parent.parent / "data" / "reference" / "abbreviations.json"
+)
 
 _TRIGGER_PATTERNS = [
     re.compile(
@@ -23,14 +25,28 @@ _BARE_WHATS_PATTERN = re.compile(r"^whats?(?:'s|\s+is)?\s+(.+?)\s*\??$", re.IGNO
 _BARE_ACRONYM_SHAPE = re.compile(r"^[A-Za-z][A-Za-z0-9]{1,7}$")
 
 _GLOSSARY_TRIGGER_VOCAB = {
-    "what", "whats", "does", "the", "acronym", "abbreviation",
-    "mean", "means", "stand", "stands", "for", "is", "meaning",
-    "definition", "of", "define",
+    "what",
+    "whats",
+    "does",
+    "the",
+    "acronym",
+    "abbreviation",
+    "mean",
+    "means",
+    "stand",
+    "stands",
+    "for",
+    "is",
+    "meaning",
+    "definition",
+    "of",
+    "define",
 }
 
 _ACRONYM_TOKEN = re.compile(r"\b[A-Z][A-Z0-9]{1,6}\b")
 
 
+# load acronyms from the abbreviations json, keyed by uppercase term
 def _load_glossary():
     with open(GLOSSARY_PATH, encoding="utf-8") as f:
         entries = json.load(f)
@@ -43,27 +59,21 @@ MANUAL_ALIASES = {
     "RDNG": (
         "RDNG",
         "Director, Nigeria Country Office. Not separately defined in the "
-        "DAM's own Abbreviations list (pages 2-7) - only \"RDG\" is "
-        "defined there, with a note that RDG \"also covers\" this role - "
-        "but \"RDNG\" is the acronym the DAM's own role names actually "
-        "use (e.g. \"RDG / Director RDNG\").",
+        'DAM\'s own Abbreviations list (pages 2-7) - only "RDG" is '
+        'defined there, with a note that RDG "also covers" this role - '
+        'but "RDNG" is the acronym the DAM\'s own role names actually '
+        'use (e.g. "RDG / Director RDNG").',
     ),
 }
 
 
+# strip quotes and punctuation around the term
 def _clean_candidate(raw):
     return raw.strip(" \t\n\"'.,!?")
 
 
+# case-insensitive lookup in the acronym reference
 def lookup_term(term):
-    """
-    Case-insensitive exact lookup against the Abbreviations and
-    Acronyms reference (data/reference/abbreviations.json, built from
-    the DAM's own pages 2-7 - see parsing/glossary.py), falling back
-    to MANUAL_ALIASES for the handful of real acronyms the DAM uses
-    but never separately defines. Returns (canonical_term, definition)
-    or None.
-    """
     if not term:
         return None
     hit = _GLOSSARY.get(term.upper())
@@ -72,6 +82,7 @@ def lookup_term(term):
     return MANUAL_ALIASES.get(term.upper())
 
 
+# try each trigger pattern and return the term asked about
 def _detect_glossary_query_raw(query):
     for pattern in _TRIGGER_PATTERNS:
         match = pattern.search(query)
@@ -92,17 +103,8 @@ def _detect_glossary_query_raw(query):
     return None
 
 
+# detect 'what does X stand for' style questions and look the term up
 def detect_glossary_query(query):
-    """
-    Returns {"term": raw_term, "found": (canonical_term, definition)|None}
-    if the query looks like a glossary question, else None.
-
-    Tries the query exactly as typed first; only retries against a
-    typo-corrected version of the TRIGGER PHRASING if that finds
-    nothing ("what dose DDG men" -> "what does DDG mean") - the term
-    being asked about is deliberately not in the correction vocabulary,
-    so it's never at risk of being "corrected" into something else.
-    """
     detection = _detect_glossary_query_raw(query)
     if detection:
         return detection
@@ -114,6 +116,7 @@ def detect_glossary_query(query):
     return None
 
 
+# say what the acronym stands for, or that it is unknown
 def format_glossary_answer(detection):
     term = detection["term"]
     found = detection["found"]
@@ -127,22 +130,8 @@ def format_glossary_answer(detection):
     )
 
 
+# add the acronym meaning in brackets the first time it appears
 def expand_acronym_in_role_name(role_name, already_expanded):
-    """
-    Appends a plain-language expansion in parentheses the first time a
-    known acronym is seen within one formatted answer - e.g. "DDG" ->
-    "DDG (Deputy Director-General)", "Country Manager / DDG" ->
-    "Country Manager / DDG (DDG = Deputy Director-General)".
-
-    `already_expanded` is a set the caller keeps for the lifetime of
-    one _format_role_list() call, so the same acronym isn't re-
-    expanded on every role in a long list - only the first mention.
-    Checks the whole role name first (covers roles that ARE just the
-    acronym, e.g. "RDG"), then falls back to scanning for an embedded
-    all-caps token (covers composite roles like "Country Manager /
-    DDG"), and expands at most one acronym per role name to avoid
-    cluttering roles that already chain several together.
-    """
     whole_match = lookup_term(role_name)
     if whole_match:
         canonical, definition = whole_match
