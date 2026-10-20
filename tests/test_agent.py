@@ -548,3 +548,27 @@ def test_out_of_scope_question_is_not_carried_over_to_previous_task(setup):
         )
         assert result["method"] != "context_carryover"
         assert result["node_id"] is None
+
+
+def test_followup_with_typos_still_carries_over(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves 2.126",
+        nodes,
+        graph,
+        vectorizer,
+        matrix,
+        searchable_ids,
+    )
+    result = answer_question(
+        "whi neds to be informed for the same task",
+        nodes,
+        graph,
+        vectorizer,
+        matrix,
+        searchable_ids,
+        previous_node_id=first["node_id"],
+    )
+    assert result["method"] == "context_carryover"
+    assert result["node_id"] == "2.126"

@@ -424,3 +424,54 @@ def test_llm_config_respects_env_overrides(client, monkeypatch):
     body = res.json()
     assert body["ollama_model"] == "mistral"
     assert body["groq_model"] == "llama-3.1-8b-instant"
+
+
+class _FakeProvider:
+    name = "fake"
+
+    def __init__(self, reply):
+        self.reply = reply
+
+    def chat(self, system, user):
+        return self.reply
+
+
+_FALLBACK_RESULT = {
+    "roles": [
+        {
+            "role": "RDG / Director RDNG",
+            "action": "A",
+            "level": None,
+            "footnote_refs": [],
+        }
+    ],
+    "llm_facts": None,
+}
+_FALLBACK_PREVIOUS = {"text": "en", "used_llm": False, "provider": "fake", "error": "x"}
+
+
+def test_translate_fallback_returns_translated_plain_answer():
+    from webapp.backend import _translate_fallback
+
+    out = _translate_fallback(
+        _FALLBACK_RESULT,
+        "English answer",
+        _FakeProvider("Pour 2.126, RDG / Director RDNG approuve."),
+        "fr",
+        _FALLBACK_PREVIOUS,
+    )
+    assert out["used_llm"] is True
+    assert "approuve" in out["text"]
+
+
+def test_translate_fallback_keeps_previous_when_role_is_missing():
+    from webapp.backend import _translate_fallback
+
+    out = _translate_fallback(
+        _FALLBACK_RESULT,
+        "English answer",
+        _FakeProvider("Pour 2.126, le directeur approuve."),
+        "fr",
+        _FALLBACK_PREVIOUS,
+    )
+    assert out is _FALLBACK_PREVIOUS

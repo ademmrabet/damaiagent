@@ -87,32 +87,38 @@ CONTEXT_OVERRIDE_MAX_SCORE = 0.5
 
 _HAS_DIGIT = re.compile(r"\d")
 
-_FOLLOWUP_MARKERS = {
-    "and",
-    "also",
-    "then",
+_FOLLOWUP_MARKERS = {"and", "also", "then", "again", "too", "about", "its"}
+_STRONG_FOLLOWUP_MARKERS = {
+    "same",
     "that",
     "this",
     "it",
-    "its",
     "them",
     "those",
-    "same",
-    "again",
-    "too",
-    "about",
+    "previous",
+    "above",
 }
+
+
+# true if the word is, or is a typo of, a generic word (stop word, intent word...)
+def _is_generic_or_typo(word):
+    if word in _GENERIC_QUERY_WORDS:
+        return True
+    return any(
+        len(g) >= 3 and SequenceMatcher(None, word, g).ratio() >= 0.75
+        for g in _GENERIC_QUERY_WORDS
+    )
 
 
 # true if the question looks like a follow-up and not a new topic
 def _looks_like_followup(query):
-    content = _content_word_count(query)
-    if content == 0:
+    words = _WORD_RE.findall(query.lower())
+    if set(words) & _STRONG_FOLLOWUP_MARKERS:
         return True
-    if content > 1:
-        return False
-    words = set(_WORD_RE.findall(query.lower()))
-    return bool(words & _FOLLOWUP_MARKERS)
+    content = [w for w in words if len(w) >= 3 and not _is_generic_or_typo(w)]
+    if not content:
+        return True
+    return len(content) == 1 and bool(set(words) & _FOLLOWUP_MARKERS)
 
 
 # result dict for answers that are not tied to a node

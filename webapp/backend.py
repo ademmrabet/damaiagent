@@ -24,7 +24,7 @@ from modeling.nodes_cache import load_nodes
 from modeling.graph import build_graph
 from knowledge.search import build_search_index
 from agent.qa import answer_question
-from agent.generate import humanize_answer
+from agent.generate import humanize_answer, _mentions_expected_facts
 from llm.router import resolve_provider
 from llm.ollama_provider import OllamaProvider
 from llm.groq_provider import GroqProvider
@@ -243,6 +243,21 @@ def _ask_about_attachment(payload: Question, request: Request, db: Session) -> d
     )
 
 
+# when the llm rewrite fails the check, translate the plain answer instead
+def _translate_fallback(result, deterministic_answer, provider, language, previous):
+    translated = translate_text(deterministic_answer, language, provider)
+    if translated["used_llm"] and _mentions_expected_facts(
+        translated["text"], result, language
+    ):
+        return {
+            "text": translated["text"],
+            "used_llm": True,
+            "provider": provider.name,
+            "error": None,
+        }
+    return previous
+
+
 # answer a question: retrieval first, then optional translation and llm rephrasing
 @app.post("/api/ask")
 def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
@@ -291,6 +306,14 @@ def ask(payload: Question, request: Request, db: Session = Depends(get_db)):
             generation = humanize_answer(
                 payload.question, result, provider, target_language=answer_language
             )
+            if (
+                not generation["used_llm"]
+                and answer_language != "en"
+                and provider is not None
+            ):
+                generation = _translate_fallback(
+                    result, deterministic_answer, provider, answer_language, generation
+                )
         elif answer_language != "en":
             translated = translate_text(result["answer"], answer_language, provider)
             generation = {
