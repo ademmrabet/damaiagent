@@ -519,3 +519,32 @@ def test_reference_entirely_out_of_document_scope_says_so_honestly(setup):
     assert "16.400" in result["answer"]
     assert "outside the scope" in result["answer"].lower()
     assert "no one is recorded" not in result["answer"].lower()
+
+
+def test_out_of_scope_question_is_not_carried_over_to_previous_task(setup):
+    nodes, graph, vectorizer, matrix, searchable_ids = setup
+
+    first = answer_question(
+        "who approves 2.126",
+        nodes,
+        graph,
+        vectorizer,
+        matrix,
+        searchable_ids,
+    )
+
+    for question in (
+        "who is the president of the AfDB",
+        "who approves of the journey in dahdah",
+    ):
+        result = answer_question(
+            question,
+            nodes,
+            graph,
+            vectorizer,
+            matrix,
+            searchable_ids,
+            previous_node_id=first["node_id"],
+        )
+        assert result["method"] != "context_carryover"
+        assert result["node_id"] is None

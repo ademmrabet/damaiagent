@@ -1,4 +1,5 @@
 import re
+from difflib import SequenceMatcher
 
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 
@@ -18,7 +19,20 @@ MIN_TEXT_SEARCH_SCORE = 0.15
 CLARIFICATION_MAX_SCORE = 0.6
 CLARIFICATION_MIN_GAP = 0.15
 
-_EXTRA_GENERIC_WORDS = {"task", "activity", "process", "dam", "please", "tell"}
+_EXTRA_GENERIC_WORDS = {
+    "task",
+    "activity",
+    "process",
+    "dam",
+    "please",
+    "tell",
+    "party",
+    "parties",
+    "partie",
+    "role",
+    "roles",
+    "people",
+}
 _GENERIC_QUERY_WORDS = ENGLISH_STOP_WORDS | _INTENT_VOCAB | _EXTRA_GENERIC_WORDS
 _WORD_RE = re.compile(r"[a-z']+")
 
@@ -27,6 +41,20 @@ _WORD_RE = re.compile(r"[a-z']+")
 def _content_word_count(query):
     words = _WORD_RE.findall(query.lower())
     return sum(1 for w in words if len(w) >= 3 and w not in _GENERIC_QUERY_WORDS)
+
+
+# true if some meaningful word of the question also appears (even with a typo) in the title
+def _shares_content_word(query, title):
+    title_words = set(_WORD_RE.findall(title.lower()))
+    for w in _WORD_RE.findall(query.lower()):
+        if len(w) < 3 or w in _GENERIC_QUERY_WORDS:
+            continue
+        for t in title_words:
+            if w == t or w[:5] == t[:5] and len(w) >= 5 and len(t) >= 5:
+                return True
+            if SequenceMatcher(None, w, t).ratio() >= 0.8:
+                return True
+    return False
 
 
 # true when the match is too vague or too close to trust
@@ -58,6 +86,33 @@ def _format_clarification_answer(matches, nodes):
 CONTEXT_OVERRIDE_MAX_SCORE = 0.5
 
 _HAS_DIGIT = re.compile(r"\d")
+
+_FOLLOWUP_MARKERS = {
+    "and",
+    "also",
+    "then",
+    "that",
+    "this",
+    "it",
+    "its",
+    "them",
+    "those",
+    "same",
+    "again",
+    "too",
+    "about",
+}
+
+
+# true if the question looks like a follow-up and not a new topic
+def _looks_like_followup(query):
+    content = _content_word_count(query)
+    if content == 0:
+        return True
+    if content > 1:
+        return False
+    words = set(_WORD_RE.findall(query.lower()))
+    return bool(words & _FOLLOWUP_MARKERS)
 
 
 # result dict for answers that are not tied to a node
@@ -306,8 +361,18 @@ def answer_question(
 
     resolution = resolve_query(query, nodes, vectorizer, matrix, searchable_ids)
 
+    if resolution["method"] == "text_search":
+        resolution["matches"] = [
+            m
+            for m in resolution["matches"]
+            if _shares_content_word(query, nodes[m["id"]].title)
+        ]
+
     context_available = (
-        previous_node_id and previous_node_id in nodes and not _HAS_DIGIT.search(query)
+        previous_node_id
+        and previous_node_id in nodes
+        and not _HAS_DIGIT.search(query)
+        and _looks_like_followup(query)
     )
 
     resolution_is_weak = resolution["method"] == "text_search" and (
